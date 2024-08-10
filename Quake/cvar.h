@@ -63,90 +63,116 @@ interface from being ambiguous.
 
 */
 
+#include "q_stdinc.h"
+
 typedef enum
 {
-	CVAR_NONE			= 0,
-	CVAR_ARCHIVE		= (1U << 0),	// if set, causes it to be saved to config
-	CVAR_NOTIFY			= (1U << 1),	// changes will be broadcasted to all players (q1)
-	CVAR_SERVERINFO		= (1U << 2),	// added to serverinfo will be sent to clients (q1/net_dgrm.c and qwsv)
-	CVAR_USERINFO		= (1U << 3),	// added to userinfo, will be sent to server (qwcl)
-	CVAR_CHANGED		= (1U << 4),
-	CVAR_ROM			= (1U << 6),
-	CVAR_LOCKED			= (1U << 8),	// locked temporarily
-	CVAR_REGISTERED		= (1U << 10),	// the var is added to the list of variables
-	CVAR_CALLBACK		= (1U << 16),	// var has a callback
-	CVAR_USERDEFINED	= (1U << 17),	// cvar was created by the user/mod, and needs to be saved a bit differently.
-	CVAR_AUTOCVAR		= (1U << 18),	// cvar changes need to feed back to qc global changes.
+  CVAR_NONE = 0,
+  CVAR_ARCHIVE = (1U << 0), // if set, causes it to be saved to config
+  CVAR_NOTIFY = (1U << 1),  // changes will be broadcasted to all players (q1)
+  CVAR_SERVERINFO = (1U << 2), // added to serverinfo will be sent to clients
+                               // (q1/net_dgrm.c and qwsv)
+  CVAR_USERINFO = (1U << 3), // added to userinfo, will be sent to server (qwcl)
+  CVAR_CHANGED = (1U << 4),
+  CVAR_ROM = (1U << 6),
+  CVAR_LOCKED = (1U << 8),       // locked temporarily
+  CVAR_REGISTERED = (1U << 10),  // the var is added to the list of variables
+  CVAR_CALLBACK = (1U << 16),    // var has a callback
+  CVAR_USERDEFINED = (1U << 17), // cvar was created by the user/mod, and needs
+                                 // to be saved a bit differently.
+  CVAR_AUTOCVAR =
+    (1U << 18), // cvar changes need to feed back to qc global changes.
 } cvarflags_t;
 
+struct cvar_s;
 
-typedef void (*cvarcallback_t) (struct cvar_s *);
-typedef void (*cvarcompletion_t) (struct cvar_s *, const char *);
+typedef void (*cvarcallback_t)(struct cvar_s*);
+typedef void (*cvarcompletion_t)(struct cvar_s*, const char*);
 
 typedef struct cvar_s
 {
-	const char	*name;
-	const char	*string;
-	cvarflags_t	flags;
-	float		value;
-	const char	*default_string; //johnfitz -- remember defaults for reset function
-	cvarcallback_t	callback;
-	cvarcompletion_t	completion;
-	struct cvar_s	*next;
+  const char* name;
+  const char* string;
+  cvarflags_t flags;
+  float value;
+  const char* default_string; // johnfitz -- remember defaults for reset
+                              // function
+  cvarcallback_t callback;
+  cvarcompletion_t completion;
+  struct cvar_s* next;
 } cvar_t;
 
-void	Cvar_RegisterVariable (cvar_t *variable);
+void
+Cvar_RegisterVariable(cvar_t* variable);
 // registers a cvar that already has the name, string, and optionally
 // the archive elements set.
 
-cvar_t *Cvar_Create (const char *name, const char *value);
-//creates+registers a cvar, otherwise just returns it.
+cvar_t*
+Cvar_Create(const char* name, const char* value);
+// creates+registers a cvar, otherwise just returns it.
 
-void Cvar_SetCallback (cvar_t *var, cvarcallback_t func);
+void
+Cvar_SetCallback(cvar_t* var, cvarcallback_t func);
 // set a callback function to the var
 
-void Cvar_SetCompletion (cvar_t *var, cvarcompletion_t func);
+void
+Cvar_SetCompletion(cvar_t* var, cvarcompletion_t func);
 // set a callback function to the var
 
-void	Cvar_Set (const char *var_name, const char *value);
+void
+Cvar_Set(const char* var_name, const char* value);
 // equivelant to "<name> <variable>" typed at the console
 
-void	Cvar_SetValue (const char *var_name, const float value);
+void
+Cvar_SetValue(const char* var_name, const float value);
 // expands value to a string and calls Cvar_Set
 
-void	Cvar_SetROM (const char *var_name, const char *value);
-void	Cvar_SetValueROM (const char *var_name, const float value);
+void
+Cvar_SetROM(const char* var_name, const char* value);
+void
+Cvar_SetValueROM(const char* var_name, const float value);
 // sets a CVAR_ROM variable from within the engine
 
-void Cvar_SetQuick (cvar_t *var, const char *value);
-void Cvar_SetValueQuick (cvar_t *var, const float value);
+void
+Cvar_SetQuick(cvar_t* var, const char* value);
+void
+Cvar_SetValueQuick(cvar_t* var, const float value);
 // these two accept a cvar pointer instead of a var name,
 // but are otherwise identical to the "non-Quick" versions.
 // the cvar MUST be registered.
 
-float	Cvar_VariableValue (const char *var_name);
+float
+Cvar_VariableValue(const char* var_name);
 // returns 0 if not defined or non numeric
 
-const char *Cvar_VariableString (const char *var_name);
+const char*
+Cvar_VariableString(const char* var_name);
 // returns an empty string if not defined
 
-qboolean Cvar_Command (void);
+qboolean
+Cvar_Command(void);
 // called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
 // command.  Returns true if the command was a variable reference that
 // was handled. (print or change)
 
-void	Cvar_WriteVariables (FILE *f);
+void
+Cvar_WriteVariables(FILE* f);
 // Writes lines containing "set variable value" for all variables
 // with the CVAR_ARCHIVE flag set
 
-cvar_t	*Cvar_FindVar (const char *var_name);
-cvar_t	*Cvar_FindVarAfter (const char *prev_name, unsigned int with_flags);
+cvar_t*
+Cvar_FindVar(const char* var_name);
+cvar_t*
+Cvar_FindVarAfter(const char* prev_name, unsigned int with_flags);
 
-void	Cvar_LockVar (const char *var_name);
-void	Cvar_UnlockVar (const char *var_name);
-void	Cvar_UnlockAll (void);
+void
+Cvar_LockVar(const char* var_name);
+void
+Cvar_UnlockVar(const char* var_name);
+void
+Cvar_UnlockAll(void);
 
-void	Cvar_Init (void);
+void
+Cvar_Init(void);
 
-#endif	/* __CVAR_H__ */
-
+#endif /* __CVAR_H__ */

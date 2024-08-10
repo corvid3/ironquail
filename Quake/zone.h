@@ -23,12 +23,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __ZZONE_H
 #define __ZZONE_H
 
+#include "q_stdinc.h"
+
 /*
  memory allocation
 
 
 H_??? The hunk manages the memory given to Quake.
-Memory can be allocated from the low end in a stack fashion. 
+Memory can be allocated from the low end in a stack fashion.
 
 The only way memory is released is by resetting the hunk cursor.
 
@@ -71,48 +73,64 @@ Zone block
 
 */
 
-void Memory_Init (void *buf, int size);
+void
+Memory_Init(void* buf, int size);
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-void Z_Free (void *ptr);
-void *Z_Malloc (int size);			// returns 0 filled memory
-void *Z_Realloc (void *ptr, int size);
-char *Z_Strdup (const char *s);
+  void Z_Free(void* ptr);
+  void* Z_Malloc(int size); // returns 0 filled memory
+  void* Z_Realloc(void* ptr, int size);
+  char* Z_Strdup(const char* s);
 #ifdef __cplusplus
 }
 #endif
 
-void *Hunk_Alloc (int size); // returns 0 filled memory
-void *Hunk_AllocNoFill (int size); // returns uninitialized memory
-void *Hunk_AllocName (int size, const char *name); // returns 0 filled memory
-void *Hunk_AllocNameNoFill (int size, const char *name); // returns uninitialized memory
-char *Hunk_Strdup (const char *s, const char *name);
+void*
+Hunk_Alloc(int size); // returns 0 filled memory
+void*
+Hunk_AllocNoFill(int size); // returns uninitialized memory
+void*
+Hunk_AllocName(int size, const char* name); // returns 0 filled memory
+void*
+Hunk_AllocNameNoFill(int size,
+                     const char* name); // returns uninitialized memory
+char*
+Hunk_Strdup(const char* s, const char* name);
 
-int	Hunk_LowMark (void);
-void Hunk_FreeToLowMark (int mark);
+int
+Hunk_LowMark(void);
+void
+Hunk_FreeToLowMark(int mark);
 
-void Hunk_Check (void);
+void
+Hunk_Check(void);
 
 typedef struct cache_user_s
 {
-	void	*data;
+  void* data;
 } cache_user_t;
 
-void Cache_Flush (void);
+void
+Cache_Flush(void);
 
-void *Cache_Check (cache_user_t *c);
+void*
+Cache_Check(cache_user_t* c);
 // returns the cached data, and moves to the head of the LRU list
 // if present, otherwise returns NULL
 
-void Cache_Free (cache_user_t *c, qboolean freetextures); //johnfitz -- added second argument
+void
+Cache_Free(cache_user_t* c,
+           qboolean freetextures); // johnfitz -- added second argument
 
-void *Cache_Alloc (cache_user_t *c, int size, const char *name);
+void*
+Cache_Alloc(cache_user_t* c, int size, const char* name);
 // Returns NULL if all purgable data was tossed and there still
 // wasn't enough room.
 
-void Cache_Report (void);
+void
+Cache_Report(void);
 
-#endif	/* __ZZONE_H */
-
+#endif /* __ZZONE_H */

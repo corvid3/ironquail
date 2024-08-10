@@ -21,7 +21,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "quakedef.h"
+#include "common.h"
+#include "keys.h"
+#include "platform.h"
+#include "strl_fn.h"
+#include "vid.h"
+#include "zone.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_video.h>
+
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)
 #if defined(USE_SDL2)
 #include <SDL2/SDL.h>
@@ -29,68 +37,68 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <SDL/SDL.h>
 #endif
 #else
-#include "SDL.h"
 #endif
 
-static const Uint8 bmp_bytes[] =
-{
+static const Uint8 bmp_bytes[] = {
 #include "qs_bmp.h"
 };
 
-void PL_SetWindowIcon (void)
+void
+PL_SetWindowIcon(void)
 {
-	SDL_RWops	*rwop;
-	SDL_Surface	*icon;
-	Uint32		colorkey;
+  SDL_RWops* rwop;
+  SDL_Surface* icon;
+  Uint32 colorkey;
 
-	/* SDL_RWFromConstMem() requires SDL >= 1.2.7 */
-	rwop = SDL_RWFromConstMem(bmp_bytes, sizeof(bmp_bytes));
-	if (rwop == NULL)
-		return;
-	icon = SDL_LoadBMP_RW(rwop, 1);
-	if (icon == NULL)
-		return;
-	/* make pure magenta (#ff00ff) tranparent */
-	colorkey = SDL_MapRGB(icon->format, 255, 0, 255);
+  /* SDL_RWFromConstMem() requires SDL >= 1.2.7 */
+  rwop = SDL_RWFromConstMem(bmp_bytes, sizeof(bmp_bytes));
+  if (rwop == NULL)
+    return;
+  icon = SDL_LoadBMP_RW(rwop, 1);
+  if (icon == NULL)
+    return;
+  /* make pure magenta (#ff00ff) tranparent */
+  colorkey = SDL_MapRGB(icon->format, 255, 0, 255);
 #if defined(USE_SDL2)
-	SDL_SetColorKey(icon, SDL_TRUE, colorkey);
-	SDL_SetWindowIcon((SDL_Window*) VID_GetWindow(), icon);
+  SDL_SetColorKey(icon, SDL_TRUE, colorkey);
+  SDL_SetWindowIcon((SDL_Window*)VID_GetWindow(), icon);
 #else
-	SDL_SetColorKey(icon, SDL_SRCCOLORKEY, colorkey);
-	SDL_WM_SetIcon(icon, NULL);
+  SDL_SetColorKey(icon, SDL_SRCCOLORKEY, colorkey);
+  SDL_WM_SetIcon(icon, NULL);
 #endif
-	SDL_FreeSurface(icon);
+  SDL_FreeSurface(icon);
 }
 
-void PL_VID_Shutdown (void)
+void
+PL_VID_Shutdown(void)
 {
 }
 
-#define MAX_CLIPBOARDTXT	MAXCMDLINE	/* 256 */
-char *PL_GetClipboardData (void)
+#define MAX_CLIPBOARDTXT MAXCMDLINE /* 256 */
+char*
+PL_GetClipboardData(void)
 {
-	char *data = NULL;
+  char* data = NULL;
 #if defined(USE_SDL2)
-	char *cliptext = SDL_GetClipboardText();
+  char* cliptext = SDL_GetClipboardText();
 
-	if (cliptext != NULL)
-	{
-		size_t size = strlen(cliptext) + 1;
-	/* this is intended for simple small text copies
-	 * such as an ip address, etc:  do chop the size
-	 * here, otherwise we may experience Z_Malloc()
-	 * failures and all other not-oh-so-fun stuff. */
-		size = q_min((size_t)(MAX_CLIPBOARDTXT), size);
-		data = (char *) Z_Malloc((int)size);
-		q_strlcpy (data, cliptext, size);
-	}
+  if (cliptext != NULL) {
+    size_t size = strlen(cliptext) + 1;
+    /* this is intended for simple small text copies
+     * such as an ip address, etc:  do chop the size
+     * here, otherwise we may experience Z_Malloc()
+     * failures and all other not-oh-so-fun stuff. */
+    size = q_min((size_t)(MAX_CLIPBOARDTXT), size);
+    data = (char*)Z_Malloc((int)size);
+    q_strlcpy(data, cliptext, size);
+  }
 #endif
 
-	return data;
+  return data;
 }
 
-void PL_ErrorDialog (const char *errorMsg)
+void
+PL_ErrorDialog(const char* errorMsg)
 {
-	SDL_ShowSimpleMessageBox (SDL_MESSAGEBOX_ERROR, "Quake Error", errorMsg, NULL);
+  SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Quake Error", errorMsg, NULL);
 }
-

@@ -181,6 +181,8 @@ else
 COMMON_LIBS= -lGL -lm
 endif
 
+CFLAGS+=-DPLATFORM_UNIX
+
 LIBS = $(COMMON_LIBS) $(NET_LIBS) $(CODECLIBS)
 
 # name of this makefile, so we can use it as a dependency

@@ -24,90 +24,102 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _QUAKE_SCREEN_H
 
 // screen.h
+#include "cvar.h"
+#include "q_stdinc.h"
+#include <GL/gl.h>
 
-void SCR_Init (void);
-void SCR_LoadPics (void);
+void
+SCR_Init(void);
+void
+SCR_LoadPics(void);
 
-void SCR_UpdateScreen (void);
+void
+SCR_UpdateScreen(void);
 
-void SCR_UpdateZoom (void);
-void SCR_CenterPrint (const char *str);
+void
+SCR_UpdateZoom(void);
+void
+SCR_CenterPrint(const char* str);
 
-void SCR_BeginLoadingPlaque (void);
-void SCR_EndLoadingPlaque (void);
+void
+SCR_BeginLoadingPlaque(void);
+void
+SCR_EndLoadingPlaque(void);
 
-int SCR_ModalMessage (const char *text, float timeout); //johnfitz -- added timeout
+int
+SCR_ModalMessage(const char* text, float timeout); // johnfitz -- added timeout
 
-extern	float		scr_con_current;
-extern	float		scr_conlines;		// lines of console to display
+extern float scr_con_current;
+extern float scr_conlines; // lines of console to display
 
-extern	int			sb_lines;
+extern int sb_lines;
 
-extern	int			clearnotify;	// set to 0 whenever notify text is drawn
-extern	qboolean	scr_disabled_for_loading;
-extern	qboolean	scr_skipupdate;
+extern int clearnotify; // set to 0 whenever notify text is drawn
+extern qboolean scr_disabled_for_loading;
+extern qboolean scr_skipupdate;
 
-extern	cvar_t		scr_viewsize;
+extern cvar_t scr_viewsize;
 
-extern	cvar_t		scr_sbaralpha; //johnfitz
+extern cvar_t scr_sbaralpha; // johnfitz
 
-//johnfitz -- stuff for 2d drawing control
-typedef enum {
-	CANVAS_NONE,
-	CANVAS_DEFAULT,
-	CANVAS_CONSOLE,
-	CANVAS_MENU,
-	CANVAS_SBAR,
-	CANVAS_SBAR_QW_INV,
-	CANVAS_SBAR2,
-	CANVAS_CROSSHAIR,
-	CANVAS_BOTTOMLEFT,
-	CANVAS_BOTTOMRIGHT,
-	CANVAS_TOPRIGHT,
-	CANVAS_CSQC,
-	CANVAS_INVALID = -1
+// johnfitz -- stuff for 2d drawing control
+typedef enum
+{
+  CANVAS_NONE,
+  CANVAS_DEFAULT,
+  CANVAS_CONSOLE,
+  CANVAS_MENU,
+  CANVAS_SBAR,
+  CANVAS_SBAR_QW_INV,
+  CANVAS_SBAR2,
+  CANVAS_CROSSHAIR,
+  CANVAS_BOTTOMLEFT,
+  CANVAS_BOTTOMRIGHT,
+  CANVAS_TOPRIGHT,
+  CANVAS_CSQC,
+  CANVAS_INVALID = -1
 } canvastype;
 
 typedef struct drawtransform_s
 {
-	float				scale[2];
-	float				offset[2];
+  float scale[2];
+  float offset[2];
 } drawtransform_t;
 
-typedef struct glcanvas_s {
-	canvastype			type;
-	float				left, right, bottom, top;
-	drawtransform_t		transform;
-	GLubyte				color[4];
-	unsigned			blendmode;
-	struct gltexture_s	*texture;
+typedef struct glcanvas_s
+{
+  canvastype type;
+  float left, right, bottom, top;
+  drawtransform_t transform;
+  GLubyte color[4];
+  unsigned blendmode;
+  struct gltexture_s* texture;
 } glcanvas_t;
 
-extern	glcanvas_t	glcanvas;
+extern glcanvas_t glcanvas;
 
-extern	cvar_t		scr_menuscale;
-extern	cvar_t		scr_menubgalpha;
-extern	cvar_t		scr_sbarscale;
-extern	cvar_t		scr_conwidth;
-extern	cvar_t		scr_conscale;
-extern	cvar_t		scr_scale;
-extern	cvar_t		scr_crosshairscale;
-//johnfitz
+extern cvar_t scr_menuscale;
+extern cvar_t scr_menubgalpha;
+extern cvar_t scr_sbarscale;
+extern cvar_t scr_conwidth;
+extern cvar_t scr_conscale;
+extern cvar_t scr_scale;
+extern cvar_t scr_crosshairscale;
+// johnfitz
 
 typedef enum hudstyle_t
 {
-	HUD_CLASSIC,
-	HUD_MODERN_CENTERAMMO,		// Modern 1
-	HUD_MODERN_SIDEAMMO,		// Modern 2
-	HUD_QUAKEWORLD,
+  HUD_CLASSIC,
+  HUD_MODERN_CENTERAMMO, // Modern 1
+  HUD_MODERN_SIDEAMMO,   // Modern 2
+  HUD_QUAKEWORLD,
 
-	HUD_COUNT,
+  HUD_COUNT,
 } hudstyle_t;
 
-extern	cvar_t		scr_hudstyle;
-extern	hudstyle_t	hudstyle;
+extern cvar_t scr_hudstyle;
+extern hudstyle_t hudstyle;
 
-extern int scr_tileclear_updates; //johnfitz
+extern int scr_tileclear_updates; // johnfitz
 
-#endif	/* _QUAKE_SCREEN_H */
-
+#endif /* _QUAKE_SCREEN_H */

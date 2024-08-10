@@ -20,59 +20,75 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-//r_alias.c -- alias model rendering
+// r_alias.c -- alias model rendering
 
+#include "client.h"
+#include "common.h"
+#include "console.h"
+#include "gl_texmgr.h"
+#include "glquake.h"
+#include "mathlib.h"
+#include "q_stdinc.h"
 #include "quakedef.h"
+#include "vid.h"
+#include <SDL2/SDL.h>
 
-extern cvar_t gl_overbright_models, gl_fullbrights, r_lerpmodels, r_lerpmove; //johnfitz
+extern cvar_t gl_overbright_models, gl_fullbrights, r_lerpmodels,
+  r_lerpmove; // johnfitz
 extern cvar_t scr_fov, cl_gun_fovscale, cl_gun_x, cl_gun_y, cl_gun_z;
 extern cvar_t r_oit;
 
-//up to 16 color translated skins
-gltexture_t *playertextures[MAX_SCOREBOARD]; //johnfitz -- changed to an array of pointers
+// up to 16 color translated skins
+gltexture_t*
+  playertextures[MAX_SCOREBOARD]; // johnfitz -- changed to an array of pointers
 
-const float	r_avertexnormals[NUMVERTEXNORMALS][3] = {
+const float r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };
 
-extern vec3_t	lightcolor; //johnfitz -- replaces "float shadelight" for lit support
+extern vec3_t
+  lightcolor; // johnfitz -- replaces "float shadelight" for lit support
 
-static float	entalpha; //johnfitz
+static float entalpha; // johnfitz
 
-//johnfitz -- struct for passing lerp information to drawing functions
-typedef struct {
-	short pose1;
-	short pose2;
-	float blend;
-	vec3_t origin;
-	vec3_t angles;
+// johnfitz -- struct for passing lerp information to drawing functions
+typedef struct
+{
+  short pose1;
+  short pose2;
+  float blend;
+  vec3_t origin;
+  vec3_t angles;
 } lerpdata_t;
-//johnfitz
+// johnfitz
 
 #define MAX_ALIAS_INSTANCES 256
 
-typedef struct aliasinstance_s {
-	float		worldmatrix[12];
-	vec3_t		lightcolor;
-	float		alpha;
-	int32_t		pose1;
-	int32_t		pose2;
-	float		blend;
-	int32_t		padding;
+typedef struct aliasinstance_s
+{
+  float worldmatrix[12];
+  vec3_t lightcolor;
+  float alpha;
+  int32_t pose1;
+  int32_t pose2;
+  float blend;
+  int32_t padding;
 } aliasinstance_t;
 
-struct ibuf_s {
-	int			count;
-	entity_t	*ent;
-	gltexture_t	*textures[2];
+struct ibuf_s
+{
+  int count;
+  entity_t* ent;
+  gltexture_t* textures[2];
 
-	struct {
-		float	matviewproj[16];
-		vec3_t	eyepos;
-		float	_pad;
-		vec4_t	fog;
-	} global;
-	aliasinstance_t inst[MAX_ALIAS_INSTANCES];
+  struct
+  {
+    float matviewproj[16];
+    vec3_t eyepos;
+    float _pad;
+    vec4_t fog;
+  } global;
+  aliasinstance_t inst[MAX_ALIAS_INSTANCES];
 } ibuf;
 
 /*
@@ -80,71 +96,70 @@ struct ibuf_s {
 R_SetupAliasFrame -- johnfitz -- rewritten to support lerping
 =================
 */
-void R_SetupAliasFrame (entity_t *e, aliashdr_t *paliashdr, lerpdata_t *lerpdata)
+void
+R_SetupAliasFrame(entity_t* e, aliashdr_t* paliashdr, lerpdata_t* lerpdata)
 {
-	int posenum, numposes;
-	int frame = e->frame;
+  int posenum, numposes;
+  int frame = e->frame;
 
-	if ((frame >= paliashdr->numframes) || (frame < 0))
-	{
-		Con_DPrintf ("R_AliasSetupFrame: no such frame %d for '%s'\n", frame, e->model->name);
-		frame = 0;
-	}
+  if ((frame >= paliashdr->numframes) || (frame < 0)) {
+    Con_DPrintf(
+      "R_AliasSetupFrame: no such frame %d for '%s'\n", frame, e->model->name);
+    frame = 0;
+  }
 
-	posenum = paliashdr->frames[frame].firstpose;
-	numposes = paliashdr->frames[frame].numposes;
+  posenum = paliashdr->frames[frame].firstpose;
+  numposes = paliashdr->frames[frame].numposes;
 
-	if (numposes > 1)
-	{
-		e->lerptime = paliashdr->frames[frame].interval;
-		posenum += (int)(cl.time / e->lerptime) % numposes;
-	}
-	else
-		e->lerptime = 0.1;
+  if (numposes > 1) {
+    e->lerptime = paliashdr->frames[frame].interval;
+    posenum += (int)(cl.time / e->lerptime) % numposes;
+  } else
+    e->lerptime = 0.1;
 
-	if (e->lerpflags & LERP_RESETANIM) //kill any lerp in progress
-	{
-		e->lerpstart = 0;
-		e->previouspose = posenum;
-		e->currentpose = posenum;
-		e->lerpflags -= LERP_RESETANIM;
-	}
-	else if (e->currentpose != posenum) // pose changed, start new lerp
-	{
-		if (e->lerpflags & LERP_RESETANIM2) //defer lerping one more time
-		{
-			e->lerpstart = 0;
-			e->previouspose = posenum;
-			e->currentpose = posenum;
-			e->lerpflags -= LERP_RESETANIM2;
-		}
-		else
-		{
-			e->lerpstart = cl.time;
-			e->previouspose = e->currentpose;
-			e->currentpose = posenum;
-		}
-	}
+  if (e->lerpflags & LERP_RESETANIM) // kill any lerp in progress
+  {
+    e->lerpstart = 0;
+    e->previouspose = posenum;
+    e->currentpose = posenum;
+    e->lerpflags -= LERP_RESETANIM;
+  } else if (e->currentpose != posenum) // pose changed, start new lerp
+  {
+    if (e->lerpflags & LERP_RESETANIM2) // defer lerping one more time
+    {
+      e->lerpstart = 0;
+      e->previouspose = posenum;
+      e->currentpose = posenum;
+      e->lerpflags -= LERP_RESETANIM2;
+    } else {
+      e->lerpstart = cl.time;
+      e->previouspose = e->currentpose;
+      e->currentpose = posenum;
+    }
+  }
 
-	//set up values
-	if (r_lerpmodels.value && !(e->model->flags & MOD_NOLERP && r_lerpmodels.value != 2))
-	{
-		float s = (cls.demoplayback && cls.demospeed < 0.f) ? -1.f : 1.f;
-		if (e->lerpflags & LERP_FINISH && numposes == 1)
-			lerpdata->blend = CLAMP (0.0f, (float)(cl.time - e->lerpstart) / (e->lerpfinish - e->lerpstart), 1.0f);
-		else
-			lerpdata->blend = CLAMP (0.0f, (float)(cl.time - e->lerpstart) / e->lerptime * s, 1.0f);
-		if (lerpdata->blend == 1.0f)
-			e->previouspose = e->currentpose;
-		lerpdata->pose1 = e->previouspose;
-		lerpdata->pose2 = e->currentpose;
-	}
-	else //don't lerp
-	{
-		lerpdata->blend = 1;
-		lerpdata->pose1 = posenum;
-		lerpdata->pose2 = posenum;
-	}
+  // set up values
+  if (r_lerpmodels.value &&
+      !(e->model->flags & MOD_NOLERP && r_lerpmodels.value != 2)) {
+    float s = (cls.demoplayback && cls.demospeed < 0.f) ? -1.f : 1.f;
+    if (e->lerpflags & LERP_FINISH && numposes == 1)
+      lerpdata->blend =
+        CLAMP(0.0f,
+              (float)(cl.time - e->lerpstart) / (e->lerpfinish - e->lerpstart),
+              1.0f);
+    else
+      lerpdata->blend =
+        CLAMP(0.0f, (float)(cl.time - e->lerpstart) / e->lerptime * s, 1.0f);
+    if (lerpdata->blend == 1.0f)
+      e->previouspose = e->currentpose;
+    lerpdata->pose1 = e->previouspose;
+    lerpdata->pose2 = e->currentpose;
+  } else // don't lerp
+  {
+    lerpdata->blend = 1;
+    lerpdata->pose1 = posenum;
+    lerpdata->pose2 = posenum;
+  }
 }
 
 /*
@@ -152,137 +167,136 @@ void R_SetupAliasFrame (entity_t *e, aliashdr_t *paliashdr, lerpdata_t *lerpdata
 R_SetupEntityTransform -- johnfitz -- set up transform part of lerpdata
 =================
 */
-void R_SetupEntityTransform (entity_t *e, lerpdata_t *lerpdata)
+void
+R_SetupEntityTransform(entity_t* e, lerpdata_t* lerpdata)
 {
-	float blend;
-	vec3_t d;
-	int i;
+  float blend;
+  vec3_t d;
+  int i;
 
-	// if LERP_RESETMOVE, kill any lerps in progress
-	if (e->lerpflags & LERP_RESETMOVE)
-	{
-		e->movelerpstart = 0;
-		VectorCopy (e->origin, e->previousorigin);
-		VectorCopy (e->origin, e->currentorigin);
-		VectorCopy (e->angles, e->previousangles);
-		VectorCopy (e->angles, e->currentangles);
-		e->lerpflags -= LERP_RESETMOVE;
-	}
-	else if (!VectorCompare (e->origin, e->currentorigin) || !VectorCompare (e->angles, e->currentangles)) // origin/angles changed, start new lerp
-	{
-		e->movelerpstart = cl.time;
-		VectorCopy (e->currentorigin, e->previousorigin);
-		VectorCopy (e->origin,  e->currentorigin);
-		VectorCopy (e->currentangles, e->previousangles);
-		VectorCopy (e->angles,  e->currentangles);
-	}
+  // if LERP_RESETMOVE, kill any lerps in progress
+  if (e->lerpflags & LERP_RESETMOVE) {
+    e->movelerpstart = 0;
+    VectorCopy(e->origin, e->previousorigin);
+    VectorCopy(e->origin, e->currentorigin);
+    VectorCopy(e->angles, e->previousangles);
+    VectorCopy(e->angles, e->currentangles);
+    e->lerpflags -= LERP_RESETMOVE;
+  } else if (!VectorCompare(e->origin, e->currentorigin) ||
+             !VectorCompare(
+               e->angles,
+               e->currentangles)) // origin/angles changed, start new lerp
+  {
+    e->movelerpstart = cl.time;
+    VectorCopy(e->currentorigin, e->previousorigin);
+    VectorCopy(e->origin, e->currentorigin);
+    VectorCopy(e->currentangles, e->previousangles);
+    VectorCopy(e->angles, e->currentangles);
+  }
 
-	//set up values
-	if (r_lerpmove.value && e != &cl.viewent && e->lerpflags & LERP_MOVESTEP)
-	{
-		float s = (cls.demoplayback && cls.demospeed < 0.f) ? -1.f : 1.f;
-		if (e->lerpflags & LERP_FINISH)
-			blend = CLAMP (0.0f, (float)(cl.time - e->movelerpstart) / (e->lerpfinish - e->movelerpstart), 1.0f);
-		else
-			blend = CLAMP (0.0f, (float)(cl.time - e->movelerpstart) / 0.1f * s, 1.0f);
+  // set up values
+  if (r_lerpmove.value && e != &cl.viewent && e->lerpflags & LERP_MOVESTEP) {
+    float s = (cls.demoplayback && cls.demospeed < 0.f) ? -1.f : 1.f;
+    if (e->lerpflags & LERP_FINISH)
+      blend = CLAMP(0.0f,
+                    (float)(cl.time - e->movelerpstart) /
+                      (e->lerpfinish - e->movelerpstart),
+                    1.0f);
+    else
+      blend = CLAMP(0.0f, (float)(cl.time - e->movelerpstart) / 0.1f * s, 1.0f);
 
-		//translation
-		VectorSubtract (e->currentorigin, e->previousorigin, d);
-		lerpdata->origin[0] = e->previousorigin[0] + d[0] * blend;
-		lerpdata->origin[1] = e->previousorigin[1] + d[1] * blend;
-		lerpdata->origin[2] = e->previousorigin[2] + d[2] * blend;
+    // translation
+    VectorSubtract(e->currentorigin, e->previousorigin, d);
+    lerpdata->origin[0] = e->previousorigin[0] + d[0] * blend;
+    lerpdata->origin[1] = e->previousorigin[1] + d[1] * blend;
+    lerpdata->origin[2] = e->previousorigin[2] + d[2] * blend;
 
-		//rotation
-		VectorSubtract (e->currentangles, e->previousangles, d);
-		for (i = 0; i < 3; i++)
-		{
-			if (d[i] > 180)  d[i] -= 360;
-			if (d[i] < -180) d[i] += 360;
-		}
-		lerpdata->angles[0] = e->previousangles[0] + d[0] * blend;
-		lerpdata->angles[1] = e->previousangles[1] + d[1] * blend;
-		lerpdata->angles[2] = e->previousangles[2] + d[2] * blend;
-	}
-	else //don't lerp
-	{
-		VectorCopy (e->origin, lerpdata->origin);
-		VectorCopy (e->angles, lerpdata->angles);
-	}
+    // rotation
+    VectorSubtract(e->currentangles, e->previousangles, d);
+    for (i = 0; i < 3; i++) {
+      if (d[i] > 180)
+        d[i] -= 360;
+      if (d[i] < -180)
+        d[i] += 360;
+    }
+    lerpdata->angles[0] = e->previousangles[0] + d[0] * blend;
+    lerpdata->angles[1] = e->previousangles[1] + d[1] * blend;
+    lerpdata->angles[2] = e->previousangles[2] + d[2] * blend;
+  } else // don't lerp
+  {
+    VectorCopy(e->origin, lerpdata->origin);
+    VectorCopy(e->angles, lerpdata->angles);
+  }
 
-	// chasecam
-	if (chase_active.value && e == &cl_entities[cl.viewentity])
-		lerpdata->angles[PITCH] *= 0.3f;
+  // chasecam
+  if (chase_active.value && e == &cl_entities[cl.viewentity])
+    lerpdata->angles[PITCH] *= 0.3f;
 }
 
 /*
 =================
-R_SetupAliasLighting -- johnfitz -- broken out from R_DrawAliasModel and rewritten
+R_SetupAliasLighting -- johnfitz -- broken out from R_DrawAliasModel and
+rewritten
 =================
 */
-void R_SetupAliasLighting (entity_t	*e)
+void
+R_SetupAliasLighting(entity_t* e)
 {
-	vec3_t		dist;
-	float		add;
-	int			i;
+  vec3_t dist;
+  float add;
+  int i;
 
-	// if the initial trace is completely black, try again from above
-	// this helps with models whose origin is slightly below ground level
-	// (e.g. some of the candles in the DOTM start map)
-	if (!R_LightPoint (e->origin, 0.f, &e->lightcache))
-		R_LightPoint (e->origin, e->model->maxs[2] * 0.5f, &e->lightcache);
+  // if the initial trace is completely black, try again from above
+  // this helps with models whose origin is slightly below ground level
+  // (e.g. some of the candles in the DOTM start map)
+  if (!R_LightPoint(e->origin, 0.f, &e->lightcache))
+    R_LightPoint(e->origin, e->model->maxs[2] * 0.5f, &e->lightcache);
 
-	//add dlights
-	for (i=0; i<r_framedata.numlights; i++)
-	{
-		gpulight_t *l = &r_lightbuffer.lights[i];
-		VectorSubtract (e->origin, l->pos, dist);
-		add = DotProduct (dist, dist);
-		if (l->radius * l->radius > add)
-			VectorMA (lightcolor, l->radius - sqrtf (add), l->color, lightcolor);
-	}
+  // add dlights
+  for (i = 0; i < r_framedata.numlights; i++) {
+    gpulight_t* l = &r_lightbuffer.lights[i];
+    VectorSubtract(e->origin, l->pos, dist);
+    add = DotProduct(dist, dist);
+    if (l->radius * l->radius > add)
+      VectorMA(lightcolor, l->radius - sqrtf(add), l->color, lightcolor);
+  }
 
-	// minimum light value on gun (24)
-	if (e == &cl.viewent)
-	{
-		add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
-		if (add > 0.0f)
-		{
-			add *= 1.0f / 3.0f;
-			lightcolor[0] += add;
-			lightcolor[1] += add;
-			lightcolor[2] += add;
-		}
-	}
+  // minimum light value on gun (24)
+  if (e == &cl.viewent) {
+    add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
+    if (add > 0.0f) {
+      add *= 1.0f / 3.0f;
+      lightcolor[0] += add;
+      lightcolor[1] += add;
+      lightcolor[2] += add;
+    }
+  }
 
-	// minimum light value on players (8)
-	if (e > cl_entities && e <= cl_entities + cl.maxclients)
-	{
-		add = 24.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
-		if (add > 0.0f)
-		{
-			add *= 1.0f / 3.0f;
-			lightcolor[0] += add;
-			lightcolor[1] += add;
-			lightcolor[2] += add;
-		}
-	}
+  // minimum light value on players (8)
+  if (e > cl_entities && e <= cl_entities + cl.maxclients) {
+    add = 24.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
+    if (add > 0.0f) {
+      add *= 1.0f / 3.0f;
+      lightcolor[0] += add;
+      lightcolor[1] += add;
+      lightcolor[2] += add;
+    }
+  }
 
-	// clamp lighting so it doesn't overbright as much (96)
-	if (gl_overbright_models.value)
-	{
-		add = lightcolor[0] + lightcolor[1] + lightcolor[2];
-		if (add > 288.0f)
-			VectorScale(lightcolor, 288.0f / add, lightcolor);
-	}
-	//hack up the brightness when fullbrights but no overbrights (256)
-	else if (e->model->flags & MOD_FBRIGHTHACK && gl_fullbrights.value)
-	{
-		lightcolor[0] = 256.0f;
-		lightcolor[1] = 256.0f;
-		lightcolor[2] = 256.0f;
-	}
+  // clamp lighting so it doesn't overbright as much (96)
+  if (gl_overbright_models.value) {
+    add = lightcolor[0] + lightcolor[1] + lightcolor[2];
+    if (add > 288.0f)
+      VectorScale(lightcolor, 288.0f / add, lightcolor);
+  }
+  // hack up the brightness when fullbrights but no overbrights (256)
+  else if (e->model->flags & MOD_FBRIGHTHACK && gl_fullbrights.value) {
+    lightcolor[0] = 256.0f;
+    lightcolor[1] = 256.0f;
+    lightcolor[2] = 256.0f;
+  }
 
-	VectorScale (lightcolor, 1.0f / 200.0f, lightcolor);
+  VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
 }
 
 /*
@@ -290,111 +304,144 @@ void R_SetupAliasLighting (entity_t	*e)
 R_FlushAliasInstances
 =================
 */
-void R_FlushAliasInstances (void)
+void
+R_FlushAliasInstances(void)
 {
-	qmodel_t	*model;
-	aliashdr_t	*paliashdr;
-	qboolean	alphatest, translucent, oit, md5;
-	GLuint		program;
-	unsigned	state;
-	GLuint		buf;
-	GLbyte		*ofs;
-	size_t		ibuf_size;
-	GLuint		buffers[2];
-	GLintptr	offsets[2];
-	GLsizeiptr	sizes[2];
+  qmodel_t* model;
+  aliashdr_t* paliashdr;
+  qboolean alphatest, translucent, oit, md5;
+  GLuint program;
+  unsigned state;
+  GLuint buf;
+  GLbyte* ofs;
+  size_t ibuf_size;
+  GLuint buffers[2];
+  GLintptr offsets[2];
+  GLsizeiptr sizes[2];
 
-	if (!ibuf.count)
-		return;
+  if (!ibuf.count)
+    return;
 
-	model = ibuf.ent->model;
-	paliashdr = (aliashdr_t *)Mod_Extradata (model);
+  model = ibuf.ent->model;
+  paliashdr = (aliashdr_t*)Mod_Extradata(model);
 
-	GL_BeginGroup (model->name);
+  GL_BeginGroup(model->name);
 
-	md5 = paliashdr->poseverttype == PV_IQM;
+  md5 = paliashdr->poseverttype == PV_IQM;
 
-	alphatest = model->flags & MF_HOLEY ? 1 : 0;
-	translucent = !ENTALPHA_OPAQUE (ibuf.ent->alpha);
-	oit = translucent && r_oit.value != 0.f;
-	switch (softemu)
-	{
-	case SOFTEMU_BANDED:
-		program = glprogs.alias[oit][ALIASSHADER_NOPERSP][alphatest][md5];
-		break;
-	case SOFTEMU_COARSE:
-		program = glprogs.alias[oit][ALIASSHADER_DITHER][alphatest][md5];
-		break;
-	default:
-		program = glprogs.alias[oit][ALIASSHADER_STANDARD][alphatest][md5];
-		break;
-	}
-	GL_UseProgram (program);
+  alphatest = model->flags & MF_HOLEY ? 1 : 0;
+  translucent = !ENTALPHA_OPAQUE(ibuf.ent->alpha);
+  oit = translucent && r_oit.value != 0.f;
+  switch (softemu) {
+    case SOFTEMU_BANDED:
+      program = glprogs.alias[oit][ALIASSHADER_NOPERSP][alphatest][md5];
+      break;
+    case SOFTEMU_COARSE:
+      program = glprogs.alias[oit][ALIASSHADER_DITHER][alphatest][md5];
+      break;
+    default:
+      program = glprogs.alias[oit][ALIASSHADER_STANDARD][alphatest][md5];
+      break;
+  }
+  GL_UseProgram(program);
 
-	if (md5)
-		state = GLS_CULL_BACK | GLS_ATTRIBS(5);
-	else
-		state = GLS_CULL_BACK | GLS_ATTRIBS(1);
+  if (md5)
+    state = GLS_CULL_BACK | GLS_ATTRIBS(5);
+  else
+    state = GLS_CULL_BACK | GLS_ATTRIBS(1);
 
-	if (!translucent)
-		state |= GLS_BLEND_OPAQUE;
-	else
-		state |= GLS_BLEND_ALPHA_OIT | GLS_NO_ZWRITE;
-	GL_SetState (state);
+  if (!translucent)
+    state |= GLS_BLEND_OPAQUE;
+  else
+    state |= GLS_BLEND_ALPHA_OIT | GLS_NO_ZWRITE;
+  GL_SetState(state);
 
-	memcpy (ibuf.global.matviewproj, r_matviewproj, sizeof (r_matviewproj));
-	memcpy (ibuf.global.eyepos, r_refdef.vieworg, sizeof (r_refdef.vieworg));
-	memcpy (ibuf.global.fog, r_framedata.fogdata, 3 * sizeof (float));
-	// use fog density sign bit as overbright flag
-	ibuf.global.fog[3] =
-		gl_overbright_models.value ?
-			-fabs (r_framedata.fogdata[3]) :
-			 fabs (r_framedata.fogdata[3])
-	;
+  memcpy(ibuf.global.matviewproj, r_matviewproj, sizeof(r_matviewproj));
+  memcpy(ibuf.global.eyepos, r_refdef.vieworg, sizeof(r_refdef.vieworg));
+  memcpy(ibuf.global.fog, r_framedata.fogdata, 3 * sizeof(float));
+  // use fog density sign bit as overbright flag
+  ibuf.global.fog[3] = gl_overbright_models.value
+                         ? -fabs(r_framedata.fogdata[3])
+                         : fabs(r_framedata.fogdata[3]);
 
-	ibuf_size = sizeof(ibuf.global) + sizeof(ibuf.inst[0]) * ibuf.count;
-	GL_Upload (GL_SHADER_STORAGE_BUFFER, &ibuf.global, ibuf_size, &buf, &ofs);
+  ibuf_size = sizeof(ibuf.global) + sizeof(ibuf.inst[0]) * ibuf.count;
+  GL_Upload(GL_SHADER_STORAGE_BUFFER, &ibuf.global, ibuf_size, &buf, &ofs);
 
-	buffers[0] = buf;
-	offsets[0] = (GLintptr) ofs;
-	sizes[0] = ibuf_size;
+  buffers[0] = buf;
+  offsets[0] = (GLintptr)ofs;
+  sizes[0] = ibuf_size;
 
-	GL_BindBuffer (GL_ARRAY_BUFFER, model->meshvbo);
+  GL_BindBuffer(GL_ARRAY_BUFFER, model->meshvbo);
 
-	if (md5)
-	{
-		GL_VertexAttribPointerFunc  (0, 3, GL_FLOAT,			GL_FALSE, sizeof (iqmvert_t), (void *) (paliashdr->vbovertofs + offsetof (iqmvert_t, xyz)));
-		GL_VertexAttribPointerFunc  (1, 4, GL_BYTE,				GL_TRUE,  sizeof (iqmvert_t), (void *) (paliashdr->vbovertofs + offsetof (iqmvert_t, norm)));
-		GL_VertexAttribPointerFunc  (2, 2, GL_FLOAT,			GL_FALSE, sizeof (iqmvert_t), (void *) (paliashdr->vbovertofs + offsetof (iqmvert_t, st)));
-		GL_VertexAttribPointerFunc  (3, 4, GL_UNSIGNED_BYTE,	GL_TRUE,  sizeof (iqmvert_t), (void *) (paliashdr->vbovertofs + offsetof (iqmvert_t, weight)));
-		GL_VertexAttribIPointerFunc (4, 4, GL_UNSIGNED_BYTE,	          sizeof (iqmvert_t), (void *) (paliashdr->vbovertofs + offsetof (iqmvert_t, idx)));
+  if (md5) {
+    GL_VertexAttribPointerFunc(
+      0,
+      3,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(iqmvert_t),
+      (void*)(paliashdr->vbovertofs + offsetof(iqmvert_t, xyz)));
+    GL_VertexAttribPointerFunc(
+      1,
+      4,
+      GL_BYTE,
+      GL_TRUE,
+      sizeof(iqmvert_t),
+      (void*)(paliashdr->vbovertofs + offsetof(iqmvert_t, norm)));
+    GL_VertexAttribPointerFunc(
+      2,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(iqmvert_t),
+      (void*)(paliashdr->vbovertofs + offsetof(iqmvert_t, st)));
+    GL_VertexAttribPointerFunc(
+      3,
+      4,
+      GL_UNSIGNED_BYTE,
+      GL_TRUE,
+      sizeof(iqmvert_t),
+      (void*)(paliashdr->vbovertofs + offsetof(iqmvert_t, weight)));
+    GL_VertexAttribIPointerFunc(
+      4,
+      4,
+      GL_UNSIGNED_BYTE,
+      sizeof(iqmvert_t),
+      (void*)(paliashdr->vbovertofs + offsetof(iqmvert_t, idx)));
 
-		buffers[1] = model->meshvbo;
-		offsets[1] = paliashdr->vboposeofs;
-		sizes[1] = sizeof (bonepose_t) * paliashdr->numbones * paliashdr->numboneposes;
+    buffers[1] = model->meshvbo;
+    offsets[1] = paliashdr->vboposeofs;
+    sizes[1] =
+      sizeof(bonepose_t) * paliashdr->numbones * paliashdr->numboneposes;
 
-		GL_BindBuffersRange (GL_SHADER_STORAGE_BUFFER, 1, 2, buffers, offsets, sizes);
-	}
-	else
-	{
-		GL_VertexAttribPointerFunc (0, 2, GL_FLOAT, GL_FALSE, sizeof (meshst_t), (void *) paliashdr->vbostofs);
+    GL_BindBuffersRange(
+      GL_SHADER_STORAGE_BUFFER, 1, 2, buffers, offsets, sizes);
+  } else {
+    GL_VertexAttribPointerFunc(
+      0, 2, GL_FLOAT, GL_FALSE, sizeof(meshst_t), (void*)paliashdr->vbostofs);
 
-		buffers[1] = model->meshvbo;
-		offsets[1] = paliashdr->vbovertofs;
-		sizes[1] = sizeof (meshxyz_t) * paliashdr->numverts_vbo * paliashdr->numposes;
+    buffers[1] = model->meshvbo;
+    offsets[1] = paliashdr->vbovertofs;
+    sizes[1] =
+      sizeof(meshxyz_t) * paliashdr->numverts_vbo * paliashdr->numposes;
 
-		GL_BindBuffersRange (GL_SHADER_STORAGE_BUFFER, 1, 2, buffers, offsets, sizes);
-	}
+    GL_BindBuffersRange(
+      GL_SHADER_STORAGE_BUFFER, 1, 2, buffers, offsets, sizes);
+  }
 
-	GL_BindTextures (0, 2, ibuf.textures);
+  GL_BindTextures(0, 2, ibuf.textures);
 
-	GL_BindBuffer (GL_ELEMENT_ARRAY_BUFFER, model->meshindexesvbo);
-	GL_DrawElementsInstancedFunc (GL_TRIANGLES, paliashdr->numindexes, GL_UNSIGNED_SHORT, (void *)paliashdr->eboofs, ibuf.count);
+  GL_BindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->meshindexesvbo);
+  GL_DrawElementsInstancedFunc(GL_TRIANGLES,
+                               paliashdr->numindexes,
+                               GL_UNSIGNED_SHORT,
+                               (void*)paliashdr->eboofs,
+                               ibuf.count);
 
-	rs_aliaspasses += paliashdr->numtris * ibuf.count;
-	ibuf.count = 0;
+  rs_aliaspasses += paliashdr->numtris * ibuf.count;
+  ibuf.count = 0;
 
-	GL_EndGroup();
+  GL_EndGroup();
 }
 
 /*
@@ -402,158 +449,166 @@ void R_FlushAliasInstances (void)
 R_DrawAliasModel_Real
 =================
 */
-static void R_DrawAliasModel_Real (entity_t *e, qboolean showtris)
+static void
+R_DrawAliasModel_Real(entity_t* e, qboolean showtris)
 {
-	aliashdr_t	*paliashdr;
-	int			anim, skinnum;
-	gltexture_t	*tx, *fb;
-	lerpdata_t	lerpdata;
-	float		fovscale = 1.0f;
-	float		model_matrix[16];
-	aliasinstance_t	*instance;
+  aliashdr_t* paliashdr;
+  int anim, skinnum;
+  gltexture_t *tx, *fb;
+  lerpdata_t lerpdata;
+  float fovscale = 1.0f;
+  float model_matrix[16];
+  aliasinstance_t* instance;
 
-	//
-	// setup pose/lerp data -- do it first so we don't miss updates due to culling
-	//
-	paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
+  //
+  // setup pose/lerp data -- do it first so we don't miss updates due to culling
+  //
+  paliashdr = (aliashdr_t*)Mod_Extradata(e->model);
 
-	R_SetupAliasFrame (e, paliashdr, &lerpdata);
-	R_SetupEntityTransform (e, &lerpdata);
+  R_SetupAliasFrame(e, paliashdr, &lerpdata);
+  R_SetupEntityTransform(e, &lerpdata);
 
-	if (lerpdata.pose1 == lerpdata.pose2)
-		lerpdata.blend = 0.f;
+  if (lerpdata.pose1 == lerpdata.pose2)
+    lerpdata.blend = 0.f;
 
-	//
-	// viewmodel adjustments (position, fov distortion correction)
-	//
-	if (e == &cl.viewent)
-	{
-		if (r_refdef.basefov > 90.f && cl_gun_fovscale.value)
-		{
-			fovscale = tan (r_refdef.basefov * (0.5f * M_PI / 180.f));
-			fovscale = 1.f + (fovscale - 1.f) * cl_gun_fovscale.value;
-		}
+  //
+  // viewmodel adjustments (position, fov distortion correction)
+  //
+  if (e == &cl.viewent) {
+    if (r_refdef.basefov > 90.f && cl_gun_fovscale.value) {
+      fovscale = tan(r_refdef.basefov * (0.5f * M_PI / 180.f));
+      fovscale = 1.f + (fovscale - 1.f) * cl_gun_fovscale.value;
+    }
 
-		VectorMA (lerpdata.origin, cl_gun_x.value * paliashdr->scale[0] * fovscale,	vright,	lerpdata.origin);
-		VectorMA (lerpdata.origin, cl_gun_y.value * paliashdr->scale[1] * fovscale,	vup,	lerpdata.origin);
-		VectorMA (lerpdata.origin, cl_gun_z.value * paliashdr->scale[2],			vpn,	lerpdata.origin);
-	}
+    VectorMA(lerpdata.origin,
+             cl_gun_x.value * paliashdr->scale[0] * fovscale,
+             vright,
+             lerpdata.origin);
+    VectorMA(lerpdata.origin,
+             cl_gun_y.value * paliashdr->scale[1] * fovscale,
+             vup,
+             lerpdata.origin);
+    VectorMA(lerpdata.origin,
+             cl_gun_z.value * paliashdr->scale[2],
+             vpn,
+             lerpdata.origin);
+  }
 
-	//
-	// cull it
-	//
-	if (R_CullModelForEntity(e))
-		return;
+  //
+  // cull it
+  //
+  if (R_CullModelForEntity(e))
+    return;
 
-	//
-	// transform it
-	//
-	R_EntityMatrix (model_matrix, lerpdata.origin, lerpdata.angles, e->scale);
-	ApplyTranslation (model_matrix, paliashdr->scale_origin[0], paliashdr->scale_origin[1] * fovscale, paliashdr->scale_origin[2] * fovscale);
-	ApplyScale (model_matrix, paliashdr->scale[0], paliashdr->scale[1] * fovscale, paliashdr->scale[2] * fovscale);
+  //
+  // transform it
+  //
+  R_EntityMatrix(model_matrix, lerpdata.origin, lerpdata.angles, e->scale);
+  ApplyTranslation(model_matrix,
+                   paliashdr->scale_origin[0],
+                   paliashdr->scale_origin[1] * fovscale,
+                   paliashdr->scale_origin[2] * fovscale);
+  ApplyScale(model_matrix,
+             paliashdr->scale[0],
+             paliashdr->scale[1] * fovscale,
+             paliashdr->scale[2] * fovscale);
 
-	//
-	// set up for alpha blending
-	//
-	if (r_lightmap_cheatsafe) //no alpha in drawflat or lightmap mode
-		entalpha = 1;
-	else
-		entalpha = ENTALPHA_DECODE(e->alpha);
+  //
+  // set up for alpha blending
+  //
+  if (r_lightmap_cheatsafe) // no alpha in drawflat or lightmap mode
+    entalpha = 1;
+  else
+    entalpha = ENTALPHA_DECODE(e->alpha);
 
-	if (entalpha == 0)
-		return;
+  if (entalpha == 0)
+    return;
 
-	//
-	// set up lighting
-	//
-	rs_aliaspolys += paliashdr->numtris;
-	R_SetupAliasLighting (e);
+  //
+  // set up lighting
+  //
+  rs_aliaspolys += paliashdr->numtris;
+  R_SetupAliasLighting(e);
 
-	//
-	// set up textures
-	//
-	anim = (int)(cl.time*10) & 3;
-	skinnum = e->skinnum;
-	if ((skinnum >= paliashdr->numskins) || (skinnum < 0))
-	{
-		Con_DPrintf ("R_DrawAliasModel: no such skin # %d for '%s'\n", skinnum, e->model->name);
-		// ericw -- display skin 0 for winquake compatibility
-		skinnum = 0;
-	}
-	tx = paliashdr->gltextures[skinnum][anim];
-	fb = paliashdr->fbtextures[skinnum][anim];
-	if (e->colormap != vid.colormap && !gl_nocolors.value)
-	{
-		if ((uintptr_t)e >= (uintptr_t)&cl_entities[1] && (uintptr_t)e <= (uintptr_t)&cl_entities[cl.maxclients]) /* && !strcmp (currententity->model->name, "progs/player.mdl") */
-			tx = playertextures[e - cl_entities - 1];
-	}
-	if (!gl_fullbrights.value)
-		fb = blacktexture;
+  //
+  // set up textures
+  //
+  anim = (int)(cl.time * 10) & 3;
+  skinnum = e->skinnum;
+  if ((skinnum >= paliashdr->numskins) || (skinnum < 0)) {
+    Con_DPrintf("R_DrawAliasModel: no such skin # %d for '%s'\n",
+                skinnum,
+                e->model->name);
+    // ericw -- display skin 0 for winquake compatibility
+    skinnum = 0;
+  }
+  tx = paliashdr->gltextures[skinnum][anim];
+  fb = paliashdr->fbtextures[skinnum][anim];
+  if (e->colormap != vid.colormap && !gl_nocolors.value) {
+    if ((uintptr_t)e >= (uintptr_t)&cl_entities[1] &&
+        (uintptr_t)e <=
+          (uintptr_t)&cl_entities[cl.maxclients]) /* && !strcmp
+                                                     (currententity->model->name,
+                                                     "progs/player.mdl") */
+      tx = playertextures[e - cl_entities - 1];
+  }
+  if (!gl_fullbrights.value)
+    fb = blacktexture;
 
-	//
-	// draw it
-	//
+  //
+  // draw it
+  //
 
-	if (r_fullbright_cheatsafe)
-		lightcolor[0] = lightcolor[1] = lightcolor[2] = 0.5f;
+  if (r_fullbright_cheatsafe)
+    lightcolor[0] = lightcolor[1] = lightcolor[2] = 0.5f;
 
-	if (r_lightmap_cheatsafe)
-	{
-		tx = greytexture;
-		fb = blacktexture;
-	}
+  if (r_lightmap_cheatsafe) {
+    tx = greytexture;
+    fb = blacktexture;
+  }
 
-	if (!fb)
-		fb = blacktexture;
+  if (!fb)
+    fb = blacktexture;
 
-	if (showtris)
-	{
-		tx = blacktexture;
-		fb = whitetexture;
-		lightcolor[0] = lightcolor[1] = lightcolor[2] = 0.5f;
-		entalpha = 1.f;
-	}
+  if (showtris) {
+    tx = blacktexture;
+    fb = whitetexture;
+    lightcolor[0] = lightcolor[1] = lightcolor[2] = 0.5f;
+    entalpha = 1.f;
+  }
 
-	if (ibuf.count)
-	{
-		if (ibuf.count == countof(ibuf.inst) ||
-			ibuf.ent->model != e->model ||
-			ibuf.textures[0] != tx ||
-			ibuf.textures[1] != fb)
-		{
-			R_FlushAliasInstances ();
-		}
-	}
+  if (ibuf.count) {
+    if (ibuf.count == countof(ibuf.inst) || ibuf.ent->model != e->model ||
+        ibuf.textures[0] != tx || ibuf.textures[1] != fb) {
+      R_FlushAliasInstances();
+    }
+  }
 
-	if (!ibuf.count)
-	{
-		ibuf.ent         = e;
-		ibuf.textures[0] = tx;
-		ibuf.textures[1] = fb;
-	}
+  if (!ibuf.count) {
+    ibuf.ent = e;
+    ibuf.textures[0] = tx;
+    ibuf.textures[1] = fb;
+  }
 
-	instance = &ibuf.inst[ibuf.count++];
+  instance = &ibuf.inst[ibuf.count++];
 
-	MatrixTranspose4x3 (model_matrix, instance->worldmatrix);
+  MatrixTranspose4x3(model_matrix, instance->worldmatrix);
 
-	instance->lightcolor[0] = lightcolor[0];
-	instance->lightcolor[1] = lightcolor[1];
-	instance->lightcolor[2] = lightcolor[2];
-	instance->alpha = entalpha;
-	instance->pose1 = lerpdata.pose1;
-	instance->pose2 = lerpdata.pose2;
-	instance->blend = lerpdata.blend;
+  instance->lightcolor[0] = lightcolor[0];
+  instance->lightcolor[1] = lightcolor[1];
+  instance->lightcolor[2] = lightcolor[2];
+  instance->alpha = entalpha;
+  instance->pose1 = lerpdata.pose1;
+  instance->pose2 = lerpdata.pose2;
+  instance->blend = lerpdata.blend;
 
-	if (paliashdr->poseverttype == PV_QUAKE1)
-	{
-		instance->pose1 *= paliashdr->numverts_vbo;
-		instance->pose2 *= paliashdr->numverts_vbo;
-	}
-	else
-	{
-		instance->pose1 *= paliashdr->numbones;
-		instance->pose2 *= paliashdr->numbones;
-	}
+  if (paliashdr->poseverttype == PV_QUAKE1) {
+    instance->pose1 *= paliashdr->numverts_vbo;
+    instance->pose2 *= paliashdr->numverts_vbo;
+  } else {
+    instance->pose1 *= paliashdr->numbones;
+    instance->pose2 *= paliashdr->numbones;
+  }
 }
 
 /*
@@ -561,12 +616,13 @@ static void R_DrawAliasModel_Real (entity_t *e, qboolean showtris)
 R_DrawAliasModels
 =================
 */
-void R_DrawAliasModels (entity_t **ents, int count)
+void
+R_DrawAliasModels(entity_t** ents, int count)
 {
-	int i;
-	for (i = 0; i < count; i++)
-		R_DrawAliasModel_Real (ents[i], false);
-	R_FlushAliasInstances ();
+  int i;
+  for (i = 0; i < count; i++)
+    R_DrawAliasModel_Real(ents[i], false);
+  R_FlushAliasInstances();
 }
 
 /*
@@ -574,10 +630,11 @@ void R_DrawAliasModels (entity_t **ents, int count)
 R_DrawAliasModels_ShowTris
 =================
 */
-void R_DrawAliasModels_ShowTris (entity_t **ents, int count)
+void
+R_DrawAliasModels_ShowTris(entity_t** ents, int count)
 {
-	int i;
-	for (i = 0; i < count; i++)
-		R_DrawAliasModel_Real (ents[i], true);
-	R_FlushAliasInstances ();
+  int i;
+  for (i = 0; i < count; i++)
+    R_DrawAliasModel_Real(ents[i], true);
+  R_FlushAliasInstances();
 }

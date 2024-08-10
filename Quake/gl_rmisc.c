@@ -22,9 +22,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_misc.c
 
+#include "client.h"
+#include "cmd.h"
+#include "console.h"
+#include "gl_texmgr.h"
+#include "glquake.h"
+#include "keys.h"
 #include "quakedef.h"
+#include <SDL2/SDL.h>
 
-//johnfitz -- new cvars
+// johnfitz -- new cvars
 extern cvar_t r_clearcolor;
 extern cvar_t r_flatlightstyles;
 extern cvar_t r_lerplightstyles;
@@ -45,7 +52,7 @@ extern cvar_t r_lerpmodels;
 extern cvar_t r_lerpmove;
 extern cvar_t r_nolerp_list;
 extern cvar_t r_noshadow_list;
-//johnfitz
+// johnfitz
 extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
 extern cvar_t r_alphasort;
 extern cvar_t r_oit;
@@ -55,49 +62,45 @@ extern cvar_t r_simd;
 #endif
 qboolean use_simd;
 
-extern gltexture_t *playertextures[MAX_SCOREBOARD]; //johnfitz
+extern gltexture_t* playertextures[MAX_SCOREBOARD]; // johnfitz
 
 /*
 ====================
 R_ShowbboxesFilter_f
 ====================
 */
-static void R_ShowbboxesFilter_f (void)
+static void
+R_ShowbboxesFilter_f(void)
 {
-	extern char r_showbboxes_filter_strings[MAXCMDLINE];
+  extern char r_showbboxes_filter_strings[MAXCMDLINE];
 
-	if (Cmd_Argc () >= 2)
-	{
-		int i, len, ofs;
-		for (i = 1, ofs = 0; i < Cmd_Argc (); i++)
-		{
-			const char *arg = Cmd_Argv (i);
-			if (!*arg)
-				continue;
-			len = strlen (arg) + 1;
-			if (ofs + len + 1 > (int) countof (r_showbboxes_filter_strings))
-			{
-				Con_Warning ("overflow at \"%s\"\n", arg);
-				break;
-			}
-			memcpy (&r_showbboxes_filter_strings[ofs], arg, len);
-			ofs += len;
-		}
-		r_showbboxes_filter_strings[ofs++] = '\0';
-	}
-	else
-	{
-		const char *p = r_showbboxes_filter_strings;
-		Con_SafePrintf ("\"r_showbboxes_filter\" is");
-		if (!*p)
-			Con_SafePrintf (" \"\"");
-		else do
-		{
-			Con_SafePrintf (" \"%s\"", p);
-			p += strlen (p) + 1;
-		} while (*p);
-		Con_SafePrintf ("\n");
-	}
+  if (Cmd_Argc() >= 2) {
+    int i, len, ofs;
+    for (i = 1, ofs = 0; i < Cmd_Argc(); i++) {
+      const char* arg = Cmd_Argv(i);
+      if (!*arg)
+        continue;
+      len = strlen(arg) + 1;
+      if (ofs + len + 1 > (int)countof(r_showbboxes_filter_strings)) {
+        Con_Warning("overflow at \"%s\"\n", arg);
+        break;
+      }
+      memcpy(&r_showbboxes_filter_strings[ofs], arg, len);
+      ofs += len;
+    }
+    r_showbboxes_filter_strings[ofs++] = '\0';
+  } else {
+    const char* p = r_showbboxes_filter_strings;
+    Con_SafePrintf("\"r_showbboxes_filter\" is");
+    if (!*p)
+      Con_SafePrintf(" \"\"");
+    else
+      do {
+        Con_SafePrintf(" \"%s\"", p);
+        p += strlen(p) + 1;
+      } while (*p);
+    Con_SafePrintf("\n");
+  }
 }
 
 /*
@@ -105,9 +108,10 @@ static void R_ShowbboxesFilter_f (void)
 GL_Fullbrights_f -- johnfitz
 ====================
 */
-static void GL_Fullbrights_f (cvar_t *var)
+static void
+GL_Fullbrights_f(cvar_t* var)
 {
-	TexMgr_ReloadNobrightImages ();
+  TexMgr_ReloadNobrightImages();
 }
 
 /*
@@ -115,26 +119,29 @@ static void GL_Fullbrights_f (cvar_t *var)
 R_SetClearColor_f -- johnfitz
 ====================
 */
-static void R_SetClearColor_f (cvar_t *var)
+static void
+R_SetClearColor_f(cvar_t* var)
 {
-	byte	*rgb;
-	int		s;
+  byte* rgb;
+  int s;
 
-	s = (int)r_clearcolor.value & 0xFF;
-	rgb = (byte*)(d_8to24table + s);
-	glClearColor (rgb[0]/255.0,rgb[1]/255.0,rgb[2]/255.0,0);
+  s = (int)r_clearcolor.value & 0xFF;
+  rgb = (byte*)(d_8to24table + s);
+  glClearColor(rgb[0] / 255.0, rgb[1] / 255.0, rgb[2] / 255.0, 0);
 }
 
 /*
 ===============
-R_Model_ExtraFlags_List_f -- johnfitz -- called when r_nolerp_list or r_noshadow_list cvar changes
+R_Model_ExtraFlags_List_f -- johnfitz -- called when r_nolerp_list or
+r_noshadow_list cvar changes
 ===============
 */
-static void R_Model_ExtraFlags_List_f (cvar_t *var)
+static void
+R_Model_ExtraFlags_List_f(cvar_t* var)
 {
-	int i;
-	for (i=0; i < MAX_MODELS; i++)
-		Mod_SetExtraFlags (cl.model_precache[i]);
+  int i;
+  for (i = 0; i < MAX_MODELS; i++)
+    Mod_SetExtraFlags(cl.model_precache[i]);
 }
 
 #if defined(USE_SIMD)
@@ -143,12 +150,13 @@ static void R_Model_ExtraFlags_List_f (cvar_t *var)
 R_SIMD_f
 ====================
 */
-static void R_SIMD_f (cvar_t *var)
+static void
+R_SIMD_f(cvar_t* var)
 {
 #if defined(USE_SSE2)
-	use_simd = SDL_HasSSE() && SDL_HasSSE2() && (var->value != 0.0f);
+  use_simd = SDL_HasSSE() && SDL_HasSSE2() && (var->value != 0.0f);
 #else
-	#error not implemented
+#error not implemented
 #endif
 }
 #endif
@@ -158,12 +166,14 @@ static void R_SIMD_f (cvar_t *var)
 R_SetWateralpha_f -- ericw
 ====================
 */
-static void R_SetWateralpha_f (cvar_t *var)
+static void
+R_SetWateralpha_f(cvar_t* var)
 {
-	if (cls.signon == SIGNONS && cl.worldmodel && !(cl.worldmodel->contentstransparent&SURF_DRAWWATER) && var->value < 1)
-		Con_Warning("Map does not appear to be water-vised\n");
-	map_wateralpha = var->value;
-	map_fallbackalpha = var->value;
+  if (cls.signon == SIGNONS && cl.worldmodel &&
+      !(cl.worldmodel->contentstransparent & SURF_DRAWWATER) && var->value < 1)
+    Con_Warning("Map does not appear to be water-vised\n");
+  map_wateralpha = var->value;
+  map_fallbackalpha = var->value;
 }
 
 /*
@@ -171,11 +181,14 @@ static void R_SetWateralpha_f (cvar_t *var)
 R_SetLavaalpha_f -- ericw
 ====================
 */
-static void R_SetLavaalpha_f (cvar_t *var)
+static void
+R_SetLavaalpha_f(cvar_t* var)
 {
-	if (cls.signon == SIGNONS && cl.worldmodel && !(cl.worldmodel->contentstransparent&SURF_DRAWLAVA) && var->value && var->value < 1)
-		Con_Warning("Map does not appear to be lava-vised\n");
-	map_lavaalpha = var->value;
+  if (cls.signon == SIGNONS && cl.worldmodel &&
+      !(cl.worldmodel->contentstransparent & SURF_DRAWLAVA) && var->value &&
+      var->value < 1)
+    Con_Warning("Map does not appear to be lava-vised\n");
+  map_lavaalpha = var->value;
 }
 
 /*
@@ -183,11 +196,14 @@ static void R_SetLavaalpha_f (cvar_t *var)
 R_SetTelealpha_f -- ericw
 ====================
 */
-static void R_SetTelealpha_f (cvar_t *var)
+static void
+R_SetTelealpha_f(cvar_t* var)
 {
-	if (cls.signon == SIGNONS && cl.worldmodel && !(cl.worldmodel->contentstransparent&SURF_DRAWTELE) && var->value && var->value < 1)
-		Con_Warning("Map does not appear to be tele-vised\n");
-	map_telealpha = var->value;
+  if (cls.signon == SIGNONS && cl.worldmodel &&
+      !(cl.worldmodel->contentstransparent & SURF_DRAWTELE) && var->value &&
+      var->value < 1)
+    Con_Warning("Map does not appear to be tele-vised\n");
+  map_telealpha = var->value;
 }
 
 /*
@@ -195,11 +211,14 @@ static void R_SetTelealpha_f (cvar_t *var)
 R_SetSlimealpha_f -- ericw
 ====================
 */
-static void R_SetSlimealpha_f (cvar_t *var)
+static void
+R_SetSlimealpha_f(cvar_t* var)
 {
-	if (cls.signon == SIGNONS && cl.worldmodel && !(cl.worldmodel->contentstransparent&SURF_DRAWSLIME) && var->value && var->value < 1)
-		Con_Warning("Map does not appear to be slime-vised\n");
-	map_slimealpha = var->value;
+  if (cls.signon == SIGNONS && cl.worldmodel &&
+      !(cl.worldmodel->contentstransparent & SURF_DRAWSLIME) && var->value &&
+      var->value < 1)
+    Con_Warning("Map does not appear to be slime-vised\n");
+  map_slimealpha = var->value;
 }
 
 /*
@@ -207,160 +226,173 @@ static void R_SetSlimealpha_f (cvar_t *var)
 GL_WaterAlphaForTextureType
 ====================
 */
-float GL_WaterAlphaForTextureType (textype_t type)
+float
+GL_WaterAlphaForTextureType(textype_t type)
 {
-	if (type == TEXTYPE_LAVA)
-		return map_lavaalpha > 0 ? map_lavaalpha : map_fallbackalpha;
-	else if (type == TEXTYPE_TELE)
-		return map_telealpha > 0 ? map_telealpha : map_fallbackalpha;
-	else if (type == TEXTYPE_SLIME)
-		return map_slimealpha > 0 ? map_slimealpha : map_fallbackalpha;
-	else
-		return map_wateralpha;
+  if (type == TEXTYPE_LAVA)
+    return map_lavaalpha > 0 ? map_lavaalpha : map_fallbackalpha;
+  else if (type == TEXTYPE_TELE)
+    return map_telealpha > 0 ? map_telealpha : map_fallbackalpha;
+  else if (type == TEXTYPE_SLIME)
+    return map_slimealpha > 0 ? map_slimealpha : map_fallbackalpha;
+  else
+    return map_wateralpha;
 }
-
 
 /*
 ===============
 R_Init
 ===============
 */
-void R_Init (void)
+void
+R_Init(void)
 {
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f);
-	Cmd_AddCommand ("r_showbboxes_filter", R_ShowbboxesFilter_f);
+  Cmd_AddCommand("timerefresh", R_TimeRefresh_f);
+  Cmd_AddCommand("pointfile", R_ReadPointFile_f);
+  Cmd_AddCommand("r_showbboxes_filter", R_ShowbboxesFilter_f);
 
-	Cvar_RegisterVariable (&r_norefresh);
-	Cvar_RegisterVariable (&r_lightmap);
-	Cvar_RegisterVariable (&r_fullbright);
-	Cvar_RegisterVariable (&r_drawentities);
-	Cvar_RegisterVariable (&r_drawviewmodel);
-	Cvar_RegisterVariable (&r_wateralpha);
-	Cvar_SetCallback (&r_wateralpha, R_SetWateralpha_f);
-	Cvar_RegisterVariable (&r_litwater);
-	Cvar_RegisterVariable (&r_dynamic);
-	Cvar_RegisterVariable (&r_novis);
+  Cvar_RegisterVariable(&r_norefresh);
+  Cvar_RegisterVariable(&r_lightmap);
+  Cvar_RegisterVariable(&r_fullbright);
+  Cvar_RegisterVariable(&r_drawentities);
+  Cvar_RegisterVariable(&r_drawviewmodel);
+  Cvar_RegisterVariable(&r_wateralpha);
+  Cvar_SetCallback(&r_wateralpha, (cvarcallback_t)R_SetWateralpha_f);
+  Cvar_RegisterVariable(&r_litwater);
+  Cvar_RegisterVariable(&r_dynamic);
+  Cvar_RegisterVariable(&r_novis);
 #if defined(USE_SIMD)
-	Cvar_RegisterVariable (&r_simd);
-	Cvar_SetCallback (&r_simd, R_SIMD_f);
-	R_SIMD_f(&r_simd);
+  Cvar_RegisterVariable(&r_simd);
+  Cvar_SetCallback(&r_simd, R_SIMD_f);
+  R_SIMD_f(&r_simd);
 #endif
-	Cvar_RegisterVariable (&r_speeds);
-	Cvar_RegisterVariable (&r_pos);
-	Cvar_RegisterVariable (&r_alphasort);
-	Cvar_RegisterVariable (&r_oit);
+  Cvar_RegisterVariable(&r_speeds);
+  Cvar_RegisterVariable(&r_pos);
+  Cvar_RegisterVariable(&r_alphasort);
+  Cvar_RegisterVariable(&r_oit);
 
-	Cvar_RegisterVariable (&gl_finish);
-	Cvar_RegisterVariable (&gl_clear);
-	Cvar_RegisterVariable (&gl_polyblend);
-	Cvar_RegisterVariable (&gl_playermip);
-	Cvar_RegisterVariable (&gl_nocolors);
+  Cvar_RegisterVariable(&gl_finish);
+  Cvar_RegisterVariable(&gl_clear);
+  Cvar_RegisterVariable(&gl_polyblend);
+  Cvar_RegisterVariable(&gl_playermip);
+  Cvar_RegisterVariable(&gl_nocolors);
 
-	//johnfitz -- new cvars
-	Cvar_RegisterVariable (&r_clearcolor);
-	Cvar_SetCallback (&r_clearcolor, R_SetClearColor_f);
-	Cvar_RegisterVariable (&r_waterwarp);
-	Cvar_RegisterVariable (&r_flatlightstyles);
-	Cvar_RegisterVariable (&r_lerplightstyles);
-	Cvar_RegisterVariable (&r_oldskyleaf);
-	Cvar_RegisterVariable (&r_drawworld);
-	Cvar_RegisterVariable (&r_showtris);
-	Cvar_RegisterVariable (&r_showbboxes);
-	Cvar_RegisterVariable (&r_showbboxes_think);
-	Cvar_RegisterVariable (&r_showbboxes_health);
-	Cvar_RegisterVariable (&r_showbboxes_links);
-	Cvar_RegisterVariable (&r_showbboxes_targets);
-	Cvar_RegisterVariable (&r_showfields);
-	Cvar_RegisterVariable (&gl_farclip);
-	Cvar_RegisterVariable (&gl_fullbrights);
-	Cvar_SetCallback (&gl_fullbrights, GL_Fullbrights_f);
-	Cvar_RegisterVariable (&gl_overbright_models);
-	Cvar_RegisterVariable (&r_lerpmodels);
-	Cvar_RegisterVariable (&r_lerpmove);
-	Cvar_RegisterVariable (&r_nolerp_list);
-	Cvar_SetCallback (&r_nolerp_list, R_Model_ExtraFlags_List_f);
-	Cvar_RegisterVariable (&r_noshadow_list);
-	Cvar_SetCallback (&r_noshadow_list, R_Model_ExtraFlags_List_f);
-	//johnfitz
+  // johnfitz -- new cvars
+  Cvar_RegisterVariable(&r_clearcolor);
+  Cvar_SetCallback(&r_clearcolor, (cvarcallback_t)R_SetClearColor_f);
+  Cvar_RegisterVariable(&r_waterwarp);
+  Cvar_RegisterVariable(&r_flatlightstyles);
+  Cvar_RegisterVariable(&r_lerplightstyles);
+  Cvar_RegisterVariable(&r_oldskyleaf);
+  Cvar_RegisterVariable(&r_drawworld);
+  Cvar_RegisterVariable(&r_showtris);
+  Cvar_RegisterVariable(&r_showbboxes);
+  Cvar_RegisterVariable(&r_showbboxes_think);
+  Cvar_RegisterVariable(&r_showbboxes_health);
+  Cvar_RegisterVariable(&r_showbboxes_links);
+  Cvar_RegisterVariable(&r_showbboxes_targets);
+  Cvar_RegisterVariable(&r_showfields);
+  Cvar_RegisterVariable(&gl_farclip);
+  Cvar_RegisterVariable(&gl_fullbrights);
+  Cvar_SetCallback(&gl_fullbrights, (cvarcallback_t)GL_Fullbrights_f);
+  Cvar_RegisterVariable(&gl_overbright_models);
+  Cvar_RegisterVariable(&r_lerpmodels);
+  Cvar_RegisterVariable(&r_lerpmove);
+  Cvar_RegisterVariable(&r_nolerp_list);
+  Cvar_SetCallback(&r_nolerp_list, (cvarcallback_t)R_Model_ExtraFlags_List_f);
+  Cvar_RegisterVariable(&r_noshadow_list);
+  Cvar_SetCallback(&r_noshadow_list, (cvarcallback_t)R_Model_ExtraFlags_List_f);
+  // johnfitz
 
-	Cvar_RegisterVariable (&gl_zfix); // QuakeSpasm z-fighting fix
-	Cvar_RegisterVariable (&r_lavaalpha);
-	Cvar_RegisterVariable (&r_telealpha);
-	Cvar_RegisterVariable (&r_slimealpha);
-	Cvar_RegisterVariable (&r_scale);
-	Cvar_SetCallback (&r_lavaalpha, R_SetLavaalpha_f);
-	Cvar_SetCallback (&r_telealpha, R_SetTelealpha_f);
-	Cvar_SetCallback (&r_slimealpha, R_SetSlimealpha_f);
+  Cvar_RegisterVariable(&gl_zfix); // QuakeSpasm z-fighting fix
+  Cvar_RegisterVariable(&r_lavaalpha);
+  Cvar_RegisterVariable(&r_telealpha);
+  Cvar_RegisterVariable(&r_slimealpha);
+  Cvar_RegisterVariable(&r_scale);
+  Cvar_SetCallback(&r_lavaalpha, (cvarcallback_t)R_SetLavaalpha_f);
+  Cvar_SetCallback(&r_telealpha, (cvarcallback_t)R_SetTelealpha_f);
+  Cvar_SetCallback(&r_slimealpha, (cvarcallback_t)R_SetSlimealpha_f);
 
-	R_InitParticles ();
-	R_SetClearColor_f (&r_clearcolor); //johnfitz
+  R_InitParticles();
+  R_SetClearColor_f(&r_clearcolor); // johnfitz
 
-	Sky_Init (); //johnfitz
-	Fog_Init (); //johnfitz
+  Sky_Init(); // johnfitz
+  Fog_Init(); // johnfitz
 }
 
 /*
 ===============
-R_TranslatePlayerSkin -- johnfitz -- rewritten.  also, only handles new colors, not new skins
+R_TranslatePlayerSkin -- johnfitz -- rewritten.  also, only handles new colors,
+not new skins
 ===============
 */
-void R_TranslatePlayerSkin (int playernum)
+void
+R_TranslatePlayerSkin(int playernum)
 {
-	int			top, bottom;
+  int top, bottom;
 
-	top = (cl.scores[playernum].colors & 0xf0)>>4;
-	bottom = cl.scores[playernum].colors &15;
+  top = (cl.scores[playernum].colors & 0xf0) >> 4;
+  bottom = cl.scores[playernum].colors & 15;
 
-	//FIXME: if gl_nocolors is on, then turned off, the textures may be out of sync with the scoreboard colors.
-	if (!gl_nocolors.value)
-	{
-		if (playertextures[playernum])
-			TexMgr_ReloadImage (playertextures[playernum], top, bottom);
-	}
+  // FIXME: if gl_nocolors is on, then turned off, the textures may be out of
+  // sync with the scoreboard colors.
+  if (!gl_nocolors.value) {
+    if (playertextures[playernum])
+      TexMgr_ReloadImage(playertextures[playernum], top, bottom);
+  }
 }
 
 /*
 ===============
-R_TranslateNewPlayerSkin -- johnfitz -- split off of TranslatePlayerSkin -- this is called when
-the skin or model actually changes, instead of just new colors
+R_TranslateNewPlayerSkin -- johnfitz -- split off of TranslatePlayerSkin -- this
+is called when the skin or model actually changes, instead of just new colors
 added bug fix from bengt jardup
 ===============
 */
-void R_TranslateNewPlayerSkin (int playernum)
+void
+R_TranslateNewPlayerSkin(int playernum)
 {
-	char		name[64];
-	byte		*pixels;
-	aliashdr_t	*paliashdr;
-	entity_t	*e;
-	int		skinnum;
+  char name[64];
+  byte* pixels;
+  aliashdr_t* paliashdr;
+  entity_t* e;
+  int skinnum;
 
-//get correct texture pixels
-	e = &cl_entities[1+playernum];
+  // get correct texture pixels
+  e = &cl_entities[1 + playernum];
 
-	if (!e->model || e->model->type != mod_alias)
-		return;
+  if (!e->model || e->model->type != mod_alias)
+    return;
 
-	paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
+  paliashdr = (aliashdr_t*)Mod_Extradata(e->model);
 
-	skinnum = e->skinnum;
+  skinnum = e->skinnum;
 
-	//TODO: move these tests to the place where skinnum gets received from the server
-	if (skinnum < 0 || skinnum >= paliashdr->numskins)
-	{
-		Con_DPrintf("(%d): Invalid player skin #%d\n", playernum, skinnum);
-		skinnum = 0;
-	}
+  // TODO: move these tests to the place where skinnum gets received from the
+  // server
+  if (skinnum < 0 || skinnum >= paliashdr->numskins) {
+    Con_DPrintf("(%d): Invalid player skin #%d\n", playernum, skinnum);
+    skinnum = 0;
+  }
 
-	pixels = (byte *)paliashdr + paliashdr->texels[skinnum]; // This is not a persistent place!
+  pixels = (byte*)paliashdr +
+           paliashdr->texels[skinnum]; // This is not a persistent place!
 
-//upload new image
-	q_snprintf(name, sizeof(name), "player_%i", playernum);
-	playertextures[playernum] = TexMgr_LoadImage (e->model, name, paliashdr->skinwidth, paliashdr->skinheight,
-		SRC_INDEXED, pixels, paliashdr->gltextures[skinnum][0]->source_file, paliashdr->gltextures[skinnum][0]->source_offset, TEXPREF_PAD | TEXPREF_OVERWRITE);
+  // upload new image
+  q_snprintf(name, sizeof(name), "player_%i", playernum);
+  playertextures[playernum] =
+    TexMgr_LoadImage(e->model,
+                     name,
+                     paliashdr->skinwidth,
+                     paliashdr->skinheight,
+                     SRC_INDEXED,
+                     pixels,
+                     paliashdr->gltextures[skinnum][0]->source_file,
+                     paliashdr->gltextures[skinnum][0]->source_offset,
+                     TEXPREF_PAD | TEXPREF_OVERWRITE);
 
-//now recolor it
-	R_TranslatePlayerSkin (playernum);
+  // now recolor it
+  R_TranslatePlayerSkin(playernum);
 }
 
 /*
@@ -368,13 +400,15 @@ void R_TranslateNewPlayerSkin (int playernum)
 R_NewGame -- johnfitz -- handle a game switch
 ===============
 */
-void R_NewGame (void)
+void
+R_NewGame(void)
 {
-	int i;
+  int i;
 
-	//clear playertexture pointers (the textures themselves were freed by texmgr_newgame)
-	for (i=0; i<MAX_SCOREBOARD; i++)
-		playertextures[i] = NULL;
+  // clear playertexture pointers (the textures themselves were freed by
+  // texmgr_newgame)
+  for (i = 0; i < MAX_SCOREBOARD; i++)
+    playertextures[i] = NULL;
 }
 
 /*
@@ -384,83 +418,93 @@ R_ParseWorldspawn
 called at map load
 =============
 */
-static void R_ParseWorldspawn (void)
+static void
+R_ParseWorldspawn(void)
 {
-	char key[128], value[4096];
-	const char *data;
+  char key[128], value[4096];
+  const char* data;
 
-	map_fallbackalpha = r_wateralpha.value;
-	map_wateralpha = (cl.worldmodel->contentstransparent&SURF_DRAWWATER)?r_wateralpha.value:1;
-	map_lavaalpha = (cl.worldmodel->contentstransparent&SURF_DRAWLAVA)?r_lavaalpha.value:1;
-	map_telealpha = (cl.worldmodel->contentstransparent&SURF_DRAWTELE)?r_telealpha.value:1;
-	map_slimealpha = (cl.worldmodel->contentstransparent&SURF_DRAWSLIME)?r_slimealpha.value:1;
+  map_fallbackalpha = r_wateralpha.value;
+  map_wateralpha = (cl.worldmodel->contentstransparent & SURF_DRAWWATER)
+                     ? r_wateralpha.value
+                     : 1;
+  map_lavaalpha = (cl.worldmodel->contentstransparent & SURF_DRAWLAVA)
+                    ? r_lavaalpha.value
+                    : 1;
+  map_telealpha = (cl.worldmodel->contentstransparent & SURF_DRAWTELE)
+                    ? r_telealpha.value
+                    : 1;
+  map_slimealpha = (cl.worldmodel->contentstransparent & SURF_DRAWSLIME)
+                     ? r_slimealpha.value
+                     : 1;
 
-	data = COM_Parse(cl.worldmodel->entities);
-	if (!data)
-		return; // error
-	if (com_token[0] != '{')
-		return; // error
+  data = COM_Parse(cl.worldmodel->entities);
+  if (!data)
+    return; // error
+  if (com_token[0] != '{')
+    return; // error
 
-	while (1)
-	{
-		data = COM_Parse(data);
-		if (!data)
-			return; // error
-		if (com_token[0] == '}')
-			break; // end of worldspawn
-		if (com_token[0] == '_')
-			q_strlcpy(key, com_token + 1, sizeof(key));
-		else
-			q_strlcpy(key, com_token, sizeof(key));
-		while (key[0] && key[strlen(key)-1] == ' ') // remove trailing spaces
-			key[strlen(key)-1] = 0;
-		data = COM_ParseEx(data, CPE_ALLOWTRUNC);
-		if (!data)
-			return; // error
-		q_strlcpy(value, com_token, sizeof(value));
+  while (1) {
+    data = COM_Parse(data);
+    if (!data)
+      return; // error
+    if (com_token[0] == '}')
+      break; // end of worldspawn
+    if (com_token[0] == '_')
+      q_strlcpy(key, com_token + 1, sizeof(key));
+    else
+      q_strlcpy(key, com_token, sizeof(key));
+    while (key[0] && key[strlen(key) - 1] == ' ') // remove trailing spaces
+      key[strlen(key) - 1] = 0;
+    data = COM_ParseEx(data, CPE_ALLOWTRUNC);
+    if (!data)
+      return; // error
+    q_strlcpy(value, com_token, sizeof(value));
 
-		if (!strcmp("wateralpha", key))
-			map_wateralpha = atof(value);
+    if (!strcmp("wateralpha", key))
+      map_wateralpha = atof(value);
 
-		if (!strcmp("lavaalpha", key))
-			map_lavaalpha = atof(value);
+    if (!strcmp("lavaalpha", key))
+      map_lavaalpha = atof(value);
 
-		if (!strcmp("telealpha", key))
-			map_telealpha = atof(value);
+    if (!strcmp("telealpha", key))
+      map_telealpha = atof(value);
 
-		if (!strcmp("slimealpha", key))
-			map_slimealpha = atof(value);
-	}
+    if (!strcmp("slimealpha", key))
+      map_slimealpha = atof(value);
+  }
 }
-
 
 /*
 ===============
 R_NewMap
 ===============
 */
-void R_NewMap (void)
+void
+R_NewMap(void)
 {
-	int		i;
+  int i;
 
-	for (i=0 ; i<256 ; i++)
-		d_lightstylevalue[i] = 264;		// normal light value
+  for (i = 0; i < 256; i++)
+    d_lightstylevalue[i] = 264; // normal light value
 
-	R_ClearEfrags ();
-	r_viewleaf = NULL;
-	R_ClearParticles ();
+  R_ClearEfrags();
+  r_viewleaf = NULL;
+  R_ClearParticles();
 
-	GL_BuildLightmaps ();
-	GL_BuildBModelVertexBuffer ();
-	GL_BuildBModelMarkBuffers ();
-	//ericw -- no longer load alias models into a VBO here, it's done in Mod_LoadAliasModel
+  GL_BuildLightmaps();
+  GL_BuildBModelVertexBuffer();
+  GL_BuildBModelMarkBuffers();
+  // ericw -- no longer load alias models into a VBO here, it's done in
+  // Mod_LoadAliasModel
 
-	r_framecount = 0; //johnfitz -- paranoid?
-	r_visframecount = 0; //johnfitz -- paranoid?
+  r_framecount = 0;    // johnfitz -- paranoid?
+  r_visframecount = 0; // johnfitz -- paranoid?
 
-	Sky_NewMap (); //johnfitz -- skybox in worldspawn
-	Fog_NewMap (); //johnfitz -- global fog in worldspawn
-	R_ParseWorldspawn (); //ericw -- wateralpha, lavaalpha, telealpha, slimealpha in worldspawn
+  Sky_NewMap();        // johnfitz -- skybox in worldspawn
+  Fog_NewMap();        // johnfitz -- global fog in worldspawn
+  R_ParseWorldspawn(); // ericw -- wateralpha, lavaalpha, telealpha, slimealpha
+                       // in worldspawn
 }
 
 /*
@@ -470,30 +514,29 @@ R_TimeRefresh_f
 For program optimization
 ====================
 */
-void R_TimeRefresh_f (void)
+void
+R_TimeRefresh_f(void)
 {
-	int		i;
-	double	start, stop, time;
+  int i;
+  double start, stop, time;
 
-	if (cls.state != ca_connected)
-	{
-		Con_Printf("Not connected to a server\n");
-		return;
-	}
+  if (cls.state != ca_connected) {
+    Con_Printf("Not connected to a server\n");
+    return;
+  }
 
-	start = Sys_DoubleTime ();
-	for (i = 0; i < 128; i++)
-	{
-		GL_BeginRendering(&glx, &gly, &glwidth, &glheight);
-		r_refdef.viewangles[1] = i*(360.0/128.0);
-		R_RenderView ();
-		GL_EndRendering ();
-	}
+  start = Sys_DoubleTime();
+  for (i = 0; i < 128; i++) {
+    GL_BeginRendering(&glx, &gly, &glwidth, &glheight);
+    r_refdef.viewangles[1] = i * (360.0 / 128.0);
+    R_RenderView();
+    GL_EndRendering();
+  }
 
-	glFinish ();
-	stop = Sys_DoubleTime ();
-	time = stop-start;
-	Con_Printf ("%lf seconds (%.1lf fps)\n", time, 128/time);
+  glFinish();
+  stop = Sys_DoubleTime();
+  time = stop - start;
+  Con_Printf("%lf seconds (%.1lf fps)\n", time, 128 / time);
 }
 
 static GLuint current_array_buffer;
@@ -506,15 +549,20 @@ static GLuint current_draw_indirect_buffer;
 GL_CreateBuffer
 ====================
 */
-GLuint GL_CreateBuffer (GLenum target, GLenum usage, const char *name, size_t size, const void *data)
+GLuint
+GL_CreateBuffer(GLenum target,
+                GLenum usage,
+                const char* name,
+                size_t size,
+                const void* data)
 {
-	GLuint buffer;
-	GL_GenBuffersFunc (1, &buffer);
-	GL_BindBuffer (target, buffer);
-	if (name)
-		GL_ObjectLabelFunc (GL_BUFFER, buffer, -1, name);
-	GL_BufferDataFunc (target, size, data, usage);
-	return buffer;
+  GLuint buffer;
+  GL_GenBuffersFunc(1, &buffer);
+  GL_BindBuffer(target, buffer);
+  if (name)
+    GL_ObjectLabelFunc(GL_BUFFER, buffer, -1, name);
+  GL_BufferDataFunc(target, size, data, usage);
+  return buffer;
 }
 
 /*
@@ -524,40 +572,40 @@ GL_BindBuffer
 glBindBuffer wrapper
 ====================
 */
-void GL_BindBuffer (GLenum target, GLuint buffer)
+void
+GL_BindBuffer(GLenum target, GLuint buffer)
 {
-	GLuint *cache;
+  GLuint* cache;
 
-	switch (target)
-	{
-		case GL_ARRAY_BUFFER:
-			cache = &current_array_buffer;
-			break;
-		case GL_ELEMENT_ARRAY_BUFFER:
-			cache = &current_element_array_buffer;
-			break;
-		case GL_SHADER_STORAGE_BUFFER:
-			cache = &current_shader_storage_buffer;
-			break;
-		case GL_DRAW_INDIRECT_BUFFER:
-			cache = &current_draw_indirect_buffer;
-			break;
-		default:
-			goto apply;
-	}
+  switch (target) {
+    case GL_ARRAY_BUFFER:
+      cache = &current_array_buffer;
+      break;
+    case GL_ELEMENT_ARRAY_BUFFER:
+      cache = &current_element_array_buffer;
+      break;
+    case GL_SHADER_STORAGE_BUFFER:
+      cache = &current_shader_storage_buffer;
+      break;
+    case GL_DRAW_INDIRECT_BUFFER:
+      cache = &current_draw_indirect_buffer;
+      break;
+    default:
+      goto apply;
+  }
 
-	if (*cache != buffer)
-	{
-		*cache = buffer;
-	apply:
-		GL_BindBufferFunc (target, buffer);
-	}
+  if (*cache != buffer) {
+    *cache = buffer;
+  apply:
+    GL_BindBufferFunc(target, buffer);
+  }
 }
 
-typedef struct {
-	GLuint		buffer;
-	GLintptr	offset;
-	GLsizeiptr	size;
+typedef struct
+{
+  GLuint buffer;
+  GLintptr offset;
+  GLsizeiptr size;
 } bufferrange_t;
 
 #define CACHED_BUFFER_RANGES 8
@@ -571,23 +619,27 @@ GL_BindBufferRange
 glBindBufferRange wrapper
 ====================
 */
-void GL_BindBufferRange (GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size)
+void
+GL_BindBufferRange(GLenum target,
+                   GLuint index,
+                   GLuint buffer,
+                   GLintptr offset,
+                   GLsizeiptr size)
 {
-	if (target == GL_SHADER_STORAGE_BUFFER)
-	{
-		if (index < CACHED_BUFFER_RANGES)
-		{
-			bufferrange_t *range = &ssbo_ranges[index];
-			if (range->buffer == buffer && range->offset == offset && range->size == size)
-				return;
-			range->buffer = buffer;
-			range->offset = offset;
-			range->size   = size;
-		}
-		current_shader_storage_buffer = buffer;
-	}
+  if (target == GL_SHADER_STORAGE_BUFFER) {
+    if (index < CACHED_BUFFER_RANGES) {
+      bufferrange_t* range = &ssbo_ranges[index];
+      if (range->buffer == buffer && range->offset == offset &&
+          range->size == size)
+        return;
+      range->buffer = buffer;
+      range->offset = offset;
+      range->size = size;
+    }
+    current_shader_storage_buffer = buffer;
+  }
 
-	GL_BindBufferRangeFunc (target, index, buffer, offset, size);
+  GL_BindBufferRangeFunc(target, index, buffer, offset, size);
 }
 
 /*
@@ -598,28 +650,29 @@ glBindBuffersRange wrapper with fallback
 if ARB_multi_bind is not present
 ====================
 */
-void GL_BindBuffersRange (GLenum target, GLuint first, GLsizei count, const GLuint *buffers, const GLintptr *offsets, const GLsizeiptr *sizes)
+void
+GL_BindBuffersRange(GLenum target,
+                    GLuint first,
+                    GLsizei count,
+                    const GLuint* buffers,
+                    const GLintptr* offsets,
+                    const GLsizeiptr* sizes)
 {
-	GLsizei i;
-	if (gl_multi_bind_able)
-	{
-		if (target == GL_SHADER_STORAGE_BUFFER)
-		{
-			for (i = 0; i < count && first + i < countof (ssbo_ranges); i++)
-			{
-				bufferrange_t *range = &ssbo_ranges[first + i];
-				range->buffer = buffers[i];
-				range->offset = offsets[i];
-				range->size   = sizes[i];
-			}
-		}
-		GL_BindBuffersRangeFunc (target, first, count, buffers, offsets, sizes);
-	}
-	else
-	{
-		for (i = 0; i < count; i++)
-			GL_BindBufferRange (target, first + i, buffers[i], offsets[i], sizes[i]);
-	}
+  GLsizei i;
+  if (gl_multi_bind_able) {
+    if (target == GL_SHADER_STORAGE_BUFFER) {
+      for (i = 0; i < count && first + i < countof(ssbo_ranges); i++) {
+        bufferrange_t* range = &ssbo_ranges[first + i];
+        range->buffer = buffers[i];
+        range->offset = offsets[i];
+        range->size = sizes[i];
+      }
+    }
+    GL_BindBuffersRangeFunc(target, first, count, buffers, offsets, sizes);
+  } else {
+    for (i = 0; i < count; i++)
+      GL_BindBufferRange(target, first + i, buffers[i], offsets[i], sizes[i]);
+  }
 }
 
 /*
@@ -627,24 +680,25 @@ void GL_BindBuffersRange (GLenum target, GLuint first, GLsizei count, const GLui
 GL_DeleteBuffer
 ====================
 */
-void GL_DeleteBuffer (GLuint buffer)
+void
+GL_DeleteBuffer(GLuint buffer)
 {
-	int i;
+  int i;
 
-	if (buffer == current_array_buffer)
-		current_array_buffer = 0;
-	if (buffer == current_element_array_buffer)
-		current_element_array_buffer = 0;
-	if (buffer == current_draw_indirect_buffer)
-		current_draw_indirect_buffer = 0;
-	if (buffer == current_shader_storage_buffer)
-		current_shader_storage_buffer = 0;
+  if (buffer == current_array_buffer)
+    current_array_buffer = 0;
+  if (buffer == current_element_array_buffer)
+    current_element_array_buffer = 0;
+  if (buffer == current_draw_indirect_buffer)
+    current_draw_indirect_buffer = 0;
+  if (buffer == current_shader_storage_buffer)
+    current_shader_storage_buffer = 0;
 
-	for (i = 0; i < countof(ssbo_ranges); i++)
-		if (ssbo_ranges[i].buffer == buffer)
-			ssbo_ranges[i].buffer = 0;
+  for (i = 0; i < countof(ssbo_ranges); i++)
+    if (ssbo_ranges[i].buffer == buffer)
+      ssbo_ranges[i].buffer = 0;
 
-	GL_DeleteBuffersFunc (1, &buffer);
+  GL_DeleteBuffersFunc(1, &buffer);
 }
 
 /*
@@ -655,27 +709,28 @@ This must be called if you do anything that could make the cached bindings
 invalid (e.g. manually binding, destroying the context).
 ====================
 */
-void GL_ClearBufferBindings (void)
+void
+GL_ClearBufferBindings(void)
 {
-	int i;
+  int i;
 
-	current_array_buffer = 0;
-	current_element_array_buffer = 0;
-	current_draw_indirect_buffer = 0;
-	current_shader_storage_buffer = 0;
+  current_array_buffer = 0;
+  current_element_array_buffer = 0;
+  current_draw_indirect_buffer = 0;
+  current_shader_storage_buffer = 0;
 
-	for (i = 0; i < countof(ssbo_ranges); i++)
-		ssbo_ranges[i].buffer = 0;
+  for (i = 0; i < countof(ssbo_ranges); i++)
+    ssbo_ranges[i].buffer = 0;
 
-	GL_BindBufferFunc (GL_ARRAY_BUFFER, 0);
-	GL_BindBufferFunc (GL_ELEMENT_ARRAY_BUFFER, 0);
-	GL_BindBufferFunc (GL_DRAW_INDIRECT_BUFFER, 0);
-	GL_BindBufferFunc (GL_SHADER_STORAGE_BUFFER, 0);
+  GL_BindBufferFunc(GL_ARRAY_BUFFER, 0);
+  GL_BindBufferFunc(GL_ELEMENT_ARRAY_BUFFER, 0);
+  GL_BindBufferFunc(GL_DRAW_INDIRECT_BUFFER, 0);
+  GL_BindBufferFunc(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
 /*
 ============================================================================
-								FRAME RESOURCES
+                                                                FRAME RESOURCES
 ============================================================================
 */
 
@@ -683,36 +738,37 @@ void GL_ClearBufferBindings (void)
 
 typedef enum
 {
-	FRAMERES_HOST_BUFFER_BIT	= 1 << 0,
-	FRAMERES_DEVICE_BUFFER_BIT	= 1 << 1,
+  FRAMERES_HOST_BUFFER_BIT = 1 << 0,
+  FRAMERES_DEVICE_BUFFER_BIT = 1 << 1,
 
-	FRAMERES_ALL_BITS			= FRAMERES_HOST_BUFFER_BIT | FRAMERES_DEVICE_BUFFER_BIT
+  FRAMERES_ALL_BITS = FRAMERES_HOST_BUFFER_BIT | FRAMERES_DEVICE_BUFFER_BIT
 } frameres_bits_t;
 
 typedef struct frameres_t
 {
-	GLsync			fence;
-	GLuint			device_buffer;
-	GLuint			host_buffer;
-	GLubyte			*host_ptr;
-	GLuint			*garbage;
+  GLsync fence;
+  GLuint device_buffer;
+  GLuint host_buffer;
+  GLubyte* host_ptr;
+  GLuint* garbage;
 } frameres_t;
 
-static frameres_t	frameres[FRAMES_IN_FLIGHT];
-static int			frameres_idx = 0;
-static size_t		frameres_host_offset = 0;
-static size_t		frameres_device_offset = 0;
-static size_t		frameres_host_buffer_size = 1 * 1024 * 1024;
-static size_t		frameres_device_buffer_size = 1 * 1024 * 1024;
+static frameres_t frameres[FRAMES_IN_FLIGHT];
+static int frameres_idx = 0;
+static size_t frameres_host_offset = 0;
+static size_t frameres_device_offset = 0;
+static size_t frameres_host_buffer_size = 1 * 1024 * 1024;
+static size_t frameres_device_buffer_size = 1 * 1024 * 1024;
 
 /*
 ====================
 GL_AddGarbageBuffer
 ====================
 */
-void GL_AddGarbageBuffer (GLuint handle)
+void
+GL_AddGarbageBuffer(GLuint handle)
 {
-	VEC_PUSH (frameres[frameres_idx].garbage, handle);
+  VEC_PUSH(frameres[frameres_idx].garbage, handle);
 }
 
 /*
@@ -720,62 +776,65 @@ void GL_AddGarbageBuffer (GLuint handle)
 GL_AllocFrameResources
 ====================
 */
-static void GL_AllocFrameResources (frameres_bits_t bits)
+static void
+GL_AllocFrameResources(frameres_bits_t bits)
 {
-	int i;
-	for (i = 0; i < countof (frameres); i++)
-	{
-		char name[64];
-		frameres_t *frame = &frameres[i];
+  int i;
+  for (i = 0; i < countof(frameres); i++) {
+    char name[64];
+    frameres_t* frame = &frameres[i];
 
-		if (bits & FRAMERES_HOST_BUFFER_BIT)
-		{
-			GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+    if (bits & FRAMERES_HOST_BUFFER_BIT) {
+      GLbitfield flags =
+        GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 
-			if (frame->host_buffer)
-			{
-				if (frame->host_ptr)
-				{
-					GL_BindBuffer (GL_ARRAY_BUFFER, frame->host_buffer);
-					GL_UnmapBufferFunc (GL_ARRAY_BUFFER);
-				}
-				GL_AddGarbageBuffer (frame->host_buffer);
-			}
+      if (frame->host_buffer) {
+        if (frame->host_ptr) {
+          GL_BindBuffer(GL_ARRAY_BUFFER, frame->host_buffer);
+          GL_UnmapBufferFunc(GL_ARRAY_BUFFER);
+        }
+        GL_AddGarbageBuffer(frame->host_buffer);
+      }
 
-			GL_GenBuffersFunc (1, &frame->host_buffer);
-			GL_BindBuffer (GL_ARRAY_BUFFER, frame->host_buffer);
-			q_snprintf (name, sizeof (name), "dynamic host buffer %d", i);
-			GL_ObjectLabelFunc (GL_BUFFER, frame->host_buffer, -1, name);
-			if (gl_buffer_storage_able)
-			{
-				GL_BufferStorageFunc (GL_ARRAY_BUFFER, frameres_host_buffer_size, NULL, flags);
-				frame->host_ptr = GL_MapBufferRangeFunc (GL_ARRAY_BUFFER, 0, frameres_host_buffer_size, flags);
-				if (!frame->host_ptr)
-					Sys_Error ("GL_AllocFrameResources: MapBufferRange failed on %" SDL_PRIu64 " bytes", (uint64_t)frameres_host_buffer_size);
-			}
-			else
-			{
-				GL_BufferDataFunc (GL_ARRAY_BUFFER, frameres_host_buffer_size, NULL, GL_STREAM_DRAW);
-			}
-		}
+      GL_GenBuffersFunc(1, &frame->host_buffer);
+      GL_BindBuffer(GL_ARRAY_BUFFER, frame->host_buffer);
+      q_snprintf(name, sizeof(name), "dynamic host buffer %d", i);
+      GL_ObjectLabelFunc(GL_BUFFER, frame->host_buffer, -1, name);
+      if (gl_buffer_storage_able) {
+        GL_BufferStorageFunc(
+          GL_ARRAY_BUFFER, frameres_host_buffer_size, NULL, flags);
+        frame->host_ptr = GL_MapBufferRangeFunc(
+          GL_ARRAY_BUFFER, 0, frameres_host_buffer_size, flags);
+        if (!frame->host_ptr)
+          Sys_Error(
+            "GL_AllocFrameResources: MapBufferRange failed on %" SDL_PRIu64
+            " bytes",
+            (uint64_t)frameres_host_buffer_size);
+      } else {
+        GL_BufferDataFunc(
+          GL_ARRAY_BUFFER, frameres_host_buffer_size, NULL, GL_STREAM_DRAW);
+      }
+    }
 
-		if (bits & FRAMERES_DEVICE_BUFFER_BIT)
-		{
-			if (frame->device_buffer)
-				GL_AddGarbageBuffer (frame->device_buffer);
+    if (bits & FRAMERES_DEVICE_BUFFER_BIT) {
+      if (frame->device_buffer)
+        GL_AddGarbageBuffer(frame->device_buffer);
 
-			GL_GenBuffersFunc (1, &frame->device_buffer);
-			GL_BindBuffer (GL_SHADER_STORAGE_BUFFER, frame->device_buffer);
-			q_snprintf (name, sizeof (name), "dynamic device buffer %d", i);
-			GL_ObjectLabelFunc (GL_BUFFER, frame->device_buffer, -1, name);
-			GL_BufferDataFunc (GL_SHADER_STORAGE_BUFFER, frameres_device_buffer_size, NULL, GL_STREAM_DRAW);
-		}
-	}
+      GL_GenBuffersFunc(1, &frame->device_buffer);
+      GL_BindBuffer(GL_SHADER_STORAGE_BUFFER, frame->device_buffer);
+      q_snprintf(name, sizeof(name), "dynamic device buffer %d", i);
+      GL_ObjectLabelFunc(GL_BUFFER, frame->device_buffer, -1, name);
+      GL_BufferDataFunc(GL_SHADER_STORAGE_BUFFER,
+                        frameres_device_buffer_size,
+                        NULL,
+                        GL_STREAM_DRAW);
+    }
+  }
 
-	if (bits & FRAMERES_HOST_BUFFER_BIT)
-		frameres_host_offset = 0;
-	if (bits & FRAMERES_DEVICE_BUFFER_BIT)
-		frameres_device_offset = 0;
+  if (bits & FRAMERES_HOST_BUFFER_BIT)
+    frameres_host_offset = 0;
+  if (bits & FRAMERES_DEVICE_BUFFER_BIT)
+    frameres_device_offset = 0;
 }
 
 /*
@@ -783,9 +842,10 @@ static void GL_AllocFrameResources (frameres_bits_t bits)
 GL_CreateFrameResources
 ====================
 */
-void GL_CreateFrameResources (void)
+void
+GL_CreateFrameResources(void)
 {
-	GL_AllocFrameResources (FRAMERES_ALL_BITS);
+  GL_AllocFrameResources(FRAMERES_ALL_BITS);
 }
 
 /*
@@ -793,45 +853,43 @@ void GL_CreateFrameResources (void)
 GL_DeleteFrameResources
 ====================
 */
-void GL_DeleteFrameResources (void)
+void
+GL_DeleteFrameResources(void)
 {
-	size_t i, j, num_garbage_bufs;
+  size_t i, j, num_garbage_bufs;
 
-	glFinish ();
+  glFinish();
 
-	for (i = 0; i < countof (frameres); i++)
-	{
-		frameres_t *frame = &frameres[i];
+  for (i = 0; i < countof(frameres); i++) {
+    frameres_t* frame = &frameres[i];
 
-		if (frame->fence)
-		{
-			GL_DeleteSyncFunc (frame->fence);
-			frame->fence = NULL;
-		}
+    if (frame->fence) {
+      GL_DeleteSyncFunc(frame->fence);
+      frame->fence = NULL;
+    }
 
-		for (j = 0, num_garbage_bufs = VEC_SIZE (frame->garbage); j < num_garbage_bufs; j++)
-			GL_DeleteBuffer (frame->garbage[j]);
-		VEC_CLEAR (frame->garbage);
+    for (j = 0, num_garbage_bufs = VEC_SIZE(frame->garbage);
+         j < num_garbage_bufs;
+         j++)
+      GL_DeleteBuffer(frame->garbage[j]);
+    VEC_CLEAR(frame->garbage);
 
-		if (frame->host_ptr)
-		{
-			GL_BindBuffer (GL_ARRAY_BUFFER, frame->host_buffer);
-			GL_UnmapBufferFunc (GL_ARRAY_BUFFER);
-			frame->host_ptr = NULL;
-		}
+    if (frame->host_ptr) {
+      GL_BindBuffer(GL_ARRAY_BUFFER, frame->host_buffer);
+      GL_UnmapBufferFunc(GL_ARRAY_BUFFER);
+      frame->host_ptr = NULL;
+    }
 
-		if (frame->host_buffer)
-		{
-			GL_DeleteBuffer (frame->host_buffer);
-			frame->host_buffer = 0;
-		}
+    if (frame->host_buffer) {
+      GL_DeleteBuffer(frame->host_buffer);
+      frame->host_buffer = 0;
+    }
 
-		if (frame->device_buffer)
-		{
-			GL_DeleteBuffer (frame->device_buffer);
-			frame->device_buffer = 0;
-		}
-	}
+    if (frame->device_buffer) {
+      GL_DeleteBuffer(frame->device_buffer);
+      frame->device_buffer = 0;
+    }
+  }
 }
 
 /*
@@ -839,33 +897,35 @@ void GL_DeleteFrameResources (void)
 GL_AcquireFrameResources
 ====================
 */
-void GL_AcquireFrameResources (void)
+void
+GL_AcquireFrameResources(void)
 {
-	frameres_t *prev_frame = &frameres[(frameres_idx + FRAMES_IN_FLIGHT - 1) % FRAMES_IN_FLIGHT];
-	frameres_t *frame = &frameres[frameres_idx];
-	size_t i, num_garbage_bufs;
+  frameres_t* prev_frame =
+    &frameres[(frameres_idx + FRAMES_IN_FLIGHT - 1) % FRAMES_IN_FLIGHT];
+  frameres_t* frame = &frameres[frameres_idx];
+  size_t i, num_garbage_bufs;
 
-	if (prev_frame->fence)
-		GL_WaitSyncFunc (prev_frame->fence, 0, GL_TIMEOUT_IGNORED);
+  if (prev_frame->fence)
+    GL_WaitSyncFunc(prev_frame->fence, 0, GL_TIMEOUT_IGNORED);
 
-	if (frame->fence)
-	{
-		GLuint64 timeout = 1ull * 1000 * 1000 * 1000; // 1 second
-		GLenum result = GL_ClientWaitSyncFunc (frame->fence, GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
-		if (result == GL_TIMEOUT_EXPIRED)
-			glFinish ();
-		else if (result == GL_WAIT_FAILED)
-			Sys_Error ("GL_AcquireFrameResources: wait failed (0x%04X)", glGetError ());
-		else if (result != GL_CONDITION_SATISFIED && result != GL_ALREADY_SIGNALED)
-			Sys_Error ("GL_AcquireFrameResources: sync failed (0x%04X)", result);
-		GL_DeleteSyncFunc (frame->fence);
-		frame->fence = NULL;
-	}
+  if (frame->fence) {
+    GLuint64 timeout = 1ull * 1000 * 1000 * 1000; // 1 second
+    GLenum result =
+      GL_ClientWaitSyncFunc(frame->fence, GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
+    if (result == GL_TIMEOUT_EXPIRED)
+      glFinish();
+    else if (result == GL_WAIT_FAILED)
+      Sys_Error("GL_AcquireFrameResources: wait failed (0x%04X)", glGetError());
+    else if (result != GL_CONDITION_SATISFIED && result != GL_ALREADY_SIGNALED)
+      Sys_Error("GL_AcquireFrameResources: sync failed (0x%04X)", result);
+    GL_DeleteSyncFunc(frame->fence);
+    frame->fence = NULL;
+  }
 
-	num_garbage_bufs = VEC_SIZE (frame->garbage);
-	for (i = 0; i < num_garbage_bufs; i++)
-		GL_DeleteBuffer (frame->garbage[i]);
-	VEC_CLEAR (frame->garbage);
+  num_garbage_bufs = VEC_SIZE(frame->garbage);
+  for (i = 0; i < num_garbage_bufs; i++)
+    GL_DeleteBuffer(frame->garbage[i]);
+  VEC_CLEAR(frame->garbage);
 }
 
 /*
@@ -873,24 +933,26 @@ void GL_AcquireFrameResources (void)
 GL_ReleaseFrameResources
 ====================
 */
-void GL_ReleaseFrameResources (void)
+void
+GL_ReleaseFrameResources(void)
 {
-	frameres_t *frame = &frameres[frameres_idx];
+  frameres_t* frame = &frameres[frameres_idx];
 
-	SDL_assert (!frame->fence);
-	frame->fence = GL_FenceSyncFunc (GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+  SDL_assert(!frame->fence);
+  frame->fence = GL_FenceSyncFunc(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
-	if (!frame->fence)
-		Sys_Error ("glFenceSync failed (error code 0x%04X)", glGetError ());
+  if (!frame->fence)
+    Sys_Error("glFenceSync failed (error code 0x%04X)", glGetError());
 
-	dev_stats.gpu_upload = frameres_host_offset;
-	dev_peakstats.gpu_upload = q_max (dev_peakstats.gpu_upload, dev_stats.gpu_upload);
+  dev_stats.gpu_upload = frameres_host_offset;
+  dev_peakstats.gpu_upload =
+    q_max(dev_peakstats.gpu_upload, dev_stats.gpu_upload);
 
-	if (++frameres_idx == countof (frameres))
-		frameres_idx = 0;
+  if (++frameres_idx == countof(frameres))
+    frameres_idx = 0;
 
-	frameres_host_offset = 0;
-	frameres_device_offset = 0;
+  frameres_host_offset = 0;
+  frameres_device_offset = 0;
 }
 
 /*
@@ -898,34 +960,38 @@ void GL_ReleaseFrameResources (void)
 GL_Upload
 ====================
 */
-void GL_Upload (GLenum target, const void *data, size_t numbytes, GLuint *outbuf, GLbyte **outofs)
+void
+GL_Upload(GLenum target,
+          const void* data,
+          size_t numbytes,
+          GLuint* outbuf,
+          GLbyte** outofs)
 {
-	size_t align;
-	frameres_t *frame;
+  size_t align;
+  frameres_t* frame;
 
-	align = (target == GL_UNIFORM_BUFFER) ? ubo_align : ssbo_align;
-	frameres_host_offset = (frameres_host_offset + align) & ~align;
+  align = (target == GL_UNIFORM_BUFFER) ? ubo_align : ssbo_align;
+  frameres_host_offset = (frameres_host_offset + align) & ~align;
 
-	if (frameres_host_offset + numbytes > frameres_host_buffer_size)
-	{
-		frameres_host_buffer_size = frameres_host_offset + ((numbytes + align) & ~align);
-		frameres_host_buffer_size += frameres_host_buffer_size >> 1;
-		GL_AllocFrameResources (FRAMERES_HOST_BUFFER_BIT);
-	}
+  if (frameres_host_offset + numbytes > frameres_host_buffer_size) {
+    frameres_host_buffer_size =
+      frameres_host_offset + ((numbytes + align) & ~align);
+    frameres_host_buffer_size += frameres_host_buffer_size >> 1;
+    GL_AllocFrameResources(FRAMERES_HOST_BUFFER_BIT);
+  }
 
-	frame = &frameres[frameres_idx];
-	if (frame->host_ptr)
-		memcpy (frame->host_ptr + frameres_host_offset, data, numbytes);
-	else
-	{
-		GL_BindBuffer (target, frame->host_buffer);
-		GL_BufferSubDataFunc (target, frameres_host_offset, numbytes, data);
-	}
+  frame = &frameres[frameres_idx];
+  if (frame->host_ptr)
+    memcpy(frame->host_ptr + frameres_host_offset, data, numbytes);
+  else {
+    GL_BindBuffer(target, frame->host_buffer);
+    GL_BufferSubDataFunc(target, frameres_host_offset, numbytes, data);
+  }
 
-	*outbuf = frame->host_buffer;
-	*outofs = (GLbyte*) frameres_host_offset;
+  *outbuf = frame->host_buffer;
+  *outofs = (GLbyte*)frameres_host_offset;
 
-	frameres_host_offset += numbytes;
+  frameres_host_offset += numbytes;
 }
 
 /*
@@ -933,25 +999,29 @@ void GL_Upload (GLenum target, const void *data, size_t numbytes, GLuint *outbuf
 GL_ReserveDeviceMemory
 ====================
 */
-void GL_ReserveDeviceMemory (GLenum target, size_t numbytes, GLuint *outbuf, size_t *outofs)
+void
+GL_ReserveDeviceMemory(GLenum target,
+                       size_t numbytes,
+                       GLuint* outbuf,
+                       size_t* outofs)
 {
-	size_t align;
-	frameres_t *frame;
+  size_t align;
+  frameres_t* frame;
 
-	align = (target == GL_UNIFORM_BUFFER) ? ubo_align : ssbo_align;
-	frameres_device_offset = (frameres_device_offset + align) & ~align;
+  align = (target == GL_UNIFORM_BUFFER) ? ubo_align : ssbo_align;
+  frameres_device_offset = (frameres_device_offset + align) & ~align;
 
-	if (frameres_device_offset + numbytes > frameres_device_buffer_size)
-	{
-		frameres_device_buffer_size = frameres_device_offset + ((numbytes + align) & ~align);
-		frameres_device_buffer_size += frameres_device_buffer_size >> 1;
-		GL_AllocFrameResources (FRAMERES_DEVICE_BUFFER_BIT);
-	}
+  if (frameres_device_offset + numbytes > frameres_device_buffer_size) {
+    frameres_device_buffer_size =
+      frameres_device_offset + ((numbytes + align) & ~align);
+    frameres_device_buffer_size += frameres_device_buffer_size >> 1;
+    GL_AllocFrameResources(FRAMERES_DEVICE_BUFFER_BIT);
+  }
 
-	frame = &frameres[frameres_idx];
+  frame = &frameres[frameres_idx];
 
-	*outbuf = frame->device_buffer;
-	*outofs = frameres_device_offset;
+  *outbuf = frame->device_buffer;
+  *outofs = frameres_device_offset;
 
-	frameres_device_offset += numbytes;
+  frameres_device_offset += numbytes;
 }
