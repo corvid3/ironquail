@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "vid.h"
 #include "view.h"
 #include "wad.h"
+#include "zone.h"
 #include <SDL2/SDL.h>
 
 /*
@@ -113,6 +114,9 @@ cvar_t scr_pixelaspect = {
   "scr_pixelaspect", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
 };
 cvar_t scr_showfps = { "scr_showfps", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_showzonemem = {
+  "scr_showzonemem", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 cvar_t scr_showspeed = { "scr_showspeed", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 cvar_t scr_clock = { "scr_clock", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 // johnfitz
@@ -608,6 +612,7 @@ SCR_Init(void)
   Cvar_RegisterVariable(&scr_conscale);
   Cvar_RegisterVariable(&scr_crosshairscale);
   Cvar_RegisterVariable(&scr_showfps);
+  Cvar_RegisterVariable(&scr_showzonemem);
   Cvar_RegisterVariable(&scr_showspeed);
   Cvar_RegisterVariable(&scr_clock);
   Cvar_RegisterVariable(&cl_screenshotname);
@@ -713,6 +718,22 @@ SCR_DrawFPS(void)
     Draw_String(x, y, st);
     scr_tileclear_updates = 0;
   }
+}
+
+void
+SCR_DrawZoneUsage(void)
+{
+  if (!scr_showzonemem.value)
+    return;
+
+  unsigned max_b = Z_GetMaxMemSize();
+  unsigned used_b = Z_GetUsage();
+
+  char st[64];
+  sprintf(st, "MAX: %ikb", max_b / 1024);
+  Draw_String(24, 24, st);
+  sprintf(st, "USED: %ikb", used_b / 1024);
+  Draw_String(24, 32, st);
 }
 
 /*
@@ -2064,6 +2085,7 @@ SCR_UpdateScreen(void)
     SCR_DrawConsole();
     M_Draw();
     SCR_DrawFPS(); // johnfitz
+    SCR_DrawZoneUsage();
     SCR_DrawSaving();
   }
 

@@ -84,6 +84,8 @@ extern "C"
   void* Z_Malloc(int size); // returns 0 filled memory
   void* Z_Realloc(void* ptr, int size);
   char* Z_Strdup(const char* s);
+  unsigned Z_GetUsage();
+  unsigned Z_GetMaxMemSize();
 #ifdef __cplusplus
 }
 #endif

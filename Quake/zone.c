@@ -27,7 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_texmgr.h"
 #include "q_stdinc.h"
 #include "sys.h"
+#include "zone.h"
 #include <SDL2/SDL.h>
+
 #define DYNAMIC_SIZE                                                           \
   (4 * 1024 * 1024) // ericw -- was 512KB (64-bit) / 384KB (32-bit)
 
@@ -49,8 +51,32 @@ The rover can be left pointing at a non-empty block
 
 The zone calls are pretty much only used for small strings and structures,
 all big things are allocated on the hunk.
+
+replaced with stdlib mem calls -crow
 ==============================================================================
 */
+
+typedef struct
+{
+  unsigned size;
+  char data[];
+} Z_alloc_t;
+
+// 4 megs max mem size
+unsigned Z_max_mem_size = 1024 * 1024 * 4;
+int Z_zone_usage = 0;
+
+unsigned
+Z_GetMaxMemSize()
+{
+  return Z_max_mem_size;
+}
+
+unsigned
+Z_GetUsage()
+{
+  return Z_zone_usage;
+}
 
 /*
 ========================
@@ -60,28 +86,14 @@ Z_Free
 void
 Z_Free(void* ptr)
 {
-  if (!ptr)
+  Z_alloc_t* alloc = ptr - sizeof(Z_alloc_t);
+
+  if (ptr == NULL)
     Sys_Error("Z_Free: NULL pointer");
-  free(ptr);
-}
 
-__attribute__((unused)) static void*
-Z_TagMalloc(int size, int tag)
-{
-  if (!tag)
-    Sys_Error("Z_TagMalloc: tried to use a 0 tag");
+  Z_zone_usage -= alloc->size;
 
-  return malloc(size);
-}
-
-/*
-========================
-Z_CheckHeap
-========================
-*/
-__attribute__((unused)) static void
-Z_CheckHeap(void)
-{
+  free(alloc);
 }
 
 /*
@@ -92,14 +104,17 @@ Z_Malloc
 void*
 Z_Malloc(int size)
 {
-  void* buf;
+  Z_alloc_t* buf = malloc(sizeof(Z_alloc_t) + size);
 
-  buf = malloc(size);
   if (!buf)
     Sys_Error("Z_Malloc: failed on allocation of %i bytes", size);
-  __builtin_memset(buf, 0, size);
 
-  return buf;
+  __builtin_memset(buf, 0, sizeof(Z_alloc_t) + size);
+  buf->size = size;
+
+  Z_zone_usage += size;
+
+  return &buf->data;
 }
 
 /*
@@ -110,15 +125,18 @@ Z_Realloc
 void*
 Z_Realloc(void* ptr, int size)
 {
-  // if (ptr == NULL)
-  //   Sys_Error("Z_Realloc: attempting to reallocate a nullptr");
+  Z_alloc_t* buf = (ptr == NULL ? NULL : ptr - sizeof(Z_alloc_t));
+  if (buf != NULL)
+    Z_zone_usage -= buf->size;
+  buf = realloc(buf, sizeof(Z_alloc_t) + size);
 
-  ptr = realloc(ptr, size);
-
-  if (!ptr)
+  if (buf == NULL)
     Sys_Error("Z_Realloc: failed on allocation of %i bytes", size);
 
-  return ptr;
+  buf->size = size;
+  Z_zone_usage += size;
+
+  return &buf->data;
 }
 
 char*
@@ -905,7 +923,6 @@ void
 Memory_Init(void* buf, int size)
 {
   int p;
-  int zonesize = DYNAMIC_SIZE;
 
   hunk_segments[0] = (hunkseg_t*)buf;
   hunk_segments[0]->base = 0;
@@ -914,15 +931,15 @@ Memory_Init(void* buf, int size)
   hunk_low_used = 0;
 
   Cache_Init();
-  p = COM_CheckParm("-zone");
+  p = COM_CheckParm("-memsize");
+
   if (p) {
     if (p < com_argc - 1)
-      zonesize = Q_atoi(com_argv[p + 1]) * 1024;
+      Z_max_mem_size = Q_atoi(com_argv[p + 1]) * 1024;
     else
       Sys_Error("Memory_Init: you must specify a size in KB after -zone");
   }
 
-  IGNORE_RETURN zonesize;
   // mainzone = (memzone_t*)Hunk_AllocName(zonesize, "zone");
   // Memory_InitZone(mainzone, zonesize);
 
