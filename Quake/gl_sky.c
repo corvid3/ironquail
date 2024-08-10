@@ -28,17 +28,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "client.h"
 #include "cmd.h"
 #include "console.h"
-#include "draw.h"
 #include "glquake.h"
 #include "image.h"
-#include "keys.h"
 #include "mathlib.h"
 #include "q_stdinc.h"
 #include "quakedef.h"
-#include "sbar.h"
-#include "screen.h"
-#include "server.h"
-#include "wad.h"
 #include <SDL2/SDL.h>
 
 extern int rs_skypolys;  // for r_speeds readout
@@ -49,10 +43,10 @@ static skybox_t* skybox_list;
 skybox_t* skybox;
 
 extern cvar_t gl_farclip;
-cvar_t r_fastsky = { "r_fastsky", "0", CVAR_NONE };
-cvar_t r_skyalpha = { "r_skyalpha", "1", CVAR_NONE };
-cvar_t r_skyfog = { "r_skyfog", "0.5", CVAR_NONE };
-cvar_t r_skywind = { "r_skywind", "1", CVAR_ARCHIVE };
+cvar_t r_fastsky = { "r_fastsky", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t r_skyalpha = { "r_skyalpha", "1", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t r_skyfog = { "r_skyfog", "0.5", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t r_skywind = { "r_skywind", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
 static const int skytexorder[6] = { 0, 2, 1, 3, 4, 5 }; // for skybox
 

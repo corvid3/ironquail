@@ -363,25 +363,29 @@ Sys_GetSteamQuakeUserDir(char* path, size_t pathsize, const char* library)
 }
 
 qboolean
-Sys_GetGOGQuakeDir(char* path, size_t pathsize)
+Sys_GetGOGQuakeDir(__attribute__((unused)) char* path,
+                   __attribute__((unused)) size_t pathsize)
 {
   return false;
 }
 
 qboolean
-Sys_GetGOGQuakeEnhancedDir(char* path, size_t pathsize)
+Sys_GetGOGQuakeEnhancedDir(__attribute__((unused)) char* path,
+                           __attribute__((unused)) size_t pathsize)
 {
   return false;
 }
 
 qboolean
-Sys_GetGOGQuakeEnhancedUserDir(char* path, size_t pathsize)
+Sys_GetGOGQuakeEnhancedUserDir(__attribute__((unused)) char* path,
+                               __attribute__((unused)) size_t pathsize)
 {
   return false;
 }
 
 qboolean
-Sys_GetEGSManifestDir(char* path, size_t pathsize)
+Sys_GetEGSManifestDir(__attribute__((unused)) char* path,
+                      __attribute__((unused)) size_t pathsize)
 {
   return false;
 }
@@ -597,7 +601,7 @@ Sys_GetBasedir(char* argv0, char* dst, size_t dstsize)
 }
 #else
 static void
-Sys_GetBasedir(char* argv0, char* dst, size_t dstsize)
+Sys_GetBasedir(__attribute__((unused)) char* argv0, char* dst, size_t dstsize)
 {
   char* tmp;
 
@@ -637,7 +641,7 @@ Sys_GetExeDir(void)
 {
   char* argv0 = host_parms->argv[0];
   char* slash = argv0 ? strrchr(argv0, '/') : NULL;
-  if (!slash || slash - argv0 >= countof(exedir))
+  if (!slash || slash - argv0 >= (int)countof(exedir))
     return NULL;
 
   memcpy(exedir, argv0, slash - argv0);
@@ -687,7 +691,7 @@ Sys_FindFirst(const char* dir, const char* ext)
   else if (*ext == '.')
     ++ext;
 
-  if (Q_strlen(ext) >= countof(ret->filter))
+  if (Q_strlen(ext) >= (int)countof(ret->filter))
     Sys_Error("Sys_FindFirst: extension too long '%s'", ext);
 
   handle = opendir(dir);
@@ -909,6 +913,6 @@ Sys_SendKeyEvents(void)
 }
 
 void
-Sys_ActivateKeyFilter(qboolean active)
+Sys_ActivateKeyFilter(__attribute__((unused)) qboolean active)
 {
 }

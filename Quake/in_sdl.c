@@ -24,31 +24,20 @@ https://github.com/yquake2/yquake2/blob/master/src/client/input/sdl.c
 
 */
 
-#include "cdaudio.h"
 #include "client.h"
 #include "cmd.h"
 #include "common.h"
 #include "console.h"
-#include "crc.h"
 #include "cvar.h"
-#include "draw.h"
-#include "gl_texmgr.h"
 #include "glquake.h"
-#include "image.h"
 #include "input.h"
 #include "keys.h"
 #include "mathlib.h"
 #include "menu.h"
-#include "platform.h"
 #include "q_stdinc.h"
 #include "quakedef.h"
-#include "sbar.h"
-#include "screen.h"
-#include "server.h"
 #include "sys.h"
 #include "vid.h"
-#include "view.h"
-#include "wad.h"
 #include <SDL2/SDL.h>
 
 #include "quakedef.h"
@@ -65,7 +54,7 @@ static qboolean windowhasfocus = true; // just in case sdl fails to tell us...
 static textmode_t textmode = TEXTMODE_OFF;
 static keydevice_t lastactivetype = KD_NONE;
 
-static cvar_t in_debugkeys = { "in_debugkeys", "0", CVAR_NONE };
+static cvar_t in_debugkeys = { "in_debugkeys", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
 
 #ifdef __APPLE__
 /* Mouse acceleration needs to be disabled on OS X */
@@ -80,43 +69,79 @@ static cvar_t in_debugkeys = { "in_debugkeys", "0", CVAR_NONE };
 #endif
 
 // SDL2 Game Controller cvars
-cvar_t joy_deadzone_look = { "joy_deadzone_look", "0.175", CVAR_ARCHIVE };
-cvar_t joy_deadzone_move = { "joy_deadzone_move", "0.175", CVAR_ARCHIVE };
-cvar_t joy_outer_threshold_look = { "joy_outer_threshold_look",
-                                    "0.02",
-                                    CVAR_ARCHIVE };
-cvar_t joy_outer_threshold_move = { "joy_outer_threshold_move",
-                                    "0.02",
-                                    CVAR_ARCHIVE };
-cvar_t joy_deadzone_trigger = { "joy_deadzone_trigger", "0.2", CVAR_ARCHIVE };
-cvar_t joy_sensitivity_yaw = { "joy_sensitivity_yaw", "240", CVAR_ARCHIVE };
-cvar_t joy_sensitivity_pitch = { "joy_sensitivity_pitch", "130", CVAR_ARCHIVE };
-cvar_t joy_invert = { "joy_invert", "0", CVAR_ARCHIVE };
-cvar_t joy_exponent = { "joy_exponent", "2", CVAR_ARCHIVE };
-cvar_t joy_exponent_move = { "joy_exponent_move", "2", CVAR_ARCHIVE };
-cvar_t joy_swapmovelook = { "joy_swapmovelook", "0", CVAR_ARCHIVE };
-cvar_t joy_flick = { "joy_flick", "0", CVAR_ARCHIVE };
-cvar_t joy_flick_time = { "joy_flick_time", "0.125", CVAR_ARCHIVE };
-cvar_t joy_flick_recenter = { "joy_flick_recenter", "0.0", CVAR_ARCHIVE };
-cvar_t joy_flick_deadzone = { "joy_flick_deadzone", "0.9", CVAR_ARCHIVE };
-cvar_t joy_flick_noise_thresh = { "joy_flick_noise_thresh",
-                                  "2.0",
-                                  CVAR_ARCHIVE };
-cvar_t joy_rumble = { "joy_rumble", "0.3", CVAR_ARCHIVE };
-cvar_t joy_device = { "joy_device", "0", CVAR_ARCHIVE };
+cvar_t joy_deadzone_look = {
+  "joy_deadzone_look", "0.175", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_deadzone_move = {
+  "joy_deadzone_move", "0.175", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_outer_threshold_look = {
+  "joy_outer_threshold_look", "0.02", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_outer_threshold_move = {
+  "joy_outer_threshold_move", "0.02", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_deadzone_trigger = {
+  "joy_deadzone_trigger", "0.2", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_sensitivity_yaw = {
+  "joy_sensitivity_yaw", "240", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_sensitivity_pitch = {
+  "joy_sensitivity_pitch", "130", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_invert = { "joy_invert", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t joy_exponent = { "joy_exponent", "2", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t joy_exponent_move = {
+  "joy_exponent_move", "2", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_swapmovelook = {
+  "joy_swapmovelook", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_flick = { "joy_flick", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t joy_flick_time = {
+  "joy_flick_time", "0.125", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_flick_recenter = {
+  "joy_flick_recenter", "0.0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_flick_deadzone = {
+  "joy_flick_deadzone", "0.9", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_flick_noise_thresh = {
+  "joy_flick_noise_thresh", "2.0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t joy_rumble = { "joy_rumble", "0.3", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t joy_device = { "joy_device", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
-cvar_t gyro_enable = { "gyro_enable", "1", CVAR_ARCHIVE };
-cvar_t gyro_mode = { "gyro_mode", "0", CVAR_ARCHIVE }; // see gyromode_t
-cvar_t gyro_turning_axis = { "gyro_turning_axis", "0", CVAR_ARCHIVE };
+cvar_t gyro_enable = { "gyro_enable", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t gyro_mode = {
+  "gyro_mode", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // see gyromode_t
+cvar_t gyro_turning_axis = {
+  "gyro_turning_axis", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 
-cvar_t gyro_yawsensitivity = { "gyro_yawsensitivity", "2.5", CVAR_ARCHIVE };
-cvar_t gyro_pitchsensitivity = { "gyro_pitchsensitivity", "2.5", CVAR_ARCHIVE };
+cvar_t gyro_yawsensitivity = {
+  "gyro_yawsensitivity", "2.5", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t gyro_pitchsensitivity = {
+  "gyro_pitchsensitivity", "2.5", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 
-cvar_t gyro_calibration_x = { "gyro_calibration_x", "0", CVAR_ARCHIVE };
-cvar_t gyro_calibration_y = { "gyro_calibration_y", "0", CVAR_ARCHIVE };
-cvar_t gyro_calibration_z = { "gyro_calibration_z", "0", CVAR_ARCHIVE };
+cvar_t gyro_calibration_x = {
+  "gyro_calibration_x", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t gyro_calibration_y = {
+  "gyro_calibration_y", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t gyro_calibration_z = {
+  "gyro_calibration_z", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 
-cvar_t gyro_noise_thresh = { "gyro_noise_thresh", "1.5", CVAR_ARCHIVE };
+cvar_t gyro_noise_thresh = {
+  "gyro_noise_thresh", "1.5", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 
 static SDL_JoystickID joy_active_instanceid = -1;
 static int joy_active_device = -1;
@@ -181,7 +206,8 @@ IN_FilterMouseEvents(const SDL_Event* event)
 }
 
 static int SDLCALL
-IN_SDL2_FilterMouseEvents(void* userdata, SDL_Event* event)
+IN_SDL2_FilterMouseEvents(__attribute__((unused)) void* userdata,
+                          SDL_Event* event)
 {
   return IN_FilterMouseEvents(event);
 }
@@ -624,7 +650,8 @@ Tab completion for the joy_device cvar
 ================
 */
 static void
-Joy_Device_Completion_f(cvar_t* cvar, const char* partial)
+Joy_Device_Completion_f(__attribute__((unused)) cvar_t* cvar,
+                        const char* partial)
 {
   int i, count;
 
@@ -641,7 +668,7 @@ Called when joy_flick changes
 ================
 */
 static void
-Joy_Flick_f(cvar_t* cvar)
+Joy_Flick_f(__attribute__((unused)) cvar_t* cvar)
 {
   IN_ResetFlickState();
 }
@@ -1217,7 +1244,7 @@ IN_RecenterEasing(float frac)
 }
 
 void
-IN_GyroMove(usercmd_t* cmd)
+IN_GyroMove(__attribute__((unused)) usercmd_t* cmd)
 {
   float scale, duration, lerp_frac;
   if (!gyro_enable.value)

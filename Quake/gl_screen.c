@@ -98,42 +98,63 @@ float scr_con_current;
 float scr_conlines; // lines of console to display
 
 // johnfitz -- new cvars
-cvar_t scr_menuscale = { "scr_menuscale", "1", CVAR_ARCHIVE };
-cvar_t scr_menubgalpha = { "scr_menubgalpha", "0.7", CVAR_ARCHIVE };
-cvar_t scr_sbarscale = { "scr_sbarscale", "1", CVAR_ARCHIVE };
-cvar_t scr_sbaralpha = { "scr_sbaralpha", "0.75", CVAR_ARCHIVE };
-cvar_t scr_conwidth = { "scr_conwidth", "0", CVAR_ARCHIVE };
-cvar_t scr_conscale = { "scr_conscale", "1", CVAR_ARCHIVE };
-cvar_t scr_crosshairscale = { "scr_crosshairscale", "1", CVAR_ARCHIVE };
-cvar_t scr_pixelaspect = { "scr_pixelaspect", "1", CVAR_ARCHIVE };
-cvar_t scr_showfps = { "scr_showfps", "0", CVAR_ARCHIVE };
-cvar_t scr_showspeed = { "scr_showspeed", "0", CVAR_ARCHIVE };
-cvar_t scr_clock = { "scr_clock", "0", CVAR_ARCHIVE };
+cvar_t scr_menuscale = { "scr_menuscale", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_menubgalpha = {
+  "scr_menubgalpha", "0.7", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t scr_sbarscale = { "scr_sbarscale", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_sbaralpha = { "scr_sbaralpha", "0.75", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_conwidth = { "scr_conwidth", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_conscale = { "scr_conscale", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_crosshairscale = {
+  "scr_crosshairscale", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t scr_pixelaspect = {
+  "scr_pixelaspect", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t scr_showfps = { "scr_showfps", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_showspeed = { "scr_showspeed", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_clock = { "scr_clock", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 // johnfitz
-cvar_t scr_usekfont = { "scr_usekfont", "0", CVAR_NONE }; // 2021 re-release
+cvar_t scr_usekfont = {
+  "scr_usekfont", "0", CVAR_NONE, 0, 0, 0, 0, 0
+}; // 2021 re-release
 
-cvar_t scr_hudstyle = { "hudstyle", "2", CVAR_ARCHIVE };
+cvar_t scr_hudstyle = { "hudstyle", "2", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 cvar_t cl_screenshotname = { "cl_screenshotname",
                              "screenshots/%map%_%date%_%time%",
-                             CVAR_ARCHIVE };
-cvar_t scr_demobar_timeout = { "scr_demobar_timeout", "1", CVAR_ARCHIVE };
+                             CVAR_ARCHIVE,
+                             0,
+                             0,
+                             0,
+                             0,
+                             0 };
+cvar_t scr_demobar_timeout = {
+  "scr_demobar_timeout", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 
-cvar_t scr_viewsize = { "viewsize", "100", CVAR_ARCHIVE };
-cvar_t scr_fov = { "fov", "90", CVAR_ARCHIVE }; // 10 - 170
-cvar_t scr_fov_adapt = { "fov_adapt", "1", CVAR_ARCHIVE };
-cvar_t scr_zoomfov = { "zoom_fov", "30", CVAR_ARCHIVE }; // 10 - 170
-cvar_t scr_zoomspeed = { "zoom_speed", "8", CVAR_ARCHIVE };
-cvar_t scr_conspeed = { "scr_conspeed", "2000", CVAR_ARCHIVE };
-cvar_t scr_centertime = { "scr_centertime", "2", CVAR_NONE };
-cvar_t scr_showturtle = { "showturtle", "0", CVAR_NONE };
-cvar_t scr_showpause = { "showpause", "1", CVAR_NONE };
-cvar_t scr_printspeed = { "scr_printspeed", "8", CVAR_NONE };
-cvar_t gl_triplebuffer = { "gl_triplebuffer", "1", CVAR_ARCHIVE };
+cvar_t scr_viewsize = { "viewsize", "100", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_fov = { "fov", "90", CVAR_ARCHIVE, 0, 0, 0, 0, 0 }; // 10 - 170
+cvar_t scr_fov_adapt = { "fov_adapt", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_zoomfov = {
+  "zoom_fov", "30", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // 10 - 170
+cvar_t scr_zoomspeed = { "zoom_speed", "8", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_conspeed = { "scr_conspeed", "2000", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t scr_centertime = { "scr_centertime", "2", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t scr_showturtle = { "showturtle", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t scr_showpause = { "showpause", "1", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t scr_printspeed = { "scr_printspeed", "8", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t gl_triplebuffer = {
+  "gl_triplebuffer", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 
-cvar_t cl_gun_fovscale = { "cl_gun_fovscale", "1", CVAR_ARCHIVE }; // Qrack
-cvar_t cl_gun_x = { "cl_gun_x", "0", CVAR_ARCHIVE };
-cvar_t cl_gun_y = { "cl_gun_y", "0", CVAR_ARCHIVE };
-cvar_t cl_gun_z = { "cl_gun_z", "0", CVAR_ARCHIVE };
+cvar_t cl_gun_fovscale = {
+  "cl_gun_fovscale", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // Qrack
+cvar_t cl_gun_x = { "cl_gun_x", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t cl_gun_y = { "cl_gun_y", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t cl_gun_z = { "cl_gun_z", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
 extern char crosshair_char;
 extern cvar_t crosshair;
@@ -491,7 +512,7 @@ SCR_SizeDown_f(void)
 }
 
 static void
-SCR_Callback_refdef(cvar_t* var)
+SCR_Callback_refdef(__attribute__((unused)) cvar_t* var)
 {
   vid.recalc_refdef = 1;
 }
@@ -502,7 +523,7 @@ SCR_Conwidth_f -- johnfitz -- called when scr_conwidth or scr_conscale changes
 ==================
 */
 void
-SCR_Conwidth_f(cvar_t* var)
+SCR_Conwidth_f(__attribute__((unused)) cvar_t* var)
 {
   vid.recalc_refdef = 1;
   VID_RecalcConsoleSize();
@@ -532,7 +553,7 @@ SCR_PixelAspect_f
 ==================
 */
 void
-SCR_PixelAspect_f(cvar_t* cvar)
+SCR_PixelAspect_f(__attribute__((unused)) cvar_t* cvar)
 {
   vid.recalc_refdef = 1;
   VID_RecalcInterfaceSize();

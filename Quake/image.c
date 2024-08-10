@@ -217,7 +217,7 @@ Image_WriteTGA(const char* name,
   }
 
   ret = fwrite(header, TARGAHEADERSIZE, 1, file) == 1 &&
-        fwrite(data, 1, size, file) == size;
+        fwrite(data, 1, size, file) == (unsigned long)size;
 
   fclose(file);
 
@@ -353,19 +353,20 @@ Image_LoadLMP(FILE* f, int* width, int* height)
   size_t pix;
   void* data;
 
-  fread(&qpic, sizeof(qpic), 1, f);
+  (void)!fread(&qpic, sizeof(qpic), 1, f);
+
   qpic.width = LittleLong(qpic.width);
   qpic.height = LittleLong(qpic.height);
 
   pix = qpic.width * qpic.height;
 
-  if (com_filesize != 8 + pix) {
+  if ((size_t)com_filesize != 8 + pix) {
     fclose(f);
     return NULL;
   }
 
   data = (byte*)Hunk_Alloc(pix); //+1 to allow reading padding byte on last line
-  fread(data, 1, pix, f);
+  (void)!fread(data, 1, pix, f);
   fclose(f);
 
   *width = qpic.width;

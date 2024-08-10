@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <SDL2/SDL.h>
 extern edict_t** bbox_linked;
 
-extern const int type_size[NUM_TYPE_SIZES] = {
+const int type_size[NUM_TYPE_SIZES] = {
   1, // ev_void
   1, // sizeof(string_t) / 4		// ev_string
   1, // ev_float
@@ -52,17 +52,17 @@ ED_FieldAtOfs(int ofs);
 static qboolean
 ED_ParseEpair(void* base, ddef_t* key, const char* s, qboolean zoned);
 
-cvar_t nomonsters = { "nomonsters", "0", CVAR_NONE };
-cvar_t gamecfg = { "gamecfg", "0", CVAR_NONE };
-cvar_t scratch1 = { "scratch1", "0", CVAR_NONE };
-cvar_t scratch2 = { "scratch2", "0", CVAR_NONE };
-cvar_t scratch3 = { "scratch3", "0", CVAR_NONE };
-cvar_t scratch4 = { "scratch4", "0", CVAR_NONE };
-cvar_t savedgamecfg = { "savedgamecfg", "0", CVAR_ARCHIVE };
-cvar_t saved1 = { "saved1", "0", CVAR_ARCHIVE };
-cvar_t saved2 = { "saved2", "0", CVAR_ARCHIVE };
-cvar_t saved3 = { "saved3", "0", CVAR_ARCHIVE };
-cvar_t saved4 = { "saved4", "0", CVAR_ARCHIVE };
+cvar_t nomonsters = { "nomonsters", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t gamecfg = { "gamecfg", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t scratch1 = { "scratch1", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t scratch2 = { "scratch2", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t scratch3 = { "scratch3", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t scratch4 = { "scratch4", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t savedgamecfg = { "savedgamecfg", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t saved1 = { "saved1", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t saved2 = { "saved2", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t saved3 = { "saved3", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t saved4 = { "saved4", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
 /*
 =================
@@ -98,7 +98,7 @@ PR_HashGet(prhashtable_t* table, const char* key)
       return table->indices[pos];
 
     ++pos;
-    if (pos == table->capacity)
+    if ((int)pos == table->capacity)
       pos = 0;
   } while (pos != end);
 
@@ -124,7 +124,7 @@ PR_HashAdd(prhashtable_t* table, int skey, int value)
     }
 
     ++pos;
-    if (pos == table->capacity)
+    if ((int)pos == table->capacity)
       pos = 0;
   } while (pos != end);
 
@@ -1267,8 +1267,8 @@ ED_RezoneString(string_t* ref, const char* str)
     }
     //		else
     //			Con_Warning("ED_RezoneString: string wasn't
-    //strzoned\n");	//warnings would trigger from the default cvar value
-    //that autocvars are initialised with
+    // strzoned\n");	//warnings would trigger from the default cvar value
+    // that autocvars are initialised with
   }
 
   buf = Z_Malloc(len);
@@ -1785,32 +1785,39 @@ PR_MergeEngineFieldDefs(void)
     // which are not defined by the mod. future note: mutators will need to edit
     // the mutator's globaldefs table too. remember to handle vectors and their
     // 3 globals too.
-    { "alpha", ev_float }, // just because we can (though its already handled in
-                           // a weird hacky way)
-    { "scale", ev_float }, // hurrah for being able to rescale entities.
+    { "alpha", ev_float, 0 }, // just because we can (though its already handled
+                              // in a weird hacky way)
+    { "scale", ev_float, 0 }, // hurrah for being able to rescale entities.
     { "emiteffectnum",
-      ev_float }, // constantly emitting particles, even without moving.
-    { "traileffectnum", ev_float }, // custom effect for trails
-                                    //{"glow_size",		ev_float},
-                                    ////deprecated particle trail rubbish
-                                    //{"glow_color",	ev_float},
-                                    ////deprecated particle trail rubbish
+      ev_float,
+      0 }, // constantly emitting particles, even without moving.
+    { "traileffectnum", ev_float, 0 }, // custom effect for trails
+                                       //{"glow_size",		ev_float},
+                                       ////deprecated particle trail rubbish
+                                       //{"glow_color",	ev_float},
+                                       ////deprecated particle trail rubbish
     { "tag_entity",
-      ev_float },              // for setattachment to not bug out when omitted.
-    { "tag_index", ev_float }, // for setattachment to not bug out when omitted.
+      ev_float,
+      0 }, // for setattachment to not bug out when omitted.
+    { "tag_index",
+      ev_float,
+      0 }, // for setattachment to not bug out when omitted.
     { "modelflags",
-      ev_float }, // deprecated rubbish to fill the high 8 bits of effects.
-                  //{"vw_index",		ev_float},	//modelindex2
-                  //{"pflags",		ev_float},	//for rtlights
-                  //{"drawflags",		ev_float},	//hexen2 compat
-                  //{"abslight",		ev_float},	//hexen2 compat
-    { "colormod", ev_vector }, // lighting tints
-                               //{"glowmod",		ev_vector},
-                               ////fullbright tints
-                               //{"fatness",		ev_float},
-                               ////bloated rendering...
-                               //{"gravitydir",	ev_vector},	//says which
-                               //direction gravity should act for this ent...
+      ev_float,
+      0 }, // deprecated rubbish to fill the high 8 bits of effects.
+           //{"vw_index",		ev_float},	//modelindex2
+           //{"pflags",		ev_float},	//for rtlights
+           //{"drawflags",		ev_float},	//hexen2 compat
+           //{"abslight",		ev_float},	//hexen2 compat
+    { "colormod",
+      ev_vector,
+      0 }, // lighting tints
+           //{"glowmod",		ev_vector},
+           ////fullbright tints
+           //{"fatness",		ev_float},
+           ////bloated rendering...
+           //{"gravitydir",	ev_vector},	//says which
+           // direction gravity should act for this ent...
 
   };
   int maxofs = qcvm->progs->entityfields;

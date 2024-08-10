@@ -50,7 +50,7 @@ extern cvar_t pausable;
 extern cvar_t nomonsters;
 
 // 0 = no, 1 = ask, 2 = when dead, 3 = always
-cvar_t sv_autoload = { "sv_autoload", "2", CVAR_ARCHIVE };
+cvar_t sv_autoload = { "sv_autoload", "2", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
 int current_skill;
 
@@ -203,7 +203,7 @@ FileList_Print(filelist_item_t* list, const char* types[2], const char* substr)
   filelist_item_t* item;
   const char* desc;
   char buf[256], buf2[256];
-  char padchar = '.' | 0x80;
+  char padchar = '.' | (char)0x80;
   size_t ofsdesc = list == extralevels ? maxlevelnamelen + 2 : 0;
 
   if (substr && *substr) {
@@ -422,7 +422,7 @@ ExtraMaps_ParseDescriptions
 ==================
 */
 static int
-ExtraMaps_ParseDescriptions(void* unused)
+ExtraMaps_ParseDescriptions(__attribute__((unused)) void* unused)
 {
   char buf[1024];
   int i;
@@ -759,7 +759,10 @@ Modlist_GetDownloadSize(const filelist_item_t* item)
 }
 
 static size_t
-WriteManifestChunk(void* buffer, size_t size, size_t nmemb, void* stream)
+WriteManifestChunk(void* buffer,
+                   __attribute__((unused)) size_t size,
+                   size_t nmemb,
+                   void* stream)
 {
   if (SDL_AtomicGet(&extramods_json_cancel))
     return 0;
@@ -786,7 +789,7 @@ Modlist_RegisterAddons(void* param)
 
   for (entry = addons->firstchild; entry; entry = entry->next) {
     const char *download, *gamedir, *name, *author, *date, *description,
-      *version;
+      __attribute__((unused)) * version;
     const double* size;
     modinfo_t* info;
     filelist_item_t* item;
@@ -859,7 +862,7 @@ Modlist_GetInstallDir(void)
 }
 
 static int
-Modlist_DownloadJSON(void* unused)
+Modlist_DownloadJSON(__attribute__((unused)) void* unused)
 {
   const char* accept = "Accept: application/json";
   const char* basedir;
@@ -1001,7 +1004,7 @@ Modlist_FinishInstalling(void* param)
 }
 
 static void
-Modlist_OnInstallFileCreationError(void* param)
+Modlist_OnInstallFileCreationError(__attribute__((unused)) void* param)
 {
   Modlist_FinishInstalling(NULL);
   Con_Warning("Couldn't create temporary file for add-on\n");
@@ -1023,7 +1026,7 @@ Modlist_OnInstallCurlError(void* param)
 }
 
 static void
-Modlist_OnInstallRenameError(void* param)
+Modlist_OnInstallRenameError(__attribute__((unused)) void* param)
 {
   Modlist_FinishInstalling(NULL);
   Con_Warning("Couldn't install add-on (rename error)\n");
@@ -1159,7 +1162,7 @@ Modlist_Add(const char* name)
 
       if (q_snprintf(
             path, sizeof(path), "%s/%s/descript.ion", com_basedirs[i], name) >=
-          sizeof(path))
+          (int)sizeof(path))
         continue;
 
       buf = (char*)COM_LoadMallocFile_TextMode_OSPath(path, NULL);
@@ -1225,7 +1228,7 @@ Modlist_Add(const char* name)
 
   // look for mod in hard-coded list
   if (!info->full_name) {
-    for (i = 0; i < countof(knownmods); i++) {
+    for (i = 0; i < (int)countof(knownmods); i++) {
       if (!q_strcasecmp(name, knownmods[i][0])) {
         info->full_name = strdup(knownmods[i][1]);
         break;
@@ -1321,7 +1324,7 @@ Modlist_FindOnline(void)
   p = strlen(extramods_addons_url);
   while (p > 0 && extramods_addons_url[p - 1] == '/')
     --p;
-  for (i = 0; i < countof(suffixes); i++) {
+  for (i = 0; i < (int)countof(suffixes); i++) {
     const char* suffix = suffixes[i];
     l = strlen(suffix);
     if (p >= l && !q_strcasecmp(extramods_addons_url + p - l, suffix))

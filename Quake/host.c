@@ -80,54 +80,69 @@ jmp_buf host_abortserver;
 
 byte* host_colormap;
 float host_netinterval;
-cvar_t host_framerate = { "host_framerate",
-                          "0",
-                          CVAR_NONE };                  // set for slow motion
-cvar_t host_speeds = { "host_speeds", "0", CVAR_NONE }; // set for running times
-cvar_t host_maxfps = { "host_maxfps", "250", CVAR_ARCHIVE };  // johnfitz
-cvar_t host_timescale = { "host_timescale", "0", CVAR_NONE }; // johnfitz
+cvar_t host_framerate = {
+  "host_framerate", "0", CVAR_NONE, 0, 0, 0, 0, 0
+}; // set for slow motion
+cvar_t host_speeds = {
+  "host_speeds", "0", CVAR_NONE, 0, 0, 0, 0, 0
+}; // set for running times
+cvar_t host_maxfps = {
+  "host_maxfps", "250", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // johnfitz
+cvar_t host_timescale = {
+  "host_timescale", "0", CVAR_NONE, 0, 0, 0, 0, 0
+}; // johnfitz
 cvar_t max_edicts = {
-  "max_edicts",
-  "16384",
-  CVAR_NONE
+  "max_edicts", "16384", CVAR_NONE, 0, 0, 0, 0, 0
 }; // johnfitz //ericw -- changed from 2048 to 8192, removed CVAR_ARCHIVE
 cvar_t cl_nocsqc = {
-  "cl_nocsqc",
-  "0",
-  CVAR_NONE
+  "cl_nocsqc", "0", CVAR_NONE, 0, 0, 0, 0, 0
 }; // spike -- blocks the loading of any csqc modules
 
-cvar_t sys_ticrate = { "sys_ticrate", "0.05", CVAR_NONE }; // dedicated server
-cvar_t serverprofile = { "serverprofile", "0", CVAR_NONE };
+cvar_t sys_ticrate = {
+  "sys_ticrate", "0.05", CVAR_NONE, 0, 0, 0, 0, 0
+}; // dedicated server
+cvar_t serverprofile = { "serverprofile", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
 
-cvar_t fraglimit = { "fraglimit", "0", CVAR_NOTIFY | CVAR_SERVERINFO };
-cvar_t timelimit = { "timelimit", "0", CVAR_NOTIFY | CVAR_SERVERINFO };
-cvar_t teamplay = { "teamplay", "0", CVAR_NOTIFY | CVAR_SERVERINFO };
-cvar_t samelevel = { "samelevel", "0", CVAR_NONE };
-cvar_t noexit = { "noexit", "0", CVAR_NOTIFY | CVAR_SERVERINFO };
-cvar_t skill = { "skill", "1", CVAR_NONE };           // 0 - 3
-cvar_t deathmatch = { "deathmatch", "0", CVAR_NONE }; // 0, 1, or 2
-cvar_t coop = { "coop", "0", CVAR_NONE };             // 0 or 1
+cvar_t fraglimit = { "fraglimit", "0", CVAR_NOTIFY | CVAR_SERVERINFO, 0, 0, 0,
+                     0,           0 };
+cvar_t timelimit = { "timelimit", "0", CVAR_NOTIFY | CVAR_SERVERINFO, 0, 0, 0,
+                     0,           0 };
+cvar_t teamplay = { "teamplay", "0", CVAR_NOTIFY | CVAR_SERVERINFO, 0, 0, 0,
+                    0,          0 };
+cvar_t samelevel = { "samelevel", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t noexit = { "noexit", "0", CVAR_NOTIFY | CVAR_SERVERINFO, 0, 0, 0, 0, 0 };
+cvar_t skill = { "skill", "1", CVAR_NONE, 0, 0, 0, 0, 0 }; // 0 - 3
+cvar_t deathmatch = {
+  "deathmatch", "0", CVAR_NONE, 0, 0, 0, 0, 0
+};                                                       // 0, 1, or 2
+cvar_t coop = { "coop", "0", CVAR_NONE, 0, 0, 0, 0, 0 }; // 0 or 1
 
-cvar_t pausable = { "pausable", "1", CVAR_NONE };
+cvar_t pausable = { "pausable", "1", CVAR_NONE, 0, 0, 0, 0, 0 };
 
-cvar_t developer = { "developer", "0", CVAR_NONE };
+cvar_t developer = { "developer", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
 
-cvar_t temp1 = { "temp1", "0", CVAR_NONE };
+cvar_t temp1 = { "temp1", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
 
 cvar_t devstats = {
-  "devstats",
-  "0",
-  CVAR_NONE
+  "devstats", "0", CVAR_NONE, 0, 0, 0, 0, 0
 }; // johnfitz -- track developer statistics that vary every frame
-cvar_t cl_titlestats = { "cl_titlestats", "1", CVAR_ARCHIVE };
+cvar_t cl_titlestats = { "cl_titlestats", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
-cvar_t campaign = { "campaign", "0", CVAR_NONE };   // for the 2021 rerelease
-cvar_t horde = { "horde", "0", CVAR_NONE };         // for the 2021 rerelease
-cvar_t sv_cheats = { "sv_cheats", "0", CVAR_NONE }; // for the 2021 rerelease
+cvar_t campaign = {
+  "campaign", "0", CVAR_NONE, 0, 0, 0, 0, 0
+}; // for the 2021 rerelease
+cvar_t horde = {
+  "horde", "0", CVAR_NONE, 0, 0, 0, 0, 0
+}; // for the 2021 rerelease
+cvar_t sv_cheats = {
+  "sv_cheats", "0", CVAR_NONE, 0, 0, 0, 0, 0
+}; // for the 2021 rerelease
 
-cvar_t sv_autosave = { "sv_autosave", "1", CVAR_ARCHIVE };
-cvar_t sv_autosave_interval = { "sv_autosave_interval", "30", CVAR_ARCHIVE };
+cvar_t sv_autosave = { "sv_autosave", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t sv_autosave_interval = {
+  "sv_autosave_interval", "30", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 
 devstats_t dev_stats, dev_peakstats;
 overflowtimes_t
@@ -140,7 +155,7 @@ Max_Edicts_f -- johnfitz
 ================
 */
 static void
-Max_Edicts_f(cvar_t* var)
+Max_Edicts_f(__attribute__((unused)) cvar_t* var)
 {
   // TODO: clamp it here?
   if (cls.state == ca_connected || sv.active)
@@ -648,7 +663,7 @@ Host_ShutdownServer(qboolean crash)
   // clear structures
   //
   //	memset (&sv, 0, sizeof(sv)); // ServerSpawn already do this by
-  //Host_ClearMemory
+  // Host_ClearMemory
   memset(svs.clients, 0, svs.maxclientslimit * sizeof(client_t));
 }
 
@@ -1216,8 +1231,9 @@ void
 _Host_Frame(double time)
 {
   static double accumtime = 0;
-  double time1, time2, time3;
-  qboolean ranserver = false;
+  // marked as static for longjmp -crow
+  static double time1, time2, time3;
+  static qboolean ranserver = false;
 
   time1 = Sys_DoubleTime();
 

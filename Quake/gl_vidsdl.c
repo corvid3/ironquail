@@ -150,28 +150,38 @@ static const glfunc_t gl_arb_clip_control_functions[] = {
 //====================================
 
 // johnfitz -- new cvars
-cvar_t vid_fullscreen = { "vid_fullscreen",
-                          "0",
-                          CVAR_ARCHIVE };                // QuakeSpasm, was "1"
-cvar_t vid_width = { "vid_width", "800", CVAR_ARCHIVE }; // QuakeSpasm, was 640
-cvar_t vid_height = { "vid_height",
-                      "600",
-                      CVAR_ARCHIVE }; // QuakeSpasm, was 480
-cvar_t vid_refreshrate = { "vid_refreshrate", "60", CVAR_ARCHIVE };
-cvar_t vid_vsync = { "vid_vsync", "0", CVAR_ARCHIVE };
-cvar_t vid_fsaa = { "vid_fsaa", "0", CVAR_ARCHIVE }; // QuakeSpasm
-cvar_t vid_fsaamode = { "vid_fsaamode", "0", CVAR_ARCHIVE };
-cvar_t vid_desktopfullscreen = { "vid_desktopfullscreen",
-                                 "0",
-                                 CVAR_ARCHIVE };                 // QuakeSpasm
-cvar_t vid_borderless = { "vid_borderless", "0", CVAR_ARCHIVE }; // QuakeSpasm
+cvar_t vid_fullscreen = {
+  "vid_fullscreen", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // QuakeSpasm, was "1"
+cvar_t vid_width = {
+  "vid_width", "800", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // QuakeSpasm, was 640
+cvar_t vid_height = {
+  "vid_height", "600", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // QuakeSpasm, was 480
+cvar_t vid_refreshrate = {
+  "vid_refreshrate", "60", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t vid_vsync = { "vid_vsync", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t vid_fsaa = {
+  "vid_fsaa", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // QuakeSpasm
+cvar_t vid_fsaamode = { "vid_fsaamode", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t vid_desktopfullscreen = {
+  "vid_desktopfullscreen", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // QuakeSpasm
+cvar_t vid_borderless = {
+  "vid_borderless", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // QuakeSpasm
 // johnfitz
-cvar_t vid_saveresize = { "vid_saveresize", "0", CVAR_ARCHIVE };
+cvar_t vid_saveresize = { "vid_saveresize", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
-cvar_t vid_gamma = { "gamma",
-                     "1",
-                     CVAR_ARCHIVE }; // johnfitz -- moved here from view.c
-cvar_t vid_contrast = { "contrast", "1", CVAR_ARCHIVE }; // QuakeSpasm, MarkV
+cvar_t vid_gamma = {
+  "gamma", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // johnfitz -- moved here from view.c
+cvar_t vid_contrast = {
+  "contrast", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // QuakeSpasm, MarkV
 
 void
 TexMgr_Anisotropy_f(cvar_t* var);
@@ -665,7 +675,7 @@ Called when vid_vsync changes
 =================
 */
 static void
-VID_VSync_f(cvar_t* cvar)
+VID_VSync_f(__attribute__((unused)) cvar_t* cvar)
 {
   VID_ApplyVSync();
 }
@@ -678,7 +688,7 @@ Called when vid_fsaa changes
 =================
 */
 static void
-VID_FSAA_f(cvar_t* cvar)
+VID_FSAA_f(__attribute__((unused)) cvar_t* cvar)
 {
   if (!host_initialized)
     return;
@@ -979,9 +989,9 @@ GL_DebugCallback(GLenum source,
                  GLenum type,
                  GLuint id,
                  GLenum severity,
-                 GLsizei length,
+                 __attribute__((unused)) GLsizei length,
                  const GLchar* message,
-                 const void* userParam)
+                 __attribute__((unused)) const void* userParam)
 {
   const char* str_source = "";
   const char* str_type = "";

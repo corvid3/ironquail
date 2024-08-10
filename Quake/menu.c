@@ -46,10 +46,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <SDL2/SDL.h>
 #include <time.h>
 
-cvar_t ui_mouse = { "ui_mouse", "1", CVAR_ARCHIVE };
-cvar_t ui_mouse_sound = { "ui_mouse_sound", "0", CVAR_ARCHIVE };
-cvar_t ui_sound_throttle = { "ui_sound_throttle", "0.1", CVAR_ARCHIVE };
-cvar_t ui_search_timeout = { "ui_search_timeout", "1", CVAR_ARCHIVE };
+cvar_t ui_mouse = { "ui_mouse", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t ui_mouse_sound = { "ui_mouse_sound", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t ui_sound_throttle = {
+  "ui_sound_throttle", "0.1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t ui_search_timeout = {
+  "ui_search_timeout", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 
 extern cvar_t crosshair;
 extern cvar_t scr_fov;
@@ -416,7 +420,7 @@ M_PrintScroll(int x,
   int maxchars = maxwidth / 8;
   int len = strlen(str);
   int i, ofs;
-  char mask = color ? 128 : 0;
+  char mask = color ? (char)128 : 0;
 
   if (len <= maxchars) {
     if (color)
@@ -1430,7 +1434,7 @@ M_Main_Key(int key)
 }
 
 void
-M_Main_Mousemove(int cx, int cy)
+M_Main_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int prev = m_main_cursor;
   M_UpdateCursor(cy, 32, 20, MAIN_ITEMS - !m_main_mods, &m_main_cursor);
@@ -1539,7 +1543,7 @@ M_SinglePlayer_Key(int key)
 }
 
 void
-M_SinglePlayer_Mousemove(int cx, int cy)
+M_SinglePlayer_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int prev = m_singleplayer_cursor;
   M_UpdateCursor(cy, 32, 20, SINGLEPLAYER_ITEMS, &m_singleplayer_cursor);
@@ -1731,7 +1735,7 @@ M_Save_Key(int k)
 }
 
 void
-M_Load_Mousemove(int cx, int cy)
+M_Load_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int prev = load_cursor;
   M_UpdateCursor(cy, 32, 8, MAX_SAVEGAMES, &load_cursor);
@@ -1740,7 +1744,7 @@ M_Load_Mousemove(int cx, int cy)
 }
 
 void
-M_Save_Mousemove(int cx, int cy)
+M_Save_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int prev = load_cursor;
   M_UpdateCursor(cy, 32, 8, MAX_SAVEGAMES, &load_cursor);
@@ -2129,7 +2133,7 @@ M_Maps_Key(int key)
 }
 
 void
-M_Maps_Mousemove(int cx, int cy)
+M_Maps_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   cy -= mapsmenu.y + MAPLIST_OFS;
 
@@ -2317,7 +2321,7 @@ M_Skill_Key(int key)
 }
 
 void
-M_Skill_Mousemove(int cx, int cy)
+M_Skill_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int ybase = 48;
   int itemheight = m_skill_usegfx ? 20 : 16;
@@ -2411,7 +2415,7 @@ M_MultiPlayer_Key(int key)
 }
 
 void
-M_MultiPlayer_Mousemove(int cx, int cy)
+M_MultiPlayer_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int prev = m_multiplayer_cursor;
   M_UpdateCursor(cy, 32, 20, MULTIPLAYER_ITEMS, &m_multiplayer_cursor);
@@ -2606,7 +2610,7 @@ M_Setup_TextEntry(void)
 }
 
 void
-M_Setup_Mousemove(int cx, int cy)
+M_Setup_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int prev = setup_cursor;
   M_UpdateCursorWithTable(
@@ -2721,7 +2725,7 @@ again:
 }
 
 void
-M_Net_Mousemove(int cx, int cy)
+M_Net_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int prev = m_net_cursor;
   M_UpdateCursor(cy, 32, 20, m_net_items, &m_net_cursor);
@@ -3021,7 +3025,7 @@ VID_Menu_ChooseNextTexFilter(void)
   const char* filter = gl_texturemode.string;
   int i;
 
-  for (i = 0; i < countof(texfilters); i++) {
+  for (i = 0; i < (int)countof(texfilters); i++) {
     if (!q_strcasecmp(filter, texfilters[i][0])) {
       filter = texfilters[(i + 1) % countof(texfilters)][0];
       break;
@@ -3043,7 +3047,7 @@ VID_Menu_GetTexFilterDesc(void)
 {
   const char* current = Cvar_VariableString("gl_texturemode");
   int i;
-  for (i = 0; i < countof(texfilters); i++)
+  for (i = 0; i < (int)countof(texfilters); i++)
     if (!q_strcasecmp(current, texfilters[i][0]))
       return texfilters[i][1];
   return "";
@@ -3064,7 +3068,7 @@ VID_Menu_ChooseNextFPSLimit(int dir)
   int i, current = (int)host_maxfps.value;
 
   if (dir < 0)
-    for (i = 0; i < countof(values) && values[i] <= current; i++)
+    for (i = 0; i < (int)countof(values) && values[i] <= current; i++)
       ;
   else
     for (i = countof(values) - 1; i >= 0 && values[i] >= current; i--)
@@ -3260,7 +3264,7 @@ M_Calibration_Draw(void)
       progress =
         (int)(IN_GetGyroCalibrationProgress() * (Q_COUNTOF(anim) - 1) + 0.5f);
       for (i = 0; i < (int)Q_COUNTOF(anim) - 1; i++)
-        anim[i] = i < progress ? '.' | 0x80 : '.';
+        anim[i] = i < progress ? '.' | (char)0x80 : '.';
       anim[i] = '\0';
       M_PrintAligned(160, y, ALIGN_CENTER, "Calibrating, please wait...");
       M_PrintAligned(160, y + 16, ALIGN_CENTER, anim);
@@ -4220,7 +4224,7 @@ M_ReleaseSliderGrab(void)
 }
 
 qboolean
-M_SliderClick(int cx, int cy)
+M_SliderClick(int cx, __attribute__((unused)) int cy)
 {
   int item;
   cx -= OPTIONS_MIDPOS;
@@ -5173,7 +5177,7 @@ M_Keys_Key(int k)
 }
 
 void
-M_Keys_Mousemove(int cx, int cy)
+M_Keys_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   M_List_Mousemove(&keysmenu.list, cy - keysmenu.y - KEYLIST_TOP);
 }
@@ -5618,7 +5622,7 @@ M_LanConfig_TextEntry(void)
 }
 
 void
-M_LanConfig_Mousemove(int cx, int cy)
+M_LanConfig_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int prev = lanConfig_cursor;
   M_UpdateCursorWithTable(cy,
@@ -6103,7 +6107,7 @@ M_GameOptions_Key(int key)
 }
 
 void
-M_GameOptions_Mousemove(int cx, int cy)
+M_GameOptions_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int prev = gameoptions_cursor;
   M_UpdateCursorWithTable(
@@ -6166,7 +6170,7 @@ M_Search_Draw(void)
 }
 
 void
-M_Search_Key(int key)
+M_Search_Key(__attribute__((unused)) int key)
 {
 }
 
@@ -6262,7 +6266,7 @@ M_ServerList_Key(int k)
 }
 
 void
-M_ServerList_Mousemove(int cx, int cy)
+M_ServerList_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   int prev = slist_cursor;
   M_UpdateCursor(cy, 32, 8, hostCacheCount, &slist_cursor);
@@ -6670,7 +6674,7 @@ M_Mods_Key(int key)
 }
 
 void
-M_Mods_Mousemove(int cx, int cy)
+M_Mods_Mousemove(__attribute__((unused)) int cx, int cy)
 {
   cy -= modsmenu.y + MODLIST_OFS;
 
@@ -6907,7 +6911,7 @@ M_Menu_Credits_f(void)
 /* Menu Subsystem */
 
 static void
-UI_Mouse_f(cvar_t* cvar)
+UI_Mouse_f(__attribute__((unused)) cvar_t* cvar)
 {
   // Ignore first mouse move message after we re-enable the option.
   // This makes it possible to cycle through the UI Mouse options

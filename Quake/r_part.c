@@ -44,7 +44,9 @@ static float uvscale;
 static float texturescalefactor; // johnfitz -- compensate for apparent size of
                                  // different particle textures
 
-cvar_t r_particles = { "r_particles", "2", CVAR_ARCHIVE }; // johnfitz
+cvar_t r_particles = {
+  "r_particles", "2", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; // johnfitz
 
 typedef struct particlevert_t
 {
@@ -61,7 +63,7 @@ R_SetParticleTexture_f -- johnfitz
 ===============
 */
 static void
-R_SetParticleTexture_f(cvar_t* var)
+R_SetParticleTexture_f(__attribute__((unused)) cvar_t* var)
 {
   switch ((int)(r_particles.value)) {
     case 1:

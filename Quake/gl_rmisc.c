@@ -109,7 +109,7 @@ GL_Fullbrights_f -- johnfitz
 ====================
 */
 static void
-GL_Fullbrights_f(cvar_t* var)
+GL_Fullbrights_f(__attribute__((unused)) cvar_t* var)
 {
   TexMgr_ReloadNobrightImages();
 }
@@ -120,7 +120,7 @@ R_SetClearColor_f -- johnfitz
 ====================
 */
 static void
-R_SetClearColor_f(cvar_t* var)
+R_SetClearColor_f(__attribute__((unused)) cvar_t* var)
 {
   byte* rgb;
   int s;
@@ -137,7 +137,7 @@ r_noshadow_list cvar changes
 ===============
 */
 static void
-R_Model_ExtraFlags_List_f(cvar_t* var)
+R_Model_ExtraFlags_List_f(__attribute__((unused)) cvar_t* var)
 {
   int i;
   for (i = 0; i < MAX_MODELS; i++)
@@ -683,7 +683,7 @@ GL_DeleteBuffer
 void
 GL_DeleteBuffer(GLuint buffer)
 {
-  int i;
+  unsigned i = 0;
 
   if (buffer == current_array_buffer)
     current_array_buffer = 0;
@@ -712,7 +712,7 @@ invalid (e.g. manually binding, destroying the context).
 void
 GL_ClearBufferBindings(void)
 {
-  int i;
+  unsigned i = 0;
 
   current_array_buffer = 0;
   current_element_array_buffer = 0;
@@ -779,8 +779,7 @@ GL_AllocFrameResources
 static void
 GL_AllocFrameResources(frameres_bits_t bits)
 {
-  int i;
-  for (i = 0; i < countof(frameres); i++) {
+  for (unsigned i = 0; i < countof(frameres); i++) {
     char name[64];
     frameres_t* frame = &frameres[i];
 

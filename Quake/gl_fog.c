@@ -359,7 +359,7 @@ Fog_DisableGFog(void)
 //
 //==============================================================================
 
-cvar_t r_vfog = { "r_vfog", "1", CVAR_NONE };
+cvar_t r_vfog = { "r_vfog", "1", CVAR_NONE, 0, 0, 0, 0, 0 };
 
 void
 Fog_DrawVFog(void)

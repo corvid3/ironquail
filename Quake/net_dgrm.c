@@ -247,7 +247,7 @@ Datagram_CanSendMessage(qsocket_t* sock)
 }
 
 qboolean
-Datagram_CanSendUnreliableMessage(qsocket_t* sock)
+Datagram_CanSendUnreliableMessage(__attribute__((unused)) qsocket_t* sock)
 {
   return true;
 }
@@ -498,10 +498,10 @@ static sys_socket_t testSocket;
 
 static void
 Test_Poll(void*);
-static PollProcedure testPollProcedure = { NULL, 0.0, Test_Poll };
+static PollProcedure testPollProcedure = { NULL, 0.0, Test_Poll, 0 };
 
 static void
-Test_Poll(void* unused)
+Test_Poll(__attribute__((unused)) void* unused)
 {
   struct qsockaddr clientaddr;
   int control;
@@ -633,10 +633,10 @@ static sys_socket_t test2Socket;
 
 static void
 Test2_Poll(void*);
-static PollProcedure test2PollProcedure = { NULL, 0.0, Test2_Poll };
+static PollProcedure test2PollProcedure = { NULL, 0.0, Test2_Poll, 0 };
 
 static void
-Test2_Poll(void* unused)
+Test2_Poll(__attribute__((unused)) void* unused)
 {
   struct qsockaddr clientaddr;
   int control;

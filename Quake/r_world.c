@@ -25,11 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "client.h"
 #include "console.h"
 #include "glquake.h"
-#include "keys.h"
 #include "mathlib.h"
 #include "q_stdinc.h"
-#include "quakedef.h"
-#include "server.h"
 #include <SDL2/SDL.h>
 
 extern cvar_t gl_fullbrights, r_oldskyleaf, r_showtris; // johnfitz
@@ -479,7 +476,7 @@ R_DrawBrushModels_Real(entity_t** ents,
   if (!count)
     return;
 
-  if (count > countof(bmodel_instances)) {
+  if (count > (int)countof(bmodel_instances)) {
     Con_DWarning("bmodel instance overflow: %d > %d\n",
                  count,
                  (int)countof(bmodel_instances));
@@ -623,7 +620,7 @@ R_DrawBrushModels_Water(entity_t** ents, int count, qboolean translucent)
   GLbyte* ofs;
   qboolean oit;
 
-  if (count > countof(bmodel_instances)) {
+  if (count > (int)countof(bmodel_instances)) {
     Con_DWarning("bmodel instance overflow: %d > %d\n",
                  count,
                  (int)countof(bmodel_instances));

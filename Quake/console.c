@@ -130,12 +130,20 @@ static conselection_t con_selection;
 static int con_clickx;
 static int con_clicky;
 
-cvar_t con_notifytime = { "con_notifytime", "3", CVAR_NONE };         // seconds
-cvar_t con_logcenterprint = { "con_logcenterprint", "1", CVAR_NONE }; // johnfitz
-cvar_t con_notifycenter = { "con_notifycenter", "0", CVAR_ARCHIVE };
-cvar_t con_notifyfade = { "con_notifyfade", "0", CVAR_ARCHIVE };
-cvar_t con_notifyfadetime = { "con_notifyfadetime", "0.5", CVAR_ARCHIVE };
-cvar_t con_maxcols = { "con_maxcols", "0", CVAR_ARCHIVE };
+cvar_t con_notifytime = {
+  "con_notifytime", "3", CVAR_NONE, 0, 0, 0, 0, 0
+}; // seconds
+cvar_t con_logcenterprint = {
+  "con_logcenterprint", "1", CVAR_NONE, 0, 0, 0, 0, 0
+}; // johnfitz
+cvar_t con_notifycenter = {
+  "con_notifycenter", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t con_notifyfade = { "con_notifyfade", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t con_notifyfadetime = {
+  "con_notifyfadetime", "0.5", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t con_maxcols = { "con_maxcols", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
 char con_lastcenterstring[1024]; // johnfitz
 
@@ -429,7 +437,8 @@ Con_GetMouseLink
 Returns the link at the current mouse position, if any, or NULL otherwise
 ================
 */
-static conlink_t*
+// whats with all the unused functions... -crow
+__attribute__((unused)) static conlink_t*
 Con_GetMouseLink(void)
 {
   conofs_t ofs;
@@ -808,7 +817,7 @@ Con_ToggleConsole_f(void)
                         // bottom of the scrollback
     history_line = edit_line; // johnfitz -- it should also return you to the
                               // bottom of the command history
-    key_tabhint[0] = '\0'; // clear tab hint
+    key_tabhint[0] = '\0';    // clear tab hint
     Con_SetHotLink(NULL);
 
     if (cls.state == ca_connected) {
@@ -1790,7 +1799,7 @@ CompleteFileList(const char* partial, void* param)
 }
 
 static qboolean
-CompleteClassnames(const char* partial, void* unused)
+CompleteClassnames(const char* partial, __attribute__((unused)) void* unused)
 {
   extern edict_t* sv_player;
   qcvm_t* oldvm;
@@ -1817,7 +1826,7 @@ CompleteClassnames(const char* partial, void* unused)
 }
 
 static qboolean
-CompleteBindKeys(const char* partial, void* unused)
+CompleteBindKeys(const char* partial, __attribute__((unused)) void* unused)
 {
   int i;
 
@@ -1834,7 +1843,7 @@ CompleteBindKeys(const char* partial, void* unused)
 }
 
 static qboolean
-CompleteUnbindKeys(const char* partial, void* unused)
+CompleteUnbindKeys(const char* partial, __attribute__((unused)) void* unused)
 {
   int i;
 
@@ -2316,7 +2325,7 @@ Con_DrawSelectionHighlight(int x, int y, int line)
   end.col = len;
 
   // Highlight line ends (as in Notepad, Visual Studio etc.)
-  if (end.line != selend.line && end.col == len)
+  if (end.line != selend.line && end.col == (int)len)
     end.col++;
 
   // ...unless we would end up overlapping the console margin

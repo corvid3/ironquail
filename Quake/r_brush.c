@@ -191,7 +191,8 @@ AllocBlock(int w, int h, short* x, short* y)
   // This makes AllocBlock much faster on large levels (can shave off 3+ seconds
   // of load time on a level with 180 lightmaps), at a cost of not quite packing
   // lightmaps as tightly vs. not doing this (uses ~5% more lightmaps)
-  for (texnum = last_lightmap_allocated; texnum < MAX_SANITY_LIGHTMAPS;
+  for (texnum = last_lightmap_allocated;
+       (unsigned)texnum < MAX_SANITY_LIGHTMAPS;
        texnum++) {
     if (texnum == lightmap_count) {
       lightmap_count++;
@@ -396,7 +397,7 @@ GL_PackLitSurfaces(void)
     }
 
     // generate offsets (prefix sum)
-    for (i = 0, j = 0; i < countof(bins); i++) {
+    for (i = 0, j = 0; i < (int)countof(bins); i++) {
       int tmp = bins[i];
       bins[i] = j;
       j += tmp;

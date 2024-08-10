@@ -55,7 +55,7 @@ PKG_CONFIG ?= pkg-config
 CPUFLAGS=
 LDFLAGS?=
 DFLAGS ?=
-CFLAGS ?= -Wall -Wno-trigraphs
+CFLAGS ?= -Wall -Wextra -Werror -Wno-trigraphs
 CFLAGS += -D_FILE_OFFSET_BITS=64
 CFLAGS += $(call check_gcc,-std=gnu11,)
 CFLAGS += $(call check_gcc,-Werror=format,)

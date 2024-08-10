@@ -51,12 +51,18 @@ solid_edge items only clip against bsp models.
 
 */
 
-cvar_t sv_friction = { "sv_friction", "4", CVAR_NOTIFY | CVAR_SERVERINFO };
-cvar_t sv_stopspeed = { "sv_stopspeed", "100", CVAR_NONE };
-cvar_t sv_gravity = { "sv_gravity", "800", CVAR_NOTIFY | CVAR_SERVERINFO };
-cvar_t sv_maxvelocity = { "sv_maxvelocity", "2000", CVAR_NONE };
-cvar_t sv_nostep = { "sv_nostep", "0", CVAR_NONE };
-cvar_t sv_freezenonclients = { "sv_freezenonclients", "0", CVAR_NONE };
+cvar_t sv_friction = {
+  "sv_friction", "4", CVAR_NOTIFY | CVAR_SERVERINFO, 0, 0, 0, 0, 0
+};
+cvar_t sv_stopspeed = { "sv_stopspeed", "100", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t sv_gravity = {
+  "sv_gravity", "800", CVAR_NOTIFY | CVAR_SERVERINFO, 0, 0, 0, 0, 0
+};
+cvar_t sv_maxvelocity = { "sv_maxvelocity", "2000", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t sv_nostep = { "sv_nostep", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t sv_freezenonclients = {
+  "sv_freezenonclients", "0", CVAR_NONE, 0, 0, 0, 0, 0
+};
 
 #define MOVE_EPSILON 0.01
 
@@ -426,9 +432,7 @@ SV_PushMove
 ============
 */
 cvar_t sv_gameplayfix_elevators = {
-  "sv_gameplayfix_elevators",
-  "2",
-  CVAR_ARCHIVE
+  "sv_gameplayfix_elevators", "2", CVAR_ARCHIVE, 0, 0, 0, 0, 0
 }; // 0=off; 1=clients only; 2=all entities
 void
 SV_PushMove(edict_t* pusher, float movetime)

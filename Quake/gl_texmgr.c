@@ -57,14 +57,20 @@ static const struct
     { GL_COMPRESSED_RGBA_BPTC_UNORM, 4 } },
 };
 
-cvar_t r_softemu = { "r_softemu", "0", CVAR_ARCHIVE };
-cvar_t r_softemu_metric = { "r_softemu_metric", "-1", CVAR_ARCHIVE };
-static cvar_t gl_max_size = { "gl_max_size", "0", CVAR_NONE };
-static cvar_t gl_picmip = { "gl_picmip", "0", CVAR_NONE };
-cvar_t gl_lodbias = { "gl_lodbias", "auto", CVAR_ARCHIVE };
-cvar_t gl_texturemode = { "gl_texturemode", "", CVAR_ARCHIVE };
-cvar_t gl_texture_anisotropy = { "gl_texture_anisotropy", "8", CVAR_ARCHIVE };
-cvar_t gl_compress_textures = { "gl_compress_textures", "0", CVAR_ARCHIVE };
+cvar_t r_softemu = { "r_softemu", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t r_softemu_metric = {
+  "r_softemu_metric", "-1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+static cvar_t gl_max_size = { "gl_max_size", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+static cvar_t gl_picmip = { "gl_picmip", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t gl_lodbias = { "gl_lodbias", "auto", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t gl_texturemode = { "gl_texturemode", "", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t gl_texture_anisotropy = {
+  "gl_texture_anisotropy", "8", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t gl_compress_textures = {
+  "gl_compress_textures", "0", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 GLint gl_max_texture_size;
 
 static float lodbias;
@@ -255,7 +261,8 @@ TexMgr_TextureMode_Completion_f -- tab completion for gl_texturemode
 ===============
 */
 static void
-TexMgr_TextureMode_Completion_f(cvar_t* cvar, const char* partial)
+TexMgr_TextureMode_Completion_f(__attribute__((unused)) cvar_t* cvar,
+                                const char* partial)
 {
   int i;
 
@@ -269,7 +276,7 @@ TexMgr_TextureMode_f -- called when gl_texturemode changes
 ===============
 */
 static void
-TexMgr_TextureMode_f(cvar_t* var)
+TexMgr_TextureMode_f(__attribute__((unused)) cvar_t* var)
 {
   int i;
 
@@ -303,7 +310,7 @@ TexMgr_Anisotropy_f -- called when gl_texture_anisotropy changes
 ===============
 */
 void
-TexMgr_Anisotropy_f(cvar_t* var)
+TexMgr_Anisotropy_f(__attribute__((unused)) cvar_t* var)
 {
   if (!host_initialized)
     return;
@@ -321,7 +328,7 @@ TexMgr_SoftEmu_f -- called when r_softemu changes
 ===============
 */
 static void
-TexMgr_SoftEmu_f(cvar_t* var)
+TexMgr_SoftEmu_f(__attribute__((unused)) cvar_t* var)
 {
   softemu = (int)r_softemu.value;
   softemu = CLAMP(0, (int)softemu, SOFTEMU_NUMMODES - 1);
@@ -614,7 +621,9 @@ TexMgr_CompressTextures_f(cvar_t* var)
   qboolean compress = var->value != 0.f;
   gltexture_t* glt;
 
-  Con_SafePrintf("Using %s textures\n", "uncompressed" + 2 * compress);
+  // who the hell? is this from original quake code? just use two strings...
+  // -crow
+  Con_SafePrintf("Using %s textures\n", &"uncompressed"[2 * compress]);
 
   // In an attempt to reduce VRAM fragmentation, instead of unloading and
   // reloading each texture sequentially, we first unload them all, then reload
@@ -1168,7 +1177,8 @@ TexMgr_MipMapH(unsigned* data, int width, int height, int depth)
 TexMgr_ResampleTexture -- bilinear resample
 ================
 */
-static unsigned*
+// unused? odd -crow
+__attribute__((unused)) static unsigned*
 TexMgr_ResampleTexture(unsigned* in, int inwidth, int inheight, qboolean alpha)
 {
   byte *nwpx, *nepx, *swpx, *sepx, *dest;
@@ -2124,7 +2134,7 @@ GL_BindTextures(GLuint first, GLsizei count, gltexture_t** textures)
   GLuint handles[8];
   GLsizei i;
 
-  if (gl_multi_bind_able && count < countof(handles)) {
+  if (gl_multi_bind_able && count < (int)countof(handles)) {
     for (i = 0; i < count; i++) {
       gltexture_t* tex = textures[i];
       if (!tex)
@@ -2176,7 +2186,7 @@ void
 GL_DeleteNativeTexture(GLuint texnum)
 {
   int i;
-  for (i = 0; i < countof(currenttexture); i++)
+  for (i = 0; i < (int)countof(currenttexture); i++)
     if (texnum == currenttexture[i])
       currenttexture[i] = 0;
   glDeleteTextures(1, &texnum);
@@ -2215,7 +2225,7 @@ GL_ClearBindings(void)
     GL_BindTexturesFunc(0, countof(currenttexture), NULL);
     GL_BindSamplersFunc(0, countof(currenttexture), NULL);
   } else
-    for (i = 0; i < countof(currenttexture); i++) {
+    for (i = 0; i < (int)countof(currenttexture); i++) {
       GL_SelectTexture(GL_TEXTURE0 + i);
       glBindTexture(GL_TEXTURE_2D, 0);
       GL_BindSamplerFunc(i, 0);

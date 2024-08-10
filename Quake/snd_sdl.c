@@ -37,7 +37,7 @@
 static int buffersize;
 
 static void SDLCALL
-paint_audio(void* unused, Uint8* stream, int len)
+paint_audio(__attribute__((unused)) void* unused, Uint8* stream, int len)
 {
   int pos, tobufend;
   int len1, len2;

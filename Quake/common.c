@@ -51,18 +51,15 @@ static char argvdummy[] = " ";
 int safemode;
 
 cvar_t registered = {
-  "registered",
-  "1",
-  CVAR_ROM
+  "registered", "1", CVAR_ROM, 0, 0, 0, 0, 0
 }; /* set to correct value in COM_CheckRegistered() */
-cvar_t
-  cmdline = { "cmdline",
-              "",
-              CVAR_ROM /*|CVAR_SERVERINFO*/ }; /* sending cmdline upon
-                                                  CCREQ_RULE_INFO is evil */
-cvar_t language = { "language",
-                    "auto",
-                    CVAR_ARCHIVE }; /* for 2021 rerelease text */
+cvar_t cmdline = {
+  "cmdline", "", CVAR_ROM, 0, 0, 0, 0, 0 /*|CVAR_SERVERINFO*/
+};                                       /* sending cmdline upon
+                             CCREQ_RULE_INFO is evil */
+cvar_t language = {
+  "language", "auto", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+}; /* for 2021 rerelease text */
 
 static qboolean com_modified; // set true if using non-id files
 
@@ -1387,7 +1384,7 @@ skipwhite:
         com_token[len] = 0;
         return data;
       }
-      if (len < Q_COUNTOF(com_token) - 1)
+      if (len < (int)Q_COUNTOF(com_token) - 1)
         com_token[len++] = c;
       else if (mode == CPE_NOTRUNC)
         return NULL;
@@ -1396,7 +1393,7 @@ skipwhite:
 
   // parse single characters
   if (c == '{' || c == '}' || c == '(' || c == ')' || c == '\'' || c == ':') {
-    if (len < Q_COUNTOF(com_token) - 1)
+    if (len < (int)Q_COUNTOF(com_token) - 1)
       com_token[len++] = c;
     else if (mode == CPE_NOTRUNC)
       return NULL;
@@ -1406,7 +1403,7 @@ skipwhite:
 
   // parse a regular word
   do {
-    if (len < Q_COUNTOF(com_token) - 1)
+    if (len < (int)Q_COUNTOF(com_token) - 1)
       com_token[len++] = c;
     else if (mode == CPE_NOTRUNC)
       return NULL;
@@ -2183,7 +2180,7 @@ const char*
 COM_ParseStringNewline(const char* buffer)
 {
   int i;
-  for (i = 0; i < countof(com_token) - 1; i++)
+  for (i = 0; i < (int)countof(com_token) - 1; i++)
     if (!buffer[i] || q_isspace(buffer[i]))
       break;
   memcpy(com_token, buffer, i);
@@ -2618,7 +2615,7 @@ COM_Game_f(void)
 COM_IsFileWritable
 =================
 */
-static qboolean
+__attribute__((unused)) static qboolean
 COM_IsFileWritable(const char* path)
 {
   qboolean exists = false;
@@ -2682,7 +2679,7 @@ COM_AddBaseDir
 static void
 COM_AddBaseDir(const char* path)
 {
-  if (com_numbasedirs >= countof(com_basedirs))
+  if (com_numbasedirs >= (int)countof(com_basedirs))
     Sys_Error("Too many basedirs (%d)", com_numbasedirs);
   if ((size_t)q_strlcpy(com_basedirs[com_numbasedirs++],
                         path,
@@ -2715,7 +2712,7 @@ COM_MigrateNightdiveUserFiles(void)
   size_t i;
 
   // move episode dirs if they contain a config file
-  for (i = 0; i < countof(episodes); i++) {
+  for (i = 0; i < (int)countof(episodes); i++) {
     const char* game = episodes[i];
     if ((size_t)q_snprintf(
           src, sizeof(src), "%s/%s/%s", com_nightdivedir, game, CONFIG_NAME) >=
@@ -2740,10 +2737,10 @@ COM_MigrateNightdiveUserFiles(void)
     if (!strcmp(moditer->name, ".") || !strcmp(moditer->name, ".."))
       continue;
 
-    for (i = 0; i < countof(episodes); i++)
+    for (i = 0; i < (int)countof(episodes); i++)
       if (!strcmp(moditer->name, episodes[i]))
         break;
-    if (i != countof(episodes))
+    if (i != (int)countof(episodes))
       continue;
 
     // look for engine config
@@ -2779,10 +2776,10 @@ COM_MigrateNightdiveUserFiles(void)
         continue;
 
       ext = COM_FileGetExtension(fileiter->name);
-      for (i = 0; i < countof(filetypes); i++)
+      for (i = 0; i < (int)countof(filetypes); i++)
         if (!q_strcasecmp(ext, filetypes[i]))
           break;
-      if (i == countof(filetypes))
+      if (i == (int)countof(filetypes))
         continue;
 
       if ((size_t)q_snprintf(
@@ -3803,7 +3800,7 @@ LOC_LoadFile(const char* file)
       }
 
       ++pos;
-      if (pos == localization.numindices)
+      if ((int)pos == localization.numindices)
         pos = 0;
 
       if (pos == end)
@@ -3892,7 +3889,8 @@ LOC_LanguageCompletion_f
 ================
 */
 void
-LOC_LanguageCompletion_f(cvar_t* cvar, const char* partial)
+LOC_LanguageCompletion_f(__attribute__((unused)) cvar_t* cvar,
+                         const char* partial)
 {
   size_t i;
 
@@ -3959,7 +3957,7 @@ LOC_GetRawString(const char* key)
       return entry->value;
 
     ++pos;
-    if (pos == localization.numindices)
+    if ((int)pos == localization.numindices)
       pos = 0;
   } while (pos != end);
 

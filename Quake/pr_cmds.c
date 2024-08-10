@@ -559,7 +559,9 @@ Returns a number from 0 < num < 1
 random()
 =================
 */
-cvar_t sv_gameplayfix_random = { "sv_gameplayfix_random", "1", CVAR_ARCHIVE };
+cvar_t sv_gameplayfix_random = {
+  "sv_gameplayfix_random", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 static void
 PF_random(void)
 {
@@ -1422,9 +1424,9 @@ Pick a vector for the player to shoot along
 vector aim(entity, missilespeed)
 =============
 */
-cvar_t sv_aim = { "sv_aim",
-                  "1",
-                  CVAR_NONE }; // ericw -- turn autoaim off by default. was 0.93
+cvar_t sv_aim = {
+  "sv_aim", "1", CVAR_NONE, 0, 0, 0, 0, 0
+}; // ericw -- turn autoaim off by default. was 0.93
 static void
 PF_aim(void)
 {
@@ -1799,9 +1801,7 @@ EXTENSION BUILT-INS
 */
 
 cvar_t pr_checkextension = {
-  "pr_checkextension",
-  "1",
-  CVAR_NONE
+  "pr_checkextension", "1", CVAR_NONE, 0, 0, 0, 0, 0
 }; // spike - enables qc extensions. if 0 then they're ALL BLOCKED! MWAHAHAHA!
    // *cough* *splutter*
 
@@ -1997,7 +1997,7 @@ static void
 PF_cl_getstat_int(void)
 {
   int stnum = G_FLOAT(OFS_PARM0);
-  if (stnum < 0 || stnum >= countof(cl.stats))
+  if (stnum < 0 || stnum >= (int)countof(cl.stats))
     G_INT(OFS_RETURN) = 0;
   else
     G_INT(OFS_RETURN) = cl.stats[stnum];
@@ -2006,7 +2006,7 @@ static void
 PF_cl_getstat_float(void)
 {
   int stnum = G_FLOAT(OFS_PARM0);
-  if (stnum < 0 || stnum >= countof(cl.stats))
+  if (stnum < 0 || stnum >= (int)countof(cl.stats))
     G_FLOAT(OFS_RETURN) = 0;
   else if (qcvm->argc > 1) {
     int firstbit = G_FLOAT(OFS_PARM1);
@@ -2019,7 +2019,7 @@ static void
 PF_cl_getstat_string(void)
 {
   int stnum = G_FLOAT(OFS_PARM0);
-  if (stnum < 0 || stnum >= countof(cl.statss) || !cl.statss[stnum])
+  if (stnum < 0 || stnum >= (int)countof(cl.statss) || !cl.statss[stnum])
     G_INT(OFS_RETURN) = 0;
   else {
     char* result = PR_GetTempString();
@@ -2118,7 +2118,7 @@ static struct
 static size_t numqcpics;
 static size_t maxqcpics;
 void
-PR_ReloadPics(qboolean purge)
+PR_ReloadPics(__attribute__((unused)) qboolean purge)
 {
   numqcpics = 0;
 
@@ -2433,7 +2433,7 @@ PF_pow(void)
 {
   G_FLOAT(OFS_RETURN) = pow(G_FLOAT(OFS_PARM0), G_FLOAT(OFS_PARM1));
 }
-static void
+__attribute__((unused)) static void
 PF_Logarithm(void)
 {
   // log2(v) = ln(v)/ln(2)
@@ -2491,7 +2491,7 @@ PF_bound(void)
     curval = minval;
   G_FLOAT(OFS_RETURN) = curval;
 }
-static void
+__attribute__((unused)) static void
 PF_anglemod(void)
 {
   float v = G_FLOAT(OFS_PARM0);
@@ -2503,7 +2503,7 @@ PF_anglemod(void)
 
   G_FLOAT(OFS_RETURN) = v;
 }
-static void
+__attribute__((unused)) static void
 PF_bitshift(void)
 {
   int bitmask = G_FLOAT(OFS_PARM0);
@@ -2514,7 +2514,7 @@ PF_bitshift(void)
     bitmask <<= shift;
   G_FLOAT(OFS_RETURN) = bitmask;
 }
-static void
+__attribute__((unused)) static void
 PF_crossproduct(void)
 {
   CrossProduct(G_VECTOR(OFS_PARM0), G_VECTOR(OFS_PARM1), G_VECTOR(OFS_RETURN));
@@ -3260,7 +3260,7 @@ PF_sprintf_internal(const char* s, int firstarg, char* outbuf, int outbuflen)
 case 's':
   // UTF-8-FIXME: figure it out yourself
   //							if(flags &
-  //PRINTF_ALTERNATE)
+  // PRINTF_ALTERNATE)
   {
     if (precision < 0) // not set
       q_snprintf(o, end - o, formatbuf, width, GETARG_STRING(thisarg));
@@ -3331,7 +3331,7 @@ PF_ArgC(void)
 }
 
 static int
-tokenizeqc(const char* str, qboolean dpfuckage)
+tokenizeqc(const char* str, __attribute__((unused)) qboolean dpfuckage)
 {
   // FIXME: if dpfuckage, then we should handle punctuation specially, as well
   // as /*.
@@ -3380,7 +3380,7 @@ PF_tokenize_console(void)
   G_FLOAT(OFS_RETURN) = tokenizeqc(G_STRING(OFS_PARM0), false);
 }
 
-static void
+__attribute__((unused)) static void
 PF_tokenizebyseparator(void)
 {
   const char* str = G_STRING(OFS_PARM0);
@@ -3438,7 +3438,7 @@ PF_tokenizebyseparator(void)
   G_FLOAT(OFS_RETURN) = qctoken_count;
 }
 
-static void
+__attribute__((unused)) static void
 PF_argv_start_index(void)
 {
   int idx = G_FLOAT(OFS_PARM0);
@@ -3453,7 +3453,7 @@ PF_argv_start_index(void)
     G_FLOAT(OFS_RETURN) = qctoken[idx].start;
 }
 
-static void
+__attribute__((unused)) static void
 PF_argv_end_index(void)
 {
   int idx = G_FLOAT(OFS_PARM0);
@@ -3487,7 +3487,7 @@ PF_ArgV(void)
 }
 
 // conversions (mostly string)
-static void
+__attribute__((unused)) static void
 PF_strtoupper(void)
 {
   const char* in = G_STRING(OFS_PARM0);
@@ -3497,7 +3497,7 @@ PF_strtoupper(void)
   *out = 0;
   G_INT(OFS_RETURN) = PR_SetEngineString(result);
 }
-static void
+__attribute__((unused)) static void
 PF_strtolower(void)
 {
   const char* in = G_STRING(OFS_PARM0);
@@ -3508,7 +3508,7 @@ PF_strtolower(void)
   G_INT(OFS_RETURN) = PR_SetEngineString(result);
 }
 #include <time.h>
-static void
+__attribute__((unused)) static void
 PF_strftime(void)
 {
   const char* in = G_STRING(OFS_PARM1);
@@ -3552,12 +3552,12 @@ PF_stov(void)
   s = COM_Parse(s);
   G_VECTOR(OFS_RETURN)[2] = atof(com_token);
 }
-static void
+__attribute__((unused)) static void
 PF_stoi(void)
 {
   G_INT(OFS_RETURN) = atoi(G_STRING(OFS_PARM0));
 }
-static void
+__attribute__((unused)) static void
 PF_itos(void)
 {
   char* result = PR_GetTempString();
@@ -3571,12 +3571,12 @@ PF_etos(void)
   q_snprintf(result, STRINGTEMP_LENGTH, "entity %i", G_EDICTNUM(OFS_PARM0));
   G_INT(OFS_RETURN) = PR_SetEngineString(result);
 }
-static void
+__attribute__((unused)) static void
 PF_stoh(void)
 {
   G_INT(OFS_RETURN) = strtoul(G_STRING(OFS_PARM0), NULL, 16);
 }
-static void
+__attribute__((unused)) static void
 PF_htos(void)
 {
   char* result = PR_GetTempString();
@@ -3678,91 +3678,107 @@ PF_clientcommand(void)
 builtindef_t pr_builtindefs[] = {
   { "makevectors",
     PF_SSQC(PF_makevectors),
-    1 }, // void(entity e) makevectors		= #1
+    1,
+    0 }, // void(entity e) makevectors		= #1
   { "setorigin",
     PF_SSQC(PF_setorigin),
-    2 }, // void(entity e, vector o) setorigin	= #2
+    2,
+    0 }, // void(entity e, vector o) setorigin	= #2
   { "setmodel",
     PF_SSQC(PF_setmodel),
-    3 }, // void(entity e, string m) setmodel	= #3
+    3,
+    0 }, // void(entity e, string m) setmodel	= #3
   { "setsize",
     PF_SSQC(PF_setsize),
-    4 }, // void(entity e, vector min, vector max) setsize	= #4
-  { "break", PF_BOTH(PF_break), 6 },   // void() break = #6
-  { "random", PF_BOTH(PF_random), 7 }, // float() random = #7
+    4,
+    0 }, // void(entity e, vector min, vector max) setsize	= #4
+  { "break", PF_BOTH(PF_break), 6, 0 },   // void() break = #6
+  { "random", PF_BOTH(PF_random), 7, 0 }, // float() random = #7
   { "sound",
     PF_SSQC(PF_sound),
-    8 }, // void(entity e, float chan, string samp) sound	= #8
+    8,
+    0 }, // void(entity e, float chan, string samp) sound	= #8
   { "normalize",
     PF_BOTH(PF_normalize),
-    9 },                                    // vector(vector v) normalize		= #9
-  { "error", PF_SSQC(PF_error), 10 },       // void(string e) error = #10
-  { "objerror", PF_SSQC(PF_objerror), 11 }, // void(string e) objerror = #11
-  { "vlen", PF_BOTH(PF_vlen), 12 },         // float(vector v) vlen = #12
-  { "vectoyaw", PF_BOTH(PF_vectoyaw), 13 }, // float(vector v) vectoyaw = #13
-  { "spawn", PF_SSQC(PF_Spawn), 14 },       // entity() spawn			= #14
-  { "remove", PF_SSQC(PF_Remove), 15 },     // void(entity e) remove = #15
+    9,
+    0 },                                 // vector(vector v) normalize		= #9
+  { "error", PF_SSQC(PF_error), 10, 0 }, // void(string e) error = #10
+  { "objerror", PF_SSQC(PF_objerror), 11, 0 }, // void(string e) objerror = #11
+  { "vlen", PF_BOTH(PF_vlen), 12, 0 },         // float(vector v) vlen = #12
+  { "vectoyaw", PF_BOTH(PF_vectoyaw), 13, 0 }, // float(vector v) vectoyaw = #13
+  { "spawn", PF_SSQC(PF_Spawn), 14, 0 },       // entity() spawn = #14
+  { "remove", PF_SSQC(PF_Remove), 15, 0 },     // void(entity e) remove = #15
   { "traceline",
     PF_SSQC(PF_traceline),
-    16 }, // float(vector v1, vector v2, float tryents) traceline	= #16
+    16,
+    0 }, // float(vector v1, vector v2, float tryents) traceline	= #16
   { "checkclient",
     PF_SSQC(PF_checkclient),
-    17 }, // entity() clientlist			= #17
+    17,
+    0 }, // entity() clientlist			= #17
   { "find",
     PF_SSQC(PF_Find),
-    18 }, // entity(entity start, .string fld, string match) find	= #18
+    18,
+    0 }, // entity(entity start, .string fld, string match) find	= #18
   { "precache_sound",
     PF_SSQC(PF_precache_sound),
-    19 }, // void(string s) precache_sound	= #19
+    19,
+    0 }, // void(string s) precache_sound	= #19
   { "precache_model",
     PF_SSQC(PF_precache_model),
-    20 }, // void(string s) precache_model	= #20
+    20,
+    0 }, // void(string s) precache_model	= #20
   { "stuffcmd",
     PF_SSQC(PF_stuffcmd),
-    21 }, // void(entity client, string s)stuffcmd	= #21
+    21,
+    0 }, // void(entity client, string s)stuffcmd	= #21
   { "findradius",
     PF_SSQC(PF_findradius),
-    22 }, // entity(vector org, float rad) findradius	= #22
-  { "bprint", PF_SSQC(PF_bprint), 23 }, // void(string s) bprint = #23
+    22,
+    0 }, // entity(vector org, float rad) findradius	= #22
+  { "bprint", PF_SSQC(PF_bprint), 23, 0 }, // void(string s) bprint = #23
   { "sprint",
     PF_SSQC(PF_sprint),
-    24 }, // void(entity client, string s) sprint	= #24
-  { "dprint", PF_BOTH(PF_dprint), 25 }, // void(string s) dprint = #25
-  { "ftos", PF_BOTH(PF_ftos), 26 },     // void(string s) ftos = #26
-  { "vtos", PF_BOTH(PF_vtos), 27 },     // void(string s) vtos = #27
-  { "coredump", PF_SSQC(PF_coredump), 28 },
-  { "traceon", PF_BOTH(PF_traceon), 29 },
-  { "traceoff", PF_BOTH(PF_traceoff), 30 },
+    24,
+    0 }, // void(entity client, string s) sprint	= #24
+  { "dprint", PF_BOTH(PF_dprint), 25, 0 }, // void(string s) dprint = #25
+  { "ftos", PF_BOTH(PF_ftos), 26, 0 },     // void(string s) ftos = #26
+  { "vtos", PF_BOTH(PF_vtos), 27, 0 },     // void(string s) vtos = #27
+  { "coredump", PF_SSQC(PF_coredump), 28, 0 },
+  { "traceon", PF_BOTH(PF_traceon), 29, 0 },
+  { "traceoff", PF_BOTH(PF_traceoff), 30, 0 },
   { "eprint",
     PF_SSQC(PF_eprint),
-    31 }, // void(entity e) debug print an entire entity
+    31,
+    0 }, // void(entity e) debug print an entire entity
   { "walkmove",
     PF_SSQC(PF_walkmove),
-    32 }, // float(float yaw, float dist) walkmove
-  { "droptofloor", PF_SSQC(PF_droptofloor), 34 },
-  { "lightstyle", PF_SSQC(PF_lightstyle), 35 },
-  { "rint", PF_BOTH(PF_rint), 36 },
-  { "floor", PF_BOTH(PF_floor), 37 },
-  { "ceil", PF_BOTH(PF_ceil), 38 },
-  { "checkbottom", PF_SSQC(PF_checkbottom), 40 },
-  { "pointcontents", PF_SSQC(PF_pointcontents), 41 },
-  { "fabs", PF_BOTH(PF_fabs), 43 },
-  { "aim", PF_SSQC(PF_aim), 44 },
-  { "cvar", PF_BOTH(PF_cvar), 45 },
-  { "localcmd", PF_BOTH(PF_localcmd), 46 },
-  { "nextent", PF_SSQC(PF_nextent), 47 },
-  { "particle", PF_SSQC(PF_particle), 48 },
-  { "ChangeYaw", PF_SSQC(PF_changeyaw), 49 },
-  { "vectoangles", PF_BOTH(PF_vectoangles), 51 },
+    32,
+    0 }, // float(float yaw, float dist) walkmove
+  { "droptofloor", PF_SSQC(PF_droptofloor), 34, 0 },
+  { "lightstyle", PF_SSQC(PF_lightstyle), 35, 0 },
+  { "rint", PF_BOTH(PF_rint), 36, 0 },
+  { "floor", PF_BOTH(PF_floor), 37, 0 },
+  { "ceil", PF_BOTH(PF_ceil), 38, 0 },
+  { "checkbottom", PF_SSQC(PF_checkbottom), 40, 0 },
+  { "pointcontents", PF_SSQC(PF_pointcontents), 41, 0 },
+  { "fabs", PF_BOTH(PF_fabs), 43, 0 },
+  { "aim", PF_SSQC(PF_aim), 44, 0 },
+  { "cvar", PF_BOTH(PF_cvar), 45, 0 },
+  { "localcmd", PF_BOTH(PF_localcmd), 46, 0 },
+  { "nextent", PF_SSQC(PF_nextent), 47, 0 },
+  { "particle", PF_SSQC(PF_particle), 48, 0 },
+  { "ChangeYaw", PF_SSQC(PF_changeyaw), 49, 0 },
+  { "vectoangles", PF_BOTH(PF_vectoangles), 51, 0 },
 
-  { "WriteByte", PF_SSQC(PF_WriteByte), 52 },
-  { "WriteChar", PF_SSQC(PF_WriteChar), 53 },
-  { "WriteShort", PF_SSQC(PF_WriteShort), 54 },
-  { "WriteLong", PF_SSQC(PF_WriteLong), 55 },
-  { "WriteCoord", PF_SSQC(PF_WriteCoord), 56 },
-  { "WriteAngle", PF_SSQC(PF_WriteAngle), 57 },
-  { "WriteString", PF_SSQC(PF_WriteString), 58 },
-  { "WriteEntity", PF_SSQC(PF_WriteEntity), 59 },
+  { "WriteByte", PF_SSQC(PF_WriteByte), 52, 0 },
+  { "WriteChar", PF_SSQC(PF_WriteChar), 53, 0 },
+  { "WriteShort", PF_SSQC(PF_WriteShort), 54, 0 },
+  { "WriteLong", PF_SSQC(PF_WriteLong), 55, 0 },
+  { "WriteCoord", PF_SSQC(PF_WriteCoord), 56, 0 },
+  { "WriteAngle", PF_SSQC(PF_WriteAngle), 57, 0 },
+  { "WriteString", PF_SSQC(PF_WriteString), 58, 0 },
+  { "WriteEntity", PF_SSQC(PF_WriteEntity), 59, 0 },
 
   { "sin", PF_BOTH(PF_Sin), 60, DP_QC_SINCOSSQRTPOW },   // float(float angle)
   { "cos", PF_BOTH(PF_Cos), 61, DP_QC_SINCOSSQRTPOW },   // float(float angle)
@@ -3770,47 +3786,61 @@ builtindef_t pr_builtindefs[] = {
 
   { "etos", PF_BOTH(PF_etos), 65, DP_QC_ETOS }, // string(entity ent)
 
-  { "movetogoal", PF_SSQC(SV_MoveToGoal), 67 },
-  { "precache_file", PF_SSQC(PF_precache_file), 68 },
-  { "makestatic", PF_SSQC(PF_makestatic), 69 },
+  { "movetogoal", PF_SSQC(SV_MoveToGoal), 67, 0 },
+  { "precache_file", PF_SSQC(PF_precache_file), 68, 0 },
+  { "makestatic", PF_SSQC(PF_makestatic), 69, 0 },
 
-  { "changelevel", PF_SSQC(PF_changelevel), 70 },
+  { "changelevel", PF_SSQC(PF_changelevel), 70, 0 },
 
-  { "cvar_set", PF_BOTH(PF_cvar_set), 72 },
-  { "centerprint", PF_SSQC(PF_centerprint), 73 },
+  { "cvar_set", PF_BOTH(PF_cvar_set), 72, 0 },
+  { "centerprint", PF_SSQC(PF_centerprint), 73, 0 },
 
-  { "ambientsound", PF_SSQC(PF_ambientsound), 74 },
+  { "ambientsound", PF_SSQC(PF_ambientsound), 74, 0 },
 
-  { "precache_model2", PF_SSQC(PF_precache_model), 75 },
+  { "precache_model2", PF_SSQC(PF_precache_model), 75, 0 },
   { "precache_sound2",
     PF_SSQC(PF_precache_sound),
-    76 }, // precache_sound2 is different only for qcc
-  { "precache_file2", PF_SSQC(PF_precache_file), 77 },
+    76,
+    0 }, // precache_sound2 is different only for qcc
+  { "precache_file2", PF_SSQC(PF_precache_file), 77, 0 },
 
-  { "setspawnparms", PF_SSQC(PF_setspawnparms), 78 },
+  { "setspawnparms", PF_SSQC(PF_setspawnparms), 78, 0 },
 
   // 2021 re-release
   { "finaleFinished",
     PF_SSQC(PF_finalefinished),
-    79 }, // float() finaleFinished = #79
+    79,
+    0 }, // float() finaleFinished = #79
   { "localsound",
     PF_SSQC(PF_localsound),
-    80 }, // void localsound (entity client, string sample) = #80
+    80,
+    0 }, // void localsound (entity client, string sample) = #80
 
   { "stof", PF_BOTH(PF_stof), 81, FRIK_FILE }, // float(string)
 
   // 2021 re-release update 3
   { "ex_centerprint",
-    PF_SSQC(PF_centerprint) },         // void(entity client, string s, ...)
-  { "ex_bprint", PF_SSQC(PF_bprint) }, // void(string s, ...)
-  { "ex_sprint", PF_SSQC(PF_sprint) }, // void(entity client, string s, ...)
-  { "ex_finalefinished", PF_SSQC(PF_finalefinished) }, // float()
+    PF_SSQC(PF_centerprint),
+    0,
+    0 }, // void(entity client, string s, ...)
+  { "ex_bprint", PF_SSQC(PF_bprint), 0, 0 }, // void(string s, ...)
+  { "ex_sprint",
+    PF_SSQC(PF_sprint),
+    0,
+    0 }, // void(entity client, string s, ...)
+  { "ex_finalefinished", PF_SSQC(PF_finalefinished), 0, 0 }, // float()
   { "ex_CheckPlayerEXFlags",
-    PF_SSQC(PF_CheckPlayerEXFlags) }, // float(entity playerEnt)
+    PF_SSQC(PF_CheckPlayerEXFlags),
+    0,
+    0 }, // float(entity playerEnt)
   { "ex_walkpathtogoal",
-    PF_SSQC(PF_walkpathtogoal) }, // float(float movedist, vector goal)
+    PF_SSQC(PF_walkpathtogoal),
+    0,
+    0 }, // float(float movedist, vector goal)
   { "ex_localsound",
-    PF_SSQC(PF_localsound) }, // void(entity client, string sample)
+    PF_SSQC(PF_localsound),
+    0,
+    0 }, // void(entity client, string sample)
 
   { "min",
     PF_BOTH(PF_min),
@@ -3830,7 +3860,10 @@ builtindef_t pr_builtindefs[] = {
     97,
     DP_QC_SINCOSSQRTPOW }, // float(float value, float exp)
 
-  { "checkextension", PF_BOTH(PF_checkextension), 99 }, // float(string extname)
+  { "checkextension",
+    PF_BOTH(PF_checkextension),
+    99,
+    0 }, // float(string extname)
 
   { "strlen", PF_BOTH(PF_strlen), 114, FRIK_FILE }, // float(string s)
   { "strcat",
@@ -3863,77 +3896,94 @@ builtindef_t pr_builtindefs[] = {
 
   { "clientstat",
     PF_SSQC(PF_clientstat),
-    232 }, // void(float num, float type, .__variant fld)
+    232,
+    0 }, // void(float num, float type, .__variant fld)
 
-  { "mod", PF_BOTH(PF_mod), 245 }, // float(float a, float n)
+  { "mod", PF_BOTH(PF_mod), 245, 0 }, // float(float a, float n)
 
-  { "ftoi", PF_BOTH(PF_ftoi) }, // int(float)
-  { "itof", PF_BOTH(PF_itof) }, // float(int)
+  { "ftoi", PF_BOTH(PF_ftoi), 0, 0 }, // int(float)
+  { "itof", PF_BOTH(PF_itof), 0, 0 }, // float(int)
 
   { "checkcommand",
     PF_BOTH(PF_checkcommand),
     294,
     FTE_QC_CHECKCOMMAND }, // float(string name)
 
-  { "iscachedpic", PF_CSQC(PF_cl_iscachedpic), 316 }, // float(string name)
+  { "iscachedpic", PF_CSQC(PF_cl_iscachedpic), 316, 0 }, // float(string name)
   { "precache_pic",
     PF_CSQC(PF_cl_precachepic),
-    317 }, // string(string name, optional float flags)
+    317,
+    0 }, // string(string name, optional float flags)
   { "drawgetimagesize",
     PF_CSQC(PF_cl_getimagesize),
-    318 }, // #define draw_getimagesize drawgetimagesize\nvector(string picname)
+    318,
+    0 }, // #define draw_getimagesize drawgetimagesize\nvector(string picname)
   { "drawcharacter",
     PF_CSQC(PF_cl_drawcharacter),
-    320 }, // float(vector position, float character, vector size, vector rgb,
-           // float alpha, optional float drawflag)
+    320,
+    0 }, // float(vector position, float character, vector size, vector rgb,
+         // float alpha, optional float drawflag)
   { "drawrawstring",
     PF_CSQC(PF_cl_drawrawstring),
-    321 }, // float(vector position, string text, vector size, vector rgb, float
-           // alpha, optional float drawflag)
+    321,
+    0 }, // float(vector position, string text, vector size, vector rgb, float
+         // alpha, optional float drawflag)
   { "drawpic",
     PF_CSQC(PF_cl_drawpic),
-    322 }, // float(vector position, string pic, vector size, vector rgb, float
-           // alpha, optional float drawflag)
+    322,
+    0 }, // float(vector position, string pic, vector size, vector rgb, float
+         // alpha, optional float drawflag)
   { "drawfill",
     PF_CSQC(PF_cl_drawfill),
-    323 }, // float(vector position, vector size, vector rgb, float alpha,
-           // optional float drawflag)
+    323,
+    0 }, // float(vector position, vector size, vector rgb, float alpha,
+         // optional float drawflag)
   { "drawsetcliparea",
     PF_CSQC(PF_cl_drawsetclip),
-    324 }, // void(float x, float y, float width, float height)
-  { "drawresetcliparea", PF_CSQC(PF_cl_drawresetclip), 325 }, // void(void)
+    324,
+    0 }, // void(float x, float y, float width, float height)
+  { "drawresetcliparea", PF_CSQC(PF_cl_drawresetclip), 325, 0 }, // void(void)
   { "drawstring",
     PF_CSQC(PF_cl_drawstring),
-    326 }, // float(vector position, string text, vector size, vector rgb, float
-           // alpha, float drawflag)
+    326,
+    0 }, // float(vector position, string text, vector size, vector rgb, float
+         // alpha, float drawflag)
   { "stringwidth",
     PF_CSQC(PF_cl_stringwidth),
-    327 }, // float(string text, float usecolours, vector fontsize='8 8')
+    327,
+    0 }, // float(string text, float usecolours, vector fontsize='8 8')
   { "drawsubpic",
     PF_CSQC(PF_cl_drawsubpic),
-    328 }, // void(vector pos, vector sz, string pic, vector srcpos, vector
-           // srcsz, vector rgb, float alpha, optional float drawflag)
+    328,
+    0 }, // void(vector pos, vector sz, string pic, vector srcpos, vector
+         // srcsz, vector rgb, float alpha, optional float drawflag)
 
   { "getstati",
     PF_CSQC(PF_cl_getstat_int),
-    330 }, // #define getstati_punf(stnum)
-           // (float)(__variant)getstati(stnum)\nint(float stnum)
+    330,
+    0 }, // #define getstati_punf(stnum)
+         // (float)(__variant)getstati(stnum)\nint(float stnum)
   { "getstatf",
     PF_CSQC(PF_cl_getstat_float),
-    331 }, // #define getstatbits getstatf\nfloat(float stnum, optional float
-           // firstbit, optional float bitcount)
-  { "getstats", PF_CSQC(PF_cl_getstat_string), 332 }, // string(float stnum)
+    331,
+    0 }, // #define getstatbits getstatf\nfloat(float stnum, optional float
+         // firstbit, optional float bitcount)
+  { "getstats", PF_CSQC(PF_cl_getstat_string), 332, 0 }, // string(float stnum)
 
   { "getplayerkeyvalue",
     PF_CSQC(PF_cl_playerkey_s),
-    348 }, // string(float playernum, string keyname)
+    348,
+    0 }, // string(float playernum, string keyname)
   { "getplayerkeyfloat",
-    PF_CSQC(PF_cl_playerkey_f) }, // float(float playernum, string keyname,
-                                  // optional float assumevalue)
+    PF_CSQC(PF_cl_playerkey_f),
+    0,
+    0 }, // float(float playernum, string keyname,
+         // optional float assumevalue)
 
   { "registercommand",
     PF_CSQC(PF_cl_registercommand),
-    352 }, // void(string cmdname)
+    352,
+    0 }, // void(string cmdname)
 
   { "vectorvectors",
     PF_BOTH(PF_vectorvectors),
@@ -3951,8 +4001,8 @@ builtindef_t pr_builtindefs[] = {
   { "argv",
     PF_BOTH(PF_ArgV),
     442,
-    KRIMZON_SV_PARSECLIENTCOMMAND }, // string(float n)
-  { "argc", PF_BOTH(PF_ArgC) },      // float()
+    KRIMZON_SV_PARSECLIENTCOMMAND },  // string(float n)
+  { "argc", PF_BOTH(PF_ArgC), 0, 0 }, // float()
 
   { "asin",
     PF_BOTH(PF_asin),

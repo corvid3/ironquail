@@ -59,9 +59,13 @@ Mod_LoadModel(qmodel_t* mod, qboolean crash);
 static void
 Mod_Print(void);
 
-static cvar_t external_ents = { "external_ents", "1", CVAR_ARCHIVE };
-static cvar_t external_vis = { "external_vis", "1", CVAR_ARCHIVE };
-cvar_t r_md5 = { "r_md5", "1", CVAR_ARCHIVE };
+static cvar_t external_ents = {
+  "external_ents", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+static cvar_t external_vis = {
+  "external_vis", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
+cvar_t r_md5 = { "r_md5", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
 static byte* mod_novis;
 static int mod_novis_capacity;
@@ -83,7 +87,7 @@ R_MD5_f -- called when r_md5 changes
 ===============
 */
 static void
-R_MD5_f(cvar_t* cvar)
+R_MD5_f(__attribute__((unused)) cvar_t* cvar)
 {
   int i;
   qmodel_t* mod;
@@ -2648,7 +2652,7 @@ Mod_LoadMapDescription(char* desc, size_t maxchars, const char* map)
 
   // if the entity lump is large enough we assume the map is playable
   // and only try to parse the first entity (worldspawn) for the map title
-  if (entlump->filelen >= sizeof(buf)) {
+  if (entlump->filelen >= (int)sizeof(buf)) {
     ret = true;
     entlump->filelen = sizeof(buf) - 1;
   }
@@ -3980,7 +3984,8 @@ MD5_HackyModelFlags(const char* name)
 
   f = (mdl_t*)COM_LoadMallocFile(oldmodel, NULL);
   if (f) {
-    if (com_filesize >= sizeof(*f) && LittleLong(f->ident) == IDPOLYHEADER &&
+    if (com_filesize >= (int)sizeof(*f) &&
+        LittleLong(f->ident) == IDPOLYHEADER &&
         LittleLong(f->version) == ALIAS_VERSION)
       ret = f->flags;
     free(f);
@@ -4188,7 +4193,7 @@ Mod_LoadMD5MeshModel(qmodel_t* mod, const char* buffer)
   md5weightinfo_t* weight;
   size_t numweights;
 
-  md5animctx_t anim = { NULL };
+  md5animctx_t anim = { 0 };
 
   start = Hunk_LowMark();
 

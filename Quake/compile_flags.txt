@@ -6,3 +6,7 @@
 -DUSE_CODEC_MP3
 -DPLATFORM_UNIX
 -DUSE_SDL2
+
+-Wall
+-Wextra
+-Werror

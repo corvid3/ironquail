@@ -591,7 +591,7 @@ qpic_t*
 Sbar_InventoryBarPic(void)
 {
   if (rogue)
-    return rsb_invbar[cl.stats[STAT_ACTIVEWEAPON] < RIT_LAVA_NAILGUN];
+    return rsb_invbar[cl.stats[STAT_ACTIVEWEAPON] < (int)RIT_LAVA_NAILGUN];
   return sb_ibar;
 }
 
@@ -676,9 +676,9 @@ Sbar_DrawInventory(void)
 
   if (rogue) {
     // check for powered up weapon.
-    if (cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN) {
+    if (cl.stats[STAT_ACTIVEWEAPON] >= (int)RIT_LAVA_NAILGUN) {
       for (i = 0; i < 5; i++) {
-        if (cl.stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << i)) {
+        if (cl.stats[STAT_ACTIVEWEAPON] == ((int)RIT_LAVA_NAILGUN << i)) {
           Sbar_DrawPic((i + 2) * 24, -16, rsb_weapons[i]);
         }
       }
@@ -859,9 +859,9 @@ Sbar_DrawInventoryQW(void)
 
     if (rogue) {
       // check for powered up weapon.
-      if (cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN) {
+      if (cl.stats[STAT_ACTIVEWEAPON] >= (int)RIT_LAVA_NAILGUN) {
         for (i = 0; i < 5; i++) {
-          if (cl.stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << i)) {
+          if (cl.stats[STAT_ACTIVEWEAPON] == ((int)RIT_LAVA_NAILGUN << i)) {
             Sbar_DrawPic(24,
                          -69 - scoreboard_y_gap - (16 * 7) + (i + 2) * 16,
                          rsb_weapons[i]);
@@ -1038,7 +1038,7 @@ Sbar_DrawInventory2(void)
           flashon = (flashon % 5) + 2;
 
         if (rogue && i >= 2 &&
-            cl.stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << (i - 2))) {
+            cl.stats[STAT_ACTIVEWEAPON] == ((int)RIT_LAVA_NAILGUN << (i - 2))) {
           // powered up weapon
           pic = rsb_weapons[i - 2];
           active = true;
@@ -1486,7 +1486,7 @@ Sbar_AmmoPic(void)
       return sb_ammo[2];
     if (cl.items & RIT_CELLS)
       return sb_ammo[3];
-    if (cl.items & RIT_LAVA_NAILS)
+    if (cl.items & (int)RIT_LAVA_NAILS)
       return rsb_ammo[0];
     if (cl.items & RIT_PLASMA_AMMO)
       return rsb_ammo[1];

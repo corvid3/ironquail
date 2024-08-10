@@ -48,12 +48,12 @@ Loop_Shutdown(void)
 }
 
 void
-Loop_Listen(qboolean state)
+Loop_Listen(__attribute__((unused)) qboolean state)
 {
 }
 
 void
-Loop_SearchForHosts(qboolean xmit)
+Loop_SearchForHosts(__attribute__((unused)) qboolean xmit)
 {
   if (!sv.active)
     return;
@@ -233,7 +233,7 @@ Loop_CanSendMessage(qsocket_t* sock)
 }
 
 qboolean
-Loop_CanSendUnreliableMessage(qsocket_t* sock)
+Loop_CanSendUnreliableMessage(__attribute__((unused)) qsocket_t* sock)
 {
   return true;
 }

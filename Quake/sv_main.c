@@ -46,7 +46,7 @@ int sv_protocol = PROTOCOL_RMQ; // johnfitz
 
 extern cvar_t nomonsters;
 
-static cvar_t sv_netsort = { "sv_netsort", "1", CVAR_NONE };
+static cvar_t sv_netsort = { "sv_netsort", "1", CVAR_NONE, 0, 0, 0, 0, 0 };
 
 //============================================================================
 
@@ -56,7 +56,7 @@ SV_CalcStats(client_t* client, int* statsi, float* statsf, const char** statss)
   size_t i;
   edict_t* ent = client->edict;
   // FIXME: string stats!
-  int items;
+  __attribute__((unused)) int items;
   eval_t* val = GetEdictFieldValue(ent, qcvm->extfields.items2);
   if (val)
     items = (int)ent->v.items | ((int)val->_float << 23);
@@ -836,7 +836,7 @@ SV_WriteEntitiesToClient(edict_t* clent, sizebuf_t* msg)
   if (sv_netsort.value) {
     // compute bin offsets
     e = 0;
-    for (i = 0; i < countof(net_edict_bins); i++) {
+    for (i = 0; i < (int)countof(net_edict_bins); i++) {
       int tmp = net_edict_bins[i];
       net_edict_bins[i] = e;
       e += tmp;

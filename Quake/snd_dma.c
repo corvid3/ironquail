@@ -24,34 +24,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // snd_dma.c -- main control for any streaming sound output device
 
-#include "cdaudio.h"
+#include "bspfile.h"
 #include "client.h"
 #include "cmd.h"
 #include "common.h"
 #include "console.h"
-#include "crc.h"
 #include "cvar.h"
-#include "draw.h"
-#include "gl_texmgr.h"
-#include "glquake.h"
-#include "image.h"
-#include "input.h"
-#include "keys.h"
+#include "gl_model.h"
 #include "mathlib.h"
-#include "menu.h"
-#include "platform.h"
 #include "q_stdinc.h"
 #include "quakedef.h"
-#include "sbar.h"
-#include "screen.h"
-#include "server.h"
 #include "sys.h"
-#include "vid.h"
-#include "view.h"
-#include "wad.h"
 #include <SDL2/SDL.h>
 
-#include "bgmusic.h"
 #include "quakedef.h"
 #include "snd_codec.h"
 
@@ -105,25 +90,35 @@ static sfx_t* ambient_sfx[NUM_AMBIENTS];
 
 static qboolean sound_started = false;
 
-cvar_t bgmvolume = { "bgmvolume", "1", CVAR_ARCHIVE };
-cvar_t sfxvolume = { "volume", "0.7", CVAR_ARCHIVE };
+cvar_t bgmvolume = { "bgmvolume", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
+cvar_t sfxvolume = { "volume", "0.7", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
-cvar_t precache = { "precache", "1", CVAR_NONE };
-cvar_t loadas8bit = { "loadas8bit", "0", CVAR_NONE };
+cvar_t precache = { "precache", "1", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t loadas8bit = { "loadas8bit", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
 
-cvar_t sndspeed = { "sndspeed", "11025", CVAR_NONE };
-cvar_t snd_mixspeed = { "snd_mixspeed", "44100", CVAR_NONE };
+cvar_t sndspeed = { "sndspeed", "11025", CVAR_NONE, 0, 0, 0, 0, 0 };
+cvar_t snd_mixspeed = { "snd_mixspeed", "44100", CVAR_NONE, 0, 0, 0, 0, 0 };
 
-cvar_t snd_waterfx = { "snd_waterfx", "1", CVAR_ARCHIVE };
+cvar_t snd_waterfx = { "snd_waterfx", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
-cvar_t snd_filterquality = { "snd_filterquality", "5", CVAR_ARCHIVE };
+cvar_t snd_filterquality = {
+  "snd_filterquality", "5", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 
-static cvar_t nosound = { "nosound", "0", CVAR_NONE };
-static cvar_t ambient_level = { "ambient_level", "0.3", CVAR_NONE };
-static cvar_t ambient_fade = { "ambient_fade", "100", CVAR_NONE };
-static cvar_t snd_noextraupdate = { "snd_noextraupdate", "0", CVAR_NONE };
-static cvar_t snd_show = { "snd_show", "0", CVAR_NONE };
-static cvar_t _snd_mixahead = { "_snd_mixahead", "0.1", CVAR_ARCHIVE };
+static cvar_t nosound = { "nosound", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+static cvar_t ambient_level = {
+  "ambient_level", "0.3", CVAR_NONE, 0, 0, 0, 0, 0
+};
+static cvar_t ambient_fade = {
+  "ambient_fade", "100", CVAR_NONE, 0, 0, 0, 0, 0
+};
+static cvar_t snd_noextraupdate = {
+  "snd_noextraupdate", "0", CVAR_NONE, 0, 0, 0, 0, 0
+};
+static cvar_t snd_show = { "snd_show", "0", CVAR_NONE, 0, 0, 0, 0, 0 };
+static cvar_t _snd_mixahead = {
+  "_snd_mixahead", "0.1", CVAR_ARCHIVE, 0, 0, 0, 0, 0
+};
 
 static void
 S_SoundInfo_f(void)
@@ -145,13 +140,13 @@ S_SoundInfo_f(void)
 }
 
 static void
-SND_Callback_sfxvolume(cvar_t* var)
+SND_Callback_sfxvolume(__attribute__((unused)) cvar_t* var)
 {
   SND_InitScaletable();
 }
 
 static void
-SND_Callback_snd_filterquality(cvar_t* var)
+SND_Callback_snd_filterquality(__attribute__((unused)) cvar_t* var)
 {
   if (snd_filterquality.value < 1 || snd_filterquality.value > 5) {
     Con_Printf("snd_filterquality must be between 1 and 5\n");
@@ -256,7 +251,7 @@ S_Init(void)
   // provides a tick sound until washed clean
   //	if (shm->buffer)
   //		shm->buffer[4] = shm->buffer[5] = 0x7f;	// force a pop for
-  //debugging
+  // debugging
 
   ambient_sfx[AMBIENT_WATER] = S_PrecacheSound("ambience/water1.wav");
   ambient_sfx[AMBIENT_SKY] = S_PrecacheSound("ambience/wind2.wav");
@@ -810,8 +805,8 @@ S_RawSamples(int samples,
       dst = s_rawend & (MAX_RAW_SAMPLES - 1);
       s_rawend++;
       //	s_rawsamples [dst].left = ((signed char *) data)[src * 2] *
-      //intVolume; 	s_rawsamples [dst].right = ((signed char *) data)[src * 2 +
-      //1] * intVolume;
+      // intVolume; 	s_rawsamples [dst].right = ((signed char *) data)[src *
+      // 2 + 1] * intVolume;
       s_rawsamples[dst].left = (((byte*)data)[src * 2] - 128) * intVolume;
       s_rawsamples[dst].right = (((byte*)data)[src * 2 + 1] - 128) * intVolume;
     }
@@ -825,8 +820,8 @@ S_RawSamples(int samples,
       dst = s_rawend & (MAX_RAW_SAMPLES - 1);
       s_rawend++;
       //	s_rawsamples [dst].left = ((signed char *) data)[src] *
-      //intVolume; 	s_rawsamples [dst].right = ((signed char *) data)[src] *
-      //intVolume;
+      // intVolume; 	s_rawsamples [dst].right = ((signed char *) data)[src] *
+      // intVolume;
       s_rawsamples[dst].left = (((byte*)data)[src] - 128) * intVolume;
       s_rawsamples[dst].right = (((byte*)data)[src] - 128) * intVolume;
     }
