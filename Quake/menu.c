@@ -7422,15 +7422,14 @@ M_CheckCustomGfx(const char* custompath,
   if (id_custom >= id_base)
     ret = true;
   else if (length == knownlength) {
-    int mark = Hunk_LowMark();
-    byte* data = (byte*)Hunk_Alloc(length);
+    byte* data = malloc(length);
     if (length == Sys_FileRead(h, data, length)) {
       unsigned int hash = COM_HashBlock(data, length);
       while (numhashes-- > 0 && !ret)
         if (hash == *hashes++)
           ret = true;
     }
-    Hunk_FreeToLowMark(mark);
+    free(data);
   }
 
   COM_CloseFile(h);
