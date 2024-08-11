@@ -24,14 +24,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Quake is a trademark of Id Software, Inc., (c) 1996 Id Software, Inc. All
 // rights reserved.
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "keys.h"
-#include "net.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "keys.hh"
+#include "net.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
 #include <SDL2/SDL.h>
 extern cvar_t cl_maxpitch; // johnfitz -- variable pitch clamping
 extern cvar_t cl_minpitch; // johnfitz -- variable pitch clamping

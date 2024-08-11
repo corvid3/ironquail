@@ -21,12 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // chase.c -- chase camera code
 
-#include "client.h"
-#include "glquake.h"
-#include "mathlib.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "world.h"
+#include "client.hh"
+#include "glquake.hh"
+#include "mathlib.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "world.hh"
 #include <SDL2/SDL.h>
 
 cvar_t chase_back = { "chase_back", "100", CVAR_NONE, 0, 0, 0, 0, 0 };

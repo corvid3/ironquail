@@ -23,13 +23,13 @@
  *
  */
 
-#include "common.h"
-#include "console.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "snd_codec.h"
-#include "snd_codeci.h"
-#include "zone.h"
+#include "common.hh"
+#include "console.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "snd_codec.hh"
+#include "snd_codeci.hh"
+#include "zone.hh"
 #include <SDL2/SDL.h>
 
 /* headers for individual codecs */
@@ -74,18 +74,18 @@ S_CodecInit(void)
   S_CodecRegister(&xmp_codec);
 #endif
 #ifdef USE_CODEC_WAVE
-#include "snd_wave.h"
+#include "snd_wave.hh"
   S_CodecRegister(&wav_codec);
 #endif
 #ifdef USE_CODEC_FLAC
   S_CodecRegister(&flac_codec);
 #endif
 #ifdef USE_CODEC_MP3
-#include "snd_mp3.h"
+#include "snd_mp3.hh"
   S_CodecRegister(&mp3_codec);
 #endif
 #ifdef USE_CODEC_VORBIS
-#include "snd_vorbis.h"
+#include "snd_vorbis.hh"
   S_CodecRegister(&vorbis_codec);
 #endif
 #ifdef USE_CODEC_OPUS

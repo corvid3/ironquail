@@ -37,6 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "world.hh"
 #include <SDL2/SDL.h>
 
+using namespace enumflag;
+
 server_t sv;
 server_static_t svs;
 

@@ -57,8 +57,9 @@ LDFLAGS?=
 DFLAGS ?=
 CXXFLAGS ?= -Wall -Wextra -Werror -Wno-trigraphs
 CXXFLAGS += -D_FILE_OFFSET_BITS=64
-CXXFLAGS += $(call check_gcc,-std=cxx23,)
+CXXFLAGS += $(call check_gcc,-std=c++23,)
 CXXFLAGS += $(call check_gcc,-Werror=format,)
+CXXFLAGS+=-std=c++23
 CXXFLAGS += $(CPUFLAGS)
 ifneq ($(DEBUG),0)
 DFLAGS += -DDEBUG

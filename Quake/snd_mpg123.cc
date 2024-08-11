@@ -17,12 +17,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "quakedef.h"
+#include "quakedef.hh"
 
 #if defined(USE_CODEC_MP3)
-#include "snd_codec.h"
-#include "snd_codeci.h"
-#include "snd_mp3.h"
+#include "snd_codec.hh"
+#include "snd_codeci.hh"
+#include "snd_mp3.hh"
 #include <errno.h>
 
 #define MPG123_DEF_SSIZE_T  /* we do define ssize_t in our stdinc.h */

@@ -19,9 +19,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "common.h"
-#include "q_stdinc.h"
-#include "zone.h"
+#include "common.hh"
+#include "q_stdinc.hh"
+#include "zone.hh"
 #include <SDL2/SDL.h>
 
 static fshandle_t* cfg_file;

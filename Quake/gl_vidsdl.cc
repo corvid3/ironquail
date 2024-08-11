@@ -22,27 +22,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_vidsdl.c -- SDL GL vid component
 
-#include "bgmusic.h"
-#include "cfgfile.h"
-#include "cvar.h"
-#include "quakedef.h"
+#include "bgmusic.hh"
+#include "cfgfile.hh"
+#include "cvar.hh"
+#include "quakedef.hh"
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)
 #include <SDL2/SDL.h>
 #else
 #include "SDL.h"
 #endif
 
-#include "cdaudio.h"
-#include "cmd.h"
-#include "console.h"
-#include "glquake.h"
-#include "input.h"
-#include "keys.h"
-#include "platform.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sbar.h"
-#include "screen.h"
+#include "cdaudio.hh"
+#include "cmd.hh"
+#include "console.hh"
+#include "glquake.hh"
+#include "input.hh"
+#include "keys.hh"
+#include "platform.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sbar.hh"
+#include "screen.hh"
 #include <SDL2/SDL.h>
 
 // ericw -- for putting the driver into multithreaded mode

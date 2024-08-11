@@ -22,15 +22,15 @@
  *
  */
 
-#include "bgmusic.h"
-#include "cdaudio.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "q_sound.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "snd_codec.h"
+#include "bgmusic.hh"
+#include "cdaudio.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "q_sound.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "snd_codec.hh"
 #include <SDL2/SDL.h>
 
 #define MUSIC_DIRNAME "music"

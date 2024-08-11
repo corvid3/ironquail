@@ -22,15 +22,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // r_alias.c -- alias model rendering
 
-#include "client.h"
-#include "common.h"
-#include "console.h"
-#include "gl_texmgr.h"
-#include "glquake.h"
-#include "mathlib.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "vid.h"
+#include "client.hh"
+#include "common.hh"
+#include "console.hh"
+#include "gl_model.hh"
+#include "gl_texmgr.hh"
+#include "glquake.hh"
+#include "mathlib.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "vid.hh"
 #include <SDL2/SDL.h>
 
 extern cvar_t gl_overbright_models, gl_fullbrights, r_lerpmodels,
@@ -43,7 +44,7 @@ gltexture_t*
   playertextures[MAX_SCOREBOARD]; // johnfitz -- changed to an array of pointers
 
 const float r_avertexnormals[NUMVERTEXNORMALS][3] = {
-#include "anorms.h"
+#include "anorms.hh"
 };
 
 extern vec3_t
@@ -327,7 +328,7 @@ R_FlushAliasInstances(void)
 
   GL_BeginGroup(model->name);
 
-  md5 = paliashdr->poseverttype == PV_IQM;
+  md5 = paliashdr->poseverttype == aliashdr_t::PV_IQM;
 
   alphatest = model->flags & MF_HOLEY ? 1 : 0;
   translucent = !ENTALPHA_OPAQUE(ibuf.ent->alpha);
@@ -546,10 +547,10 @@ R_DrawAliasModel_Real(entity_t* e, qboolean showtris)
   fb = paliashdr->fbtextures[skinnum][anim];
   if (e->colormap != vid.colormap && !gl_nocolors.value) {
     if ((uintptr_t)e >= (uintptr_t)&cl_entities[1] &&
-        (uintptr_t)e <=
-          (uintptr_t)&cl_entities[cl.maxclients]) /* && !strcmp
-                                                     (currententity->model->name,
-                                                     "progs/player.mdl") */
+        (uintptr_t)e <= (uintptr_t)&cl_entities
+                          [cl.maxclients]) /* && !strcmp
+                                              (currententity->model->name,
+                                              "progs/player.mdl") */
       tx = playertextures[e - cl_entities - 1];
   }
   if (!gl_fullbrights.value)
@@ -602,7 +603,7 @@ R_DrawAliasModel_Real(entity_t* e, qboolean showtris)
   instance->pose2 = lerpdata.pose2;
   instance->blend = lerpdata.blend;
 
-  if (paliashdr->poseverttype == PV_QUAKE1) {
+  if (paliashdr->poseverttype == aliashdr_t::PV_QUAKE1) {
     instance->pose1 *= paliashdr->numverts_vbo;
     instance->pose2 *= paliashdr->numverts_vbo;
   } else {

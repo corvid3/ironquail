@@ -30,6 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "zone.hh"
 #include <SDL2/SDL.h>
 
+// evil
+using namespace enumflag;
+
 static cvar_t* cvar_vars;
 static char cvar_null_string[] = "";
 
@@ -589,7 +592,7 @@ Cvar_Create(const char* name, const char* value)
   if (Cmd_Exists(name))
     return NULL; // error! panic! oh noes!
 
-  newvar = Z_Malloc(sizeof(cvar_t) + strlen(name) + 1);
+  newvar = (cvar_t*)Z_Malloc(sizeof(cvar_t) + strlen(name) + 1);
   newvar->name = (char*)(newvar + 1);
   strcpy((char*)(newvar + 1), name);
   newvar->flags = CVAR_USERDEFINED;

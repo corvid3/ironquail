@@ -21,10 +21,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "console.h"
-#include "glquake.h"
-#include "mathlib.h"
-#include "quakedef.h"
+#include "console.hh"
+#include "glquake.hh"
+#include "mathlib.hh"
+#include "quakedef.hh"
 
 #define MAX_PARTICLES                                                          \
   16384 // default max # of particles at one

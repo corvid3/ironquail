@@ -24,15 +24,15 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "console.h"
+#include "console.hh"
 
 #if defined(USE_CODEC_MP3)
-#include "snd_codec.h"
-#include "snd_mp3.h"
+#include "snd_codec.hh"
+#include "snd_mp3.hh"
 #include <mad.h>
 
 // including this here might not be correct? i'll fix it later
-#include "snd_codeci.h"
+#include "snd_codeci.hh"
 
 /* Under Windows, importing data from DLLs is a dicey proposition. This is true
  * when using dlopen, but also true if linking directly against the DLL if the

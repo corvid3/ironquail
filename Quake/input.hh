@@ -22,8 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef QUAKE_INPUT_H
 #define QUAKE_INPUT_H
 
-#include "protocol.h"
-#include "q_stdinc.h"
+#include "protocol.hh"
+#include "q_stdinc.hh"
 
 // input.h -- external (non-keyboard) input devices
 
@@ -40,6 +40,10 @@ IN_Commands(void);
 // mouse moved by dx and dy pixels
 void
 IN_MouseMotion(int dx, int dy);
+
+// fwd declare
+enum textmode_t : int;
+enum keydevice_t : int;
 
 //
 // controller gyro

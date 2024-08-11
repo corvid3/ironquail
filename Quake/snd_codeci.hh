@@ -26,8 +26,8 @@
 #ifndef _SND_CODECI_H_
 #define _SND_CODECI_H_
 
-#include "q_stdinc.h"
-#include "snd_codec.h"
+#include "q_stdinc.hh"
+#include "snd_codec.hh"
 #include <SDL2/SDL.h>
 
 /* Codec internals */

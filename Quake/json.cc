@@ -17,14 +17,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "common.h"
-#include "json.h"
-#include "quakedef.h"
+#include "common.hh"
+#include "json.hh"
+#include "quakedef.hh"
 
 // https://github.com/zserge/jsmn
 #define JSMN_PARENT_LINKS
 #define JSMN_STATIC
-#include "jsmn.h"
+#include "jsmn.hh"
 
 /*
 ==================

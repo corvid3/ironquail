@@ -21,19 +21,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sv_user.c -- server code for moving users
 
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "keys.h"
-#include "mathlib.h"
-#include "net.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "server.h"
-#include "sys.h"
-#include "view.h"
-#include "world.h"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "keys.hh"
+#include "mathlib.hh"
+#include "net.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "server.hh"
+#include "sys.hh"
+#include "view.hh"
+#include "world.hh"
 #include <SDL2/SDL.h>
+
+// evil
+using namespace enumflag;
+
 edict_t* sv_player;
 
 extern cvar_t sv_friction;

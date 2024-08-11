@@ -24,22 +24,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // models are the only shared resource between a client and server running
 // on the same machine.
 
-#include "modelgen.h"
+#include "modelgen.hh"
 
-#include "cvar.h"
+#include "gl_model.hh"
 
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "crc.h"
-#include "gl_texmgr.h"
-#include "glquake.h"
-#include "image.h"
-#include "mathlib.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "server.h"
-#include "sys.h"
+#include "cvar.hh"
+
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "crc.hh"
+#include "gl_texmgr.hh"
+#include "glquake.hh"
+#include "image.hh"
+#include "mathlib.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "server.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 
 static qmodel_t* loadmodel;
@@ -3103,7 +3105,7 @@ Mod_CalcAliasBounds(aliashdr_t* a)
   for (;;) {
     if (a->numposes && a->numverts) {
       switch (a->poseverttype) {
-        case PV_QUAKE1:
+        case aliashdr_t::PV_QUAKE1:
           // process verts
           for (i = 0; i < a->numposes; i++)
             for (j = 0; j < a->numverts; j++) {
@@ -3123,7 +3125,7 @@ Mod_CalcAliasBounds(aliashdr_t* a)
                 radius = dist;
             }
           break;
-        case PV_IQM:
+        case aliashdr_t::PV_IQM:
           // process verts
           for (i = 0; i < a->numposes; i++) {
             const iqmvert_t* pv =
@@ -3379,7 +3381,7 @@ Mod_LoadAliasModel(qmodel_t* mod, void* buffer)
   }
 
   pheader->numposes = posenum;
-  pheader->poseverttype = PV_QUAKE1;
+  pheader->poseverttype = aliashdr_t::PV_QUAKE1;
 
   mod->type = mod_alias;
 
@@ -4157,15 +4159,15 @@ MD5Anim_Load(md5animctx_t* ctx, boneinfo_t* bones, size_t numbones)
       if (bones[j].parent < 0)
         frameposes[j] = local;
       else
-        R_ConcatTransforms((void*)frameposes[bones[j].parent].mat,
-                           (void*)local.mat,
-                           (void*)frameposes[j].mat);
+        R_ConcatTransforms((float(*)[4])frameposes[bones[j].parent].mat,
+                           (float(*)[4])local.mat,
+                           (float(*)[4])frameposes[j].mat);
     }
 
     for (j = 0; j < ctx->numjoints; j++)
-      R_ConcatTransforms((void*)frameposes[j].mat,
-                         (void*)bones[j].inverse.mat,
-                         (void*)outposes[idx * ctx->numjoints + j].mat);
+      R_ConcatTransforms((float(*)[4])frameposes[j].mat,
+                         (float(*)[4])bones[j].inverse.mat,
+                         (float(*)[4])outposes[idx * ctx->numjoints + j].mat);
   }
 
   Z_Free(raw);
@@ -4193,7 +4195,7 @@ Mod_LoadMD5MeshModel(qmodel_t* mod, const char* buffer)
   md5weightinfo_t* weight;
   size_t numweights;
 
-  md5animctx_t anim = { 0 };
+  md5animctx_t anim{};
 
   start = Hunk_LowMark();
 
@@ -4270,7 +4272,7 @@ Mod_LoadMD5MeshModel(qmodel_t* mod, const char* buffer)
     else
       surf->nextsurface = 0;
 
-    surf->poseverttype = PV_IQM;
+    surf->poseverttype = aliashdr_t::PV_IQM;
     for (j = 0; j < 3; j++) {
       surf->scale_origin[j] = 0;
       surf->scale[j] = 1.0;
@@ -4318,21 +4320,21 @@ Mod_LoadMD5MeshModel(qmodel_t* mod, const char* buffer)
                              fwidth,
                              fheight,
                              fmt,
-                             data,
+                             (byte*)data,
                              texname,
                              0,
                              TEXPREF_ALPHA | TEXPREF_NOBRIGHT | TEXPREF_MIPMAP);
           surf->fbtextures[surf->numskins][f] = NULL;
           if (fmt == SRC_INDEXED) { // 8bit base texture. use it for
                                     // fullbrights.
-            if (Mod_CheckFullbrights(data, fwidth * fheight))
+            if (Mod_CheckFullbrights((byte*)data, fwidth * fheight))
               surf->fbtextures[surf->numskins][f] = TexMgr_LoadImage(
                 mod,
                 va("%s_luma", texname),
                 fwidth,
                 fheight,
                 fmt,
-                data,
+                (byte*)data,
                 texname,
                 0,
                 TEXPREF_ALPHA | TEXPREF_FULLBRIGHT | TEXPREF_MIPMAP);

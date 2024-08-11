@@ -21,12 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sv_move.c -- monster movement
 
-#include "cdaudio.h"
-#include "mathlib.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "server.h"
-#include "world.h"
+#include "cdaudio.hh"
+#include "mathlib.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "server.hh"
+#include "world.hh"
 #include <SDL2/SDL.h>
 
 #define STEPSIZE 18

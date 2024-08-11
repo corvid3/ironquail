@@ -22,24 +22,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // gl_texmgr.c -- fitzquake's texture manager. manages opengl texture images
 
-#include "cvar.h"
-#include "glquake.h"
-#include "quakedef.h"
+#include "cvar.hh"
+#include "glquake.hh"
+#include "quakedef.hh"
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "crc.h"
-#include "gl_texmgr.h"
-#include "glquake.h"
-#include "image.h"
-#include "mathlib.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sbar.h"
-#include "sys.h"
-#include "view.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "crc.hh"
+#include "gl_texmgr.hh"
+#include "glquake.hh"
+#include "image.hh"
+#include "mathlib.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sbar.hh"
+#include "sys.hh"
+#include "view.hh"
 #include <SDL2/SDL.h>
 
 typedef struct
@@ -330,8 +330,9 @@ TexMgr_SoftEmu_f -- called when r_softemu changes
 static void
 TexMgr_SoftEmu_f(__attribute__((unused)) cvar_t* var)
 {
-  softemu = (int)r_softemu.value;
-  softemu = CLAMP(0, (int)softemu, SOFTEMU_NUMMODES - 1);
+  softemu = static_cast<softemu_t>(r_softemu.value);
+  softemu =
+    static_cast<softemu_t>(CLAMP(0, (int)softemu, SOFTEMU_NUMMODES - 1));
 }
 
 /*
@@ -2338,8 +2339,9 @@ GLPalette_UpdateLookupTable(void)
                      cl.worldmodel->litfile;
     metric = oklab ? SOFTEMU_METRIC_OKLAB : SOFTEMU_METRIC_NAIVE;
   } else {
-    metric = (int)r_softemu_metric.value;
-    metric = CLAMP(0, (int)metric, SOFTEMU_METRIC_COUNT - 1);
+    metric = static_cast<softemu_metric_t>(r_softemu_metric.value);
+    metric = static_cast<softemu_metric_t>(
+      CLAMP(0, (int)metric, SOFTEMU_METRIC_COUNT - 1));
   }
 
   SDL_assert((unsigned)metric < SOFTEMU_METRIC_COUNT);

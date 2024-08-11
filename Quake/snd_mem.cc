@@ -21,11 +21,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // snd_mem.c: sound caching
 
-#include "common.h"
-#include "console.h"
-#include "q_sound.h"
-#include "q_stdinc.h"
-#include "sys.h"
+#include "common.hh"
+#include "console.hh"
+#include "q_sound.hh"
+#include "q_stdinc.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 
 /*

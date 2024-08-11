@@ -17,8 +17,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "console.h"
-#include "q_stdinc.h"
+#include "console.hh"
+#include "q_stdinc.hh"
 
 int
 CDAudio_Play(__attribute__((unused)) byte track,

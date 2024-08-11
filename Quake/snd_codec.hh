@@ -26,7 +26,7 @@
 #ifndef _SND_CODEC_H_
 #define _SND_CODEC_H_
 
-#include "common.h"
+#include "common.hh"
 typedef struct snd_info_s
 {
   int rate;

@@ -23,8 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _QUAKE_MENU_H
 #define _QUAKE_MENU_H
 
-#include "q_stdinc.h"
-#include "wad.h"
+#include "q_stdinc.hh"
+#include "wad.hh"
 
 enum m_state_e
 {

@@ -19,15 +19,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "client.h"
-#include "common.h"
-#include "console.h"
-#include "net.h"
-#include "net_defs.h"
-#include "net_loop.h"
-#include "q_stdinc.h"
-#include "server.h"
-#include "sys.h"
+#include "client.hh"
+#include "common.hh"
+#include "console.hh"
+#include "net.hh"
+#include "net_defs.hh"
+#include "net_loop.hh"
+#include "q_stdinc.hh"
+#include "server.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 
 static qboolean localconnectpending = false;

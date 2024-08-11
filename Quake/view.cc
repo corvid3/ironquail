@@ -21,19 +21,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // view.c -- player eye positioning
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "cvar.h"
-#include "gl_texmgr.h"
-#include "glquake.h"
-#include "mathlib.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "screen.h"
-#include "vid.h"
-#include "view.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "cvar.hh"
+#include "gl_texmgr.hh"
+#include "glquake.hh"
+#include "mathlib.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "screen.hh"
+#include "vid.hh"
+#include "view.hh"
 #include <SDL2/SDL.h>
 /*
 

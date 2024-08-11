@@ -24,7 +24,7 @@
 #ifndef __NET_SYS_H__
 #define __NET_SYS_H__
 
-#include "q_stdinc.h"
+#include "q_stdinc.hh"
 #include <errno.h>
 #include <limits.h>
 #include <stddef.h>
@@ -170,7 +170,7 @@ typedef SOCKET sys_socket_t;
 #define SOCKETERRNO WSAGetLastError()
 #define NET_EWOULDBLOCK WSAEWOULDBLOCK
 #define NET_ECONNREFUSED WSAECONNREFUSED
-/* must #include "wsaerror.h" for this : */
+/* must #include "wsaerror.hh" for this : */
 #define socketerror(x) __WSAE_StrError((x))
 
 /* Verify that we defined HAVE_SA_LEN correctly: */

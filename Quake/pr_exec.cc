@@ -19,12 +19,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "client.h"
-#include "common.h"
-#include "console.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "server.h"
+#include "client.hh"
+#include "common.hh"
+#include "console.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "server.hh"
 #include <SDL2/SDL.h>
 static const char* const pr_opnames[] = {
   "DONE",

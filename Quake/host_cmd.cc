@@ -21,25 +21,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "input.h"
-#include "json.h"
-#include "keys.h"
-#include "mathlib.h"
-#include "menu.h"
-#include "net.h"
-#include "q_ctype.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "screen.h"
-#include "server.h"
-#include "sys.h"
-#include "world.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "input.hh"
+#include "json.hh"
+#include "keys.hh"
+#include "mathlib.hh"
+#include "menu.hh"
+#include "net.hh"
+#include "q_ctype.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "screen.hh"
+#include "server.hh"
+#include "sys.hh"
+#include "world.hh"
 #include <SDL2/SDL.h>
 #include <time.h>
+
+using namespace enumflag;
 
 #ifndef WITHOUT_CURL
 #include <curl/curl.h>
@@ -277,7 +279,7 @@ ExtraMaps_Categorize(const char* name, const searchpath_t* source)
         break;
       case 'e':
         if (name[1] >= '1' && name[1] <= '4')
-          return MAPTYPE_ID_EP1_LEVEL + (name[1] - '1');
+          return static_cast<maptype_t>(MAPTYPE_ID_EP1_LEVEL + (name[1] - '1'));
         if (!strcmp(name + 1, "nd"))
           return MAPTYPE_ID_END;
         break;
@@ -307,12 +309,12 @@ ExtraMaps_Categorize(const char* name, const searchpath_t* source)
 
   base = *source->filename ? MAPTYPE_CUSTOM_MOD_START : MAPTYPE_MOD_START;
   if (is_start)
-    return base + MAPTYPE_CUSTOM_MOD_START;
+    return static_cast<maptype_t>(base + MAPTYPE_CUSTOM_MOD_START);
   if (is_end)
-    return base + MAPTYPE_CUSTOM_MOD_END;
+    return static_cast<maptype_t>(base + MAPTYPE_CUSTOM_MOD_END);
   if (is_dm)
-    return base + MAPTYPE_CUSTOM_MOD_DM;
-  return base + MAPTYPE_CUSTOM_MOD_LEVEL;
+    return static_cast<maptype_t>(base + MAPTYPE_CUSTOM_MOD_DM);
+  return static_cast<maptype_t>(base + MAPTYPE_CUSTOM_MOD_LEVEL);
 }
 
 typedef struct levelinfo_s
@@ -341,7 +343,7 @@ maptype_t
 ExtraMaps_GetType(const filelist_item_t* item)
 {
   const levelinfo_t* info = ExtraMaps_GetInfo(item);
-  return SDL_AtomicGet((SDL_atomic_t*)&info->type);
+  return static_cast<maptype_t>(SDL_AtomicGet((SDL_atomic_t*)&info->type));
 }
 
 /*
@@ -436,7 +438,8 @@ ExtraMaps_ParseDescriptions(__attribute__((unused)) void* unused)
 
     if (!Mod_LoadMapDescription(buf, sizeof(buf), item->name))
       SDL_AtomicSet(&extra->type, MAPTYPE_BMODEL);
-    SDL_AtomicSetPtr((void**)&extra->message, buf[0] ? strdup(buf) : "");
+    SDL_AtomicSetPtr((void**)&extra->message,
+                     (void*)(buf[0] ? strdup(buf) : ""));
   }
 
   return 0;
@@ -788,8 +791,8 @@ Modlist_RegisterAddons(void* param)
   installed = 0;
 
   for (entry = addons->firstchild; entry; entry = entry->next) {
-    const char *download, *gamedir, *name, *author, *date, *description,
-      __attribute__((unused)) * version;
+    const char *download, *gamedir, *name, *author, *date,
+      *description, *__attribute__((unused)) version;
     const double* size;
     modinfo_t* info;
     filelist_item_t* item;
@@ -1787,7 +1790,7 @@ Host_Noclip_f(void)
   // johnfitz -- allow user to explicitly set noclip to on or off
   switch (Cmd_Argc()) {
     case 1:
-      if (sv_player->v.movetype != MOVETYPE_NOCLIP) {
+      if ((int)sv_player->v.movetype != MOVETYPE_NOCLIP) {
         noclip_anglehack = true;
         sv_player->v.movetype = MOVETYPE_NOCLIP;
         SV_ClientPrintf("noclip ON\n");
@@ -1849,7 +1852,7 @@ Host_SetPos_f(void)
     return;
   }
 
-  if (sv_player->v.movetype != MOVETYPE_NOCLIP) {
+  if ((int)sv_player->v.movetype != MOVETYPE_NOCLIP) {
     noclip_anglehack = true;
     sv_player->v.movetype = MOVETYPE_NOCLIP;
     SV_ClientPrintf("noclip ON\n");
@@ -1895,7 +1898,7 @@ Host_Fly_f(void)
   // johnfitz -- allow user to explicitly set noclip to on or off
   switch (Cmd_Argc()) {
     case 1:
-      if (sv_player->v.movetype != MOVETYPE_FLY) {
+      if ((int)sv_player->v.movetype != MOVETYPE_FLY) {
         sv_player->v.movetype = MOVETYPE_FLY;
         SV_ClientPrintf("flymode ON\n");
       } else {
@@ -3385,21 +3388,21 @@ Host_Give_f(void)
         sv_player->v.items = sv_player->v.items -
                              ((int)(sv_player->v.items) &
                               (int)(IT_ARMOR1 | IT_ARMOR2 | IT_ARMOR3)) +
-                             IT_ARMOR3;
+                             (int)IT_ARMOR3;
       } else if (v > 100) {
         sv_player->v.armortype = 0.6;
         sv_player->v.armorvalue = v;
         sv_player->v.items = sv_player->v.items -
                              ((int)(sv_player->v.items) &
                               (int)(IT_ARMOR1 | IT_ARMOR2 | IT_ARMOR3)) +
-                             IT_ARMOR2;
+                             (int)IT_ARMOR2;
       } else if (v >= 0) {
         sv_player->v.armortype = 0.3;
         sv_player->v.armorvalue = v;
         sv_player->v.items = sv_player->v.items -
                              ((int)(sv_player->v.items) &
                               (int)(IT_ARMOR1 | IT_ARMOR2 | IT_ARMOR3)) +
-                             IT_ARMOR1;
+                             (int)IT_ARMOR1;
       }
       break;
       // johnfitz

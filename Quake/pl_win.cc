@@ -21,14 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "quakedef.h"
+#include "quakedef.hh"
 #include <windows.h>
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #else
 #include "SDL.h"
-#include "SDL_syswm.h"
+#include "SDL_syswm.hh"
 #endif
 
 static HICON icon;

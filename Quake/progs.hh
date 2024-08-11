@@ -37,6 +37,20 @@ typedef enum showbboxflags_t
   SHOWBBOX_LINK_BOTH = SHOWBBOX_LINK_OUTGOING | SHOWBBOX_LINK_INCOMING,
 } showbboxflags_t;
 
+inline showbboxflags_t
+operator|(showbboxflags_t const lhs, showbboxflags_t const rhs)
+{
+  return static_cast<showbboxflags_t>(static_cast<int>(lhs) |
+                                      static_cast<int>(rhs));
+}
+
+inline showbboxflags_t&
+operator|=(showbboxflags_t& lhs, showbboxflags_t const rhs)
+{
+  lhs = lhs | rhs;
+  return lhs;
+}
+
 typedef union eval_s
 {
   string_t string;

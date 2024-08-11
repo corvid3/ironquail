@@ -20,5 +20,5 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_warp.c -- warping animation support
 
-#include "cvar.h"
+#include "cvar.hh"
 cvar_t r_waterwarp = { "r_waterwarp", "1", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };

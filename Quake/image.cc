@@ -21,12 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // image.c -- image loading
 
-#include "common.h"
-#include "console.h"
-#include "gl_texmgr.h"
-#include "image.h"
-#include "q_stdinc.h"
-#include "sys.h"
+#include "common.hh"
+#include "console.hh"
+#include "gl_texmgr.hh"
+#include "image.hh"
+#include "q_stdinc.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 
 static byte*
@@ -49,7 +49,7 @@ Image_LoadLMP(FILE* f, int* width, int* height);
 #define STBI_NO_PIC
 #define STBI_NO_PNM
 #define STBI_NO_LINEAR
-#include "stb_image.h"
+#include "stb_image.hh"
 
 #ifdef __GNUC__
 // Restore unused function warnings on GCC/clang
@@ -58,14 +58,14 @@ Image_LoadLMP(FILE* f, int* width, int* height);
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_STATIC
-#include "stb_image_write.h"
+#include "stb_image_write.hh"
 
 #define LODEPNG_NO_COMPILE_DECODER
 #define LODEPNG_NO_COMPILE_CPP
 #define LODEPNG_NO_COMPILE_ANCILLARY_CHUNKS
 #define LODEPNG_NO_COMPILE_ERROR_TEXT
-#include "lodepng.c"
-#include "lodepng.h"
+#include "lodepng.cc"
+#include "lodepng.hh"
 
 static char
   loadfilename[MAX_OSPATH]; // file scope so that error messages can use it
@@ -372,7 +372,7 @@ Image_LoadLMP(FILE* f, int* width, int* height)
   *width = qpic.width;
   *height = qpic.height;
 
-  return data;
+  return (byte*)data;
 }
 
 //==============================================================================

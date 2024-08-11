@@ -21,13 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_mesh.c: triangle model functions
 
-#include "client.h"
-#include "common.h"
-#include "gl_texmgr.h"
-#include "glquake.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sys.h"
+#include "client.hh"
+#include "common.hh"
+#include "gl_model.hh"
+#include "gl_texmgr.hh"
+#include "glquake.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 
 /*
@@ -160,13 +161,13 @@ GLMesh_LoadVertexBuffer(qmodel_t* m, aliashdr_t* mainhdr)
   // count how much space we're going to need.
   for (hdr = mainhdr, numverts = 0, numindexes = 0;;) {
     switch (hdr->poseverttype) {
-      case PV_QUAKE1:
+      case aliashdr_t::PV_QUAKE1:
         totalvbosize +=
           (hdr->numposes * hdr->numverts_vbo *
            sizeof(meshxyz_t)); // ericw -- what RMQEngine called nummeshframes
                                // is called numposes in QuakeSpasm
         break;
-      case PV_IQM:
+      case aliashdr_t::PV_IQM:
         totalvbosize += (hdr->numposes * hdr->numverts_vbo * sizeof(iqmvert_t));
         animsize += hdr->numboneposes * hdr->numbones * sizeof(bonepose_t);
         break;
@@ -189,7 +190,7 @@ GLMesh_LoadVertexBuffer(qmodel_t* m, aliashdr_t* mainhdr)
   totalvbosize = (totalvbosize + ssbo_align) & ~ssbo_align; // align it.
 
   stofs = totalvbosize;
-  if (mainhdr->poseverttype == PV_QUAKE1)
+  if (mainhdr->poseverttype == aliashdr_t::PV_QUAKE1)
     totalvbosize += (numverts * sizeof(meshst_t));
   totalvbosize = (totalvbosize + ssbo_align) & ~ssbo_align; // align it.
 
@@ -233,7 +234,7 @@ GLMesh_LoadVertexBuffer(qmodel_t* m, aliashdr_t* mainhdr)
 
     // fill in the vertices at the start of the buffer
     switch (hdr->poseverttype) {
-      case PV_QUAKE1:
+      case aliashdr_t::PV_QUAKE1:
         for (f = 0; f < hdr->numposes;
              f++) // ericw -- what RMQEngine called nummeshframes is called
                   // numposes in QuakeSpasm
@@ -265,7 +266,7 @@ GLMesh_LoadVertexBuffer(qmodel_t* m, aliashdr_t* mainhdr)
           }
         }
         break;
-      case PV_IQM:
+      case aliashdr_t::PV_IQM:
         for (f = 0; f < hdr->numposes;
              f++) // ericw -- what RMQEngine called nummeshframes is called
                   // numposes in QuakeSpasm
@@ -291,7 +292,7 @@ GLMesh_LoadVertexBuffer(qmodel_t* m, aliashdr_t* mainhdr)
     }
 
     // fill in the ST coords at the end of the buffer
-    if (hdr->poseverttype == PV_QUAKE1) {
+    if (hdr->poseverttype == aliashdr_t::PV_QUAKE1) {
       meshst_t* st;
       float hscale, vscale;
 

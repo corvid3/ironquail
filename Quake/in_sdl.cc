@@ -24,23 +24,23 @@ https://github.com/yquake2/yquake2/blob/master/src/client/input/sdl.c
 
 */
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "cvar.h"
-#include "glquake.h"
-#include "input.h"
-#include "keys.h"
-#include "mathlib.h"
-#include "menu.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sys.h"
-#include "vid.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "cvar.hh"
+#include "glquake.hh"
+#include "input.hh"
+#include "keys.hh"
+#include "mathlib.hh"
+#include "menu.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sys.hh"
+#include "vid.hh"
 #include <SDL2/SDL.h>
 
-#include "quakedef.h"
+#include "quakedef.hh"
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)
 #include <SDL2/SDL.h>
 #else
@@ -822,7 +822,7 @@ at 1. Raises the axis values to the given exponent, keeping signs.
 static joyaxis_t
 IN_ApplyEasing(joyaxis_t axis, float exponent)
 {
-  joyaxis_t result = { 0 };
+  joyaxis_t result{};
   vec_t eased_magnitude;
   vec_t magnitude = IN_AxisMagnitude(axis);
 
@@ -856,7 +856,7 @@ http://www.third-helix.com/2013/04/12/doing-thumbstick-dead-zones-right.html
 static joyaxis_t
 IN_ApplyDeadzone(joyaxis_t axis, float deadzone, float outer_threshold)
 {
-  joyaxis_t result = { 0 };
+  joyaxis_t result{};
   vec_t magnitude = IN_AxisMagnitude(axis);
 
   if (magnitude > deadzone) {

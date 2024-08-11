@@ -20,29 +20,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "bgmusic.h"
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "cvar.h"
-#include "draw.h"
-#include "gl_texmgr.h"
-#include "glquake.h"
-#include "input.h"
-#include "keys.h"
-#include "mathlib.h"
-#include "menu.h"
-#include "net.h"
-#include "q_ctype.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "screen.h"
-#include "server.h"
-#include "sys.h"
-#include "vid.h"
-#include "view.h"
-#include "wad.h"
+#include "bgmusic.hh"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "cvar.hh"
+#include "draw.hh"
+#include "gl_texmgr.hh"
+#include "glquake.hh"
+#include "input.hh"
+#include "keys.hh"
+#include "mathlib.hh"
+#include "menu.hh"
+#include "net.hh"
+#include "q_ctype.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "screen.hh"
+#include "server.hh"
+#include "sys.hh"
+#include "vid.hh"
+#include "view.hh"
+#include "wad.hh"
 #include <SDL2/SDL.h>
 #include <time.h>
 
@@ -859,7 +859,8 @@ M_List_DrawSearch(const menulist_t* list, int cx, int cy, int maxlen)
   for (i = ofs; i < list->search.len; i++)
     M_DrawCharacter(cx + (i - ofs) * 8, cy, list->search.text[i]);
 
-  alpha = CLAMP(0.f, (float)list->search.timeout / SEARCH_FADE_TIMEOUT, 1.f);
+  alpha =
+    CLAMP<float>(0.f, (float)list->search.timeout / SEARCH_FADE_TIMEOUT, 1.f);
   GL_SetCanvasColor(1.f, 1.f, 1.f, alpha);
   M_DrawCharacter(
     cx + (i - ofs) * 8, cy, list->search.errtimeout ? 11 ^ 128 : 11);
@@ -1891,7 +1892,8 @@ M_Maps_Init(void)
     if (type >= MAPTYPE_BMODEL)
       continue;
     if (prev_type != -1 && prev_type != type)
-      M_Maps_AddSeparator(prev_type, type);
+      M_Maps_AddSeparator(static_cast<maptype_t>(prev_type),
+                          static_cast<maptype_t>(type));
     prev_type = type;
 
     map.name = item->name;
@@ -1901,7 +1903,8 @@ M_Maps_Init(void)
     if (map.active && active == -1)
       active = VEC_SIZE(mapsmenu.items);
     if ((map.active && !cls.demoplayback) ||
-        (mapsmenu.list.cursor == -1 && ExtraMaps_IsStart(type)))
+        (mapsmenu.list.cursor == -1 &&
+         ExtraMaps_IsStart(static_cast<maptype_t>(type))))
       mapsmenu.list.cursor = VEC_SIZE(mapsmenu.items);
     VEC_PUSH(mapsmenu.items, map);
     mapsmenu.list.numitems++;
@@ -1957,7 +1960,8 @@ M_Maps_Draw(void)
 
   M_Maps_UpdateLayout();
 
-  namecols = (int)CLAMP(14, mapsmenu.cols * 0.375f, 56) & ~1;
+  namecols =
+    static_cast<int>(CLAMP<float>(14, mapsmenu.cols * 0.375f, 56)) & ~1;
   desccols = mapsmenu.cols - 1 - namecols;
 
   if (!keydown[K_MOUSE1])
@@ -2937,7 +2941,8 @@ static void
 VID_Menu_ChooseNextDisplayMode(int dir)
 {
   windowmode_t mode = VID_Menu_GetDisplayMode();
-  mode = (mode + DISPLAYMODE_COUNT - dir) % DISPLAYMODE_COUNT;
+  mode = static_cast<windowmode_t>(
+    (static_cast<int>(mode) + DISPLAYMODE_COUNT - dir) % DISPLAYMODE_COUNT);
   VID_Menu_SetDisplayMode(mode);
 }
 
@@ -3722,9 +3727,9 @@ M_AdjustSliders(int dir)
                          ((int)q_max(crosshair.value, 0.f) + 3 + dir) % 3);
       break;
     case OPT_UIMOUSE: // UI mouse support
-      M_Options_SetUIMouse(
+      M_Options_SetUIMouse(static_cast<uimouse_t>(
         (M_Options_GetUIMouse() + UI_MOUSE_NUMSETTINGS + dir) %
-        UI_MOUSE_NUMSETTINGS);
+        UI_MOUSE_NUMSETTINGS));
       break;
     case OPT_GAMMA: // gamma
       f = vid_gamma.value - dir * 0.05;
@@ -3982,10 +3987,10 @@ M_AdjustSliders(int dir)
       Cvar_SetValueQuick(&joy_flick, !joy_flick.value);
       break;
     case GPAD_OPT_GYROMODE:
-      Cvar_SetValueQuick(
-        &gyro_mode,
-        (int)(q_max(gyro_mode.value, 0.f) + GYRO_MODE_COUNT + dir) %
-          GYRO_MODE_COUNT);
+      Cvar_SetValueQuick(&gyro_mode,
+                         (int)(q_max(gyro_mode.value, 0.f) +
+                               static_cast<int>(GYRO_MODE_COUNT) + dir) %
+                           GYRO_MODE_COUNT);
       break;
     case GPAD_OPT_GYROAXIS:
       Cvar_SetValueQuick(&gyro_turning_axis, !gyro_turning_axis.value);
@@ -5136,6 +5141,8 @@ M_Keys_Key(int k)
 
   if (M_List_Key(&keysmenu.list, k))
     return;
+
+  using namespace enumflag;
 
   switch (k) {
     case K_ESCAPE:
@@ -6489,7 +6496,7 @@ M_Mods_Draw(void)
   M_Mods_UpdateLayout();
   M_List_Update(&modsmenu.list);
 
-  namecols = (int)CLAMP(16, modsmenu.cols * 0.4375f, 24) & ~1;
+  namecols = (int)CLAMP<float>(16, modsmenu.cols * 0.4375f, 24) & ~1;
   desccols = modsmenu.cols - 1 - namecols;
 
   if (modsmenu.prev_cursor != modsmenu.list.cursor) {
@@ -7422,7 +7429,7 @@ M_CheckCustomGfx(const char* custompath,
   if (id_custom >= id_base)
     ret = true;
   else if (length == knownlength) {
-    byte* data = malloc(length);
+    byte* data = (byte*)malloc(length);
     if (length == Sys_FileRead(h, data, length)) {
       unsigned int hash = COM_HashBlock(data, length);
       while (numhashes-- > 0 && !ret)

@@ -21,13 +21,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "common.h"
-#include "console.h"
-#include "input.h"
-#include "platform.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sys.h"
+#include "common.hh"
+#include "console.hh"
+#include "input.hh"
+#include "platform.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 
 #include <errno.h>
@@ -52,6 +52,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #else
 #endif
+
+using namespace enumflag;
 
 qboolean isDedicated;
 
@@ -662,7 +664,7 @@ static void
 Sys_FillFindData(unixfindfile_t* find)
 {
   q_strlcpy(find->base.name, find->data->d_name, sizeof(find->base.name));
-  find->base.attribs = 0;
+  find->base.attribs = static_cast<fileattribs_t>(0);
   if (find->data->d_type & DT_DIR)
     find->base.attribs |= FA_DIRECTORY;
 }

@@ -19,14 +19,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "q_stdinc.h"
-#include "arch_def.h"
-#include "net_sys.h"
-#include "quakedef.h"
-#include "net_defs.h"
+#include "q_stdinc.hh"
+#include "arch_def.hh"
+#include "net_sys.hh"
+#include "quakedef.hh"
+#include "net_defs.hh"
 
-#include "net_dgrm.h"
-#include "net_loop.h"
+#include "net_dgrm.hh"
+#include "net_loop.hh"
 
 net_driver_t net_drivers[] =
 {
@@ -65,7 +65,7 @@ net_driver_t net_drivers[] =
 
 const int net_numdrivers = Q_COUNTOF(net_drivers);
 
-#include "net_udp.h"
+#include "net_udp.hh"
 
 net_landriver_t	net_landrivers[] =
 {

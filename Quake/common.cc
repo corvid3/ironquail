@@ -22,25 +22,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // common.c -- misc functions used in client and server
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "crc.h"
-#include "cvar.h"
-#include "draw.h"
-#include "gl_texmgr.h"
-#include "glquake.h"
-#include "mathlib.h"
-#include "miniz.h"
-#include "net.h"
-#include "q_ctype.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "steam.h"
-#include "sys.h"
-#include "unicode_translit.h"
-#include "vid.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "crc.hh"
+#include "cvar.hh"
+#include "draw.hh"
+#include "gl_texmgr.hh"
+#include "glquake.hh"
+#include "mathlib.hh"
+#include "miniz.hh"
+#include "net.hh"
+#include "q_ctype.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "steam.hh"
+#include "sys.hh"
+#include "unicode_translit.hh"
+#include "vid.hh"
 #include <SDL2/SDL.h>
 #include <errno.h>
 #include <time.h>
@@ -1312,7 +1312,7 @@ COM_TintString(const char* in, char* out, size_t outsize)
 {
   char* ret = out;
   if (!outsize)
-    return "";
+    return (char*){ 0 };
   --outsize;
   while (*in && outsize > 0) {
     char c = *in++;
@@ -2426,7 +2426,7 @@ COM_ResetGameDirectories(const char* newgamedirs)
             sizeof(com_gamedir));
 
   for (newpath = newgamedirs; newpath && *newpath;) {
-    char* e = strchr(newpath, ';');
+    char* e = const_cast<char*>(strchr(newpath, ';'));
     if (e)
       *e++ = 0;
 

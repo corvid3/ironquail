@@ -19,16 +19,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "keys.h"
-#include "mathlib.h"
-#include "net.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sys.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "keys.hh"
+#include "mathlib.hh"
+#include "net.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 
 static void

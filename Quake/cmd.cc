@@ -22,14 +22,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // cmd.c -- Quake script command processing module
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "server.h"
-#include "sys.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "server.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 void
 Cmd_ForwardToServer(void);
@@ -282,7 +282,7 @@ Cmd_StuffCmds_f(void)
 
 /* id1/pak0.pak from 2021 re-release doesn't have a default.cfg
  * embedding Quakespasm's customized default.cfg for that...  */
-#include "default_cfg.h"
+#include "default_cfg.hh"
 
 /*
 ===============

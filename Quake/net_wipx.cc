@@ -21,13 +21,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // net_wipx.c
 
-#include "quakedef.h"
-#include "q_stdinc.h"
-#include "arch_def.h"
-#include "net_sys.h"
+#include "quakedef.hh"
+#include "q_stdinc.hh"
+#include "arch_def.hh"
+#include "net_sys.hh"
 #include <wsipx.h>
-#include "net_defs.h"
-#include "net_wipx.h"
+#include "net_defs.hh"
+#include "net_wipx.hh"
 
 extern cvar_t hostname;
 

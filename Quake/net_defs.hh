@@ -24,12 +24,12 @@
 #ifndef __NET_DEFS_H
 #define __NET_DEFS_H
 
-#include "client.h"
-#include "common.h"
-#include "net.h"
-#include "net_sys.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
+#include "client.hh"
+#include "common.hh"
+#include "net.hh"
+#include "net_sys.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
 #include <SDL2/SDL.h>
 struct qsockaddr
 {

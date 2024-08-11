@@ -21,21 +21,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "glquake.h"
-#include "input.h"
-#include "keys.h"
-#include "menu.h"
-#include "platform.h"
-#include "q_ctype.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "screen.h"
-#include "sys.h"
-#include "vid.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "glquake.hh"
+#include "input.hh"
+#include "keys.hh"
+#include "menu.hh"
+#include "platform.hh"
+#include "q_ctype.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "screen.hh"
+#include "sys.hh"
+#include "vid.hh"
 #include <SDL2/SDL.h>
 /* key up events are sent even if in console mode */
 

@@ -20,12 +20,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // steam.c -- steam config parsing
 
-#include "common.h"
-#include "json.h"
-#include "q_ctype.h"
-#include "q_stdinc.h"
-#include "steam.h"
-#include "sys.h"
+#include "common.hh"
+#include "json.hh"
+#include "q_ctype.hh"
+#include "q_stdinc.hh"
+#include "steam.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)
 #include <SDL2/SDL.h>

@@ -20,12 +20,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "quakedef.h"
+#include "quakedef.hh"
 
 #if defined(USE_CODEC_XMP)
-#include "snd_codec.h"
-#include "snd_codeci.h"
-#include "snd_xmp.h"
+#include "snd_codec.hh"
+#include "snd_codeci.hh"
+#include "snd_xmp.hh"
 #if defined(_WIN32) && defined(LIBXMP_STATIC)
 #define BUILDING_STATIC
 #endif

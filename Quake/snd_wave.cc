@@ -22,17 +22,17 @@
  *
  */
 
-#include "common.h"
-#include "console.h"
-#include "q_sound.h"
-#include "q_stdinc.h"
-#include "snd_codeci.h"
-#include "sys.h"
+#include "common.hh"
+#include "console.hh"
+#include "q_sound.hh"
+#include "q_stdinc.hh"
+#include "snd_codeci.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 
 #if defined(USE_CODEC_WAVE)
-#include "snd_codec.h"
-#include "snd_wave.h"
+#include "snd_codec.hh"
+#include "snd_wave.hh"
 
 /*
 =================

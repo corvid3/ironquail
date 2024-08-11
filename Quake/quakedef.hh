@@ -299,6 +299,7 @@ typedef struct filelist_item_s
 } filelist_item_t;
 
 typedef enum
+  : int
 {
   MAPTYPE_CUSTOM_MOD_START,
   MAPTYPE_CUSTOM_MOD_LEVEL,

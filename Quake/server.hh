@@ -40,6 +40,14 @@ typedef struct
   qboolean changelevel_issued; // cleared when at SV_SpawnServer
 } server_static_t;
 
+struct svcustomstat_s
+{
+  int idx;
+  int type;
+  int fld;
+  eval_t* ptr;
+};
+
 //=============================================================================
 
 #define MAX_SIGNON_BUFFERS 256
@@ -85,13 +93,7 @@ typedef struct
   unsigned protocol; // johnfitz
   unsigned protocolflags;
 
-  struct svcustomstat_s
-  {
-    int idx;
-    int type;
-    int fld;
-    eval_t* ptr;
-  } customstats[MAX_CL_STATS * 2]; // strings or numeric...
+  svcustomstat_s customstats[MAX_CL_STATS * 2]; // strings or numeric...
   size_t numcustomstats;
 
   char lastsave[MAX_OSPATH];
@@ -164,6 +166,7 @@ typedef struct client_s
 
 // edict->movetype values
 typedef enum
+  : int
 {
   MOVETYPE_NONE = 0, // never moves
   MOVETYPE_ANGLENOCLIP = 1,
@@ -181,6 +184,7 @@ typedef enum
 
 // edict->solid values
 typedef enum
+  : int
 {
   SOLID_NOT = 0,      // no interaction with other objects
   SOLID_TRIGGER = 1,  // touch on edge, but not blocking
@@ -191,6 +195,7 @@ typedef enum
 
 // edict->deadflag values
 typedef enum
+  : int
 {
   DEAD_NO = 0,
   DEAD_DYING = 1,
@@ -200,6 +205,7 @@ typedef enum
 
 // edict->takedamage
 typedef enum
+  : int
 {
   DAMAGE_NO = 0,
   DAMAGE_YES = 1,
@@ -208,6 +214,7 @@ typedef enum
 
 // edict->flags
 typedef enum
+  : int
 {
   FL_FLY = 1,
   FL_SWIM = 2,

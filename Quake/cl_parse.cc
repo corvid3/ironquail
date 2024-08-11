@@ -23,25 +23,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // cl_parse.c  -- parse a message received from the server
 
-#include "modelgen.h"
+#include "modelgen.hh"
 
-#include "bgmusic.h"
-#include "cdaudio.h"
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "glquake.h"
-#include "mathlib.h"
-#include "net.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sbar.h"
-#include "screen.h"
-#include "server.h"
-#include "sys.h"
-#include "vid.h"
-#include "view.h"
+#include "bgmusic.hh"
+#include "cdaudio.hh"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "glquake.hh"
+#include "mathlib.hh"
+#include "net.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sbar.hh"
+#include "screen.hh"
+#include "server.hh"
+#include "sys.hh"
+#include "vid.hh"
+#include "view.hh"
 #include <SDL2/SDL.h>
 
 const char* svc_strings[] = {

@@ -21,22 +21,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // cl_main.c  -- client main loop
 
-#include "bgmusic.h"
-#include "cdaudio.h"
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "glquake.h"
-#include "input.h"
-#include "keys.h"
-#include "mathlib.h"
-#include "net.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "screen.h"
-#include "server.h"
-#include "view.h"
+#include "bgmusic.hh"
+#include "cdaudio.hh"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "glquake.hh"
+#include "input.hh"
+#include "keys.hh"
+#include "mathlib.hh"
+#include "net.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "screen.hh"
+#include "server.hh"
+#include "view.hh"
 #include <SDL2/SDL.h>
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.

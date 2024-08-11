@@ -21,15 +21,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sv_phys.c
 
-#include "console.h"
-#include "cvar.h"
-#include "mathlib.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "server.h"
-#include "sys.h"
-#include "world.h"
+#include "console.hh"
+#include "cvar.hh"
+#include "mathlib.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "server.hh"
+#include "sys.hh"
+#include "world.hh"
 #include <SDL2/SDL.h>
+
+using namespace enumflag;
 
 /*
 
@@ -89,10 +91,12 @@ SV_CheckAllEnts(void)
   for (e = 1; e < qcvm->num_edicts; e++, check = NEXT_EDICT(check)) {
     if (check->free)
       continue;
-    if (check->v.movetype == MOVETYPE_PUSH ||
-        check->v.movetype == MOVETYPE_NONE ||
-        check->v.movetype == MOVETYPE_NOCLIP)
+    if ((check->v.movetype <=> MOVETYPE_PUSH) == 0 ||
+        (check->v.movetype <=> MOVETYPE_NONE) == 0 ||
+        (check->v.movetype <=> MOVETYPE_NOCLIP) == 0)
       continue;
+
+    enumflag::operator<=>(check->v.movetype, MOVETYPE_PUSH);
 
     if (SV_TestEntityPosition(check))
       Con_Printf("entity in invalid position\n");
@@ -180,13 +184,13 @@ SV_Impact(edict_t* e1, edict_t* e2)
   old_other = pr_global_struct->other;
 
   pr_global_struct->time = qcvm->time;
-  if (e1->v.touch && e1->v.solid != SOLID_NOT) {
+  if (e1->v.touch && e1->v.solid <=> SOLID_NOT != 0) {
     pr_global_struct->self = EDICT_TO_PROG(e1);
     pr_global_struct->other = EDICT_TO_PROG(e2);
     PR_ExecuteProgram(e1->v.touch);
   }
 
-  if (e2->v.touch && e2->v.solid != SOLID_NOT) {
+  if (e2->v.touch && e2->v.solid <=> SOLID_NOT != 0) {
     pr_global_struct->self = EDICT_TO_PROG(e2);
     pr_global_struct->other = EDICT_TO_PROG(e1);
     PR_ExecuteProgram(e2->v.touch);

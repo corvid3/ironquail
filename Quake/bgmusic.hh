@@ -25,8 +25,8 @@
 #ifndef _BGMUSIC_H_
 #define _BGMUSIC_H_
 
-#include "cvar.h"
-#include "q_stdinc.h"
+#include "cvar.hh"
+#include "q_stdinc.hh"
 
 extern qboolean bgmloop;
 extern cvar_t bgm_extmusic;

@@ -21,9 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_light.c
 
-#include "glquake.h"
-#include "mathlib.h"
-#include "quakedef.h"
+#include "glquake.hh"
+#include "mathlib.hh"
+#include "quakedef.hh"
 
 extern cvar_t r_flatlightstyles; // johnfitz
 extern cvar_t r_lerplightstyles;

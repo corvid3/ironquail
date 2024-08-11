@@ -22,12 +22,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // mathlib.c -- math primitives
 
-#include "common.h"
-#include "glquake.h"
-#include "mathlib.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sys.h"
+#include "common.hh"
+#include "glquake.hh"
+#include "mathlib.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 
 vec3_t vec3_origin = { 0, 0, 0 };

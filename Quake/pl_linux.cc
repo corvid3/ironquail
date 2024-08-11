@@ -21,12 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "common.h"
-#include "keys.h"
-#include "platform.h"
+#include "common.hh"
+#include "keys.hh"
+#include "platform.hh"
 #include "strl_fn.h"
-#include "vid.h"
-#include "zone.h"
+#include "vid.hh"
+#include "zone.hh"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_video.h>
 
@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 static const Uint8 bmp_bytes[] = {
-#include "qs_bmp.h"
+#include "qs_bmp.hh"
 };
 
 void

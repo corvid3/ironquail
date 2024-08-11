@@ -21,14 +21,14 @@
  *
  */
 
-#include "console.h"
-#include "quakedef.h"
-#include "zone.h"
+#include "console.hh"
+#include "quakedef.hh"
+#include "zone.hh"
 
 #if defined(USE_CODEC_VORBIS)
-#include "snd_codec.h"
-#include "snd_codeci.h"
-#include "snd_vorbis.h"
+#include "snd_codec.hh"
+#include "snd_codeci.hh"
+#include "snd_vorbis.hh"
 
 #define OV_EXCLUDE_STATIC_CALLBACKS
 #if defined(VORBIS_USE_TREMOR)

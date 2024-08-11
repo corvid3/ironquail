@@ -21,12 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // wad.c
 
-#include "common.h"
-#include "console.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sys.h"
-#include "wad.h"
+#include "common.hh"
+#include "console.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sys.hh"
+#include "wad.hh"
 #include <SDL2/SDL.h>
 
 int wad_numlumps;

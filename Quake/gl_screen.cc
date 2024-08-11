@@ -23,28 +23,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // screen.c -- master for refresh, status bar, console, chat, notify, etc
 
-#include "cvar.h"
-#include "quakedef.h"
+#include "cvar.hh"
+#include "quakedef.hh"
 #include <time.h>
 
-#include "client.h"
-#include "cmd.h"
-#include "console.h"
-#include "draw.h"
-#include "glquake.h"
-#include "image.h"
-#include "keys.h"
-#include "mathlib.h"
-#include "menu.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sbar.h"
-#include "screen.h"
-#include "server.h"
-#include "vid.h"
-#include "view.h"
-#include "wad.h"
-#include "zone.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "console.hh"
+#include "draw.hh"
+#include "glquake.hh"
+#include "image.hh"
+#include "keys.hh"
+#include "mathlib.hh"
+#include "menu.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sbar.hh"
+#include "screen.hh"
+#include "server.hh"
+#include "vid.hh"
+#include "view.hh"
+#include "wad.hh"
+#include "zone.hh"
 #include <SDL2/SDL.h>
 
 /*

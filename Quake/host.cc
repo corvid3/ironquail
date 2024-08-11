@@ -22,32 +22,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // host.c -- coordinates spawning and killing of local servers
 
-#include "bgmusic.h"
-#include "cdaudio.h"
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "cvar.h"
-#include "draw.h"
-#include "gl_texmgr.h"
-#include "glquake.h"
-#include "input.h"
-#include "keys.h"
-#include "mathlib.h"
-#include "menu.h"
-#include "net.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sbar.h"
-#include "screen.h"
-#include "server.h"
-#include "sys.h"
-#include "vid.h"
-#include "view.h"
-#include "wad.h"
+#include "bgmusic.hh"
+#include "cdaudio.hh"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "cvar.hh"
+#include "draw.hh"
+#include "gl_texmgr.hh"
+#include "glquake.hh"
+#include "input.hh"
+#include "keys.hh"
+#include "mathlib.hh"
+#include "menu.hh"
+#include "net.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sbar.hh"
+#include "screen.hh"
+#include "server.hh"
+#include "sys.hh"
+#include "vid.hh"
+#include "view.hh"
+#include "wad.hh"
 #include <SDL2/SDL.h>
 #include <setjmp.h>
+
+using namespace enumflag;
+
 /*
 
 A server can allways be started, even if the system started out as a client
@@ -970,9 +973,9 @@ Host_CheckAutosave(void)
   // Boost the score after finding a secret
   score += sv.autosave.secret_boost * 0.25f;
   // Boost the score after teleporting
-  score +=
-    CLAMP(0.f, 1.f - (qcvm->time - sv_player->v.teleport_time) / 1.5f, 1.f) *
-    0.5f;
+  score += CLAMP<float>(
+             0.f, 1.f - (qcvm->time - sv_player->v.teleport_time) / 1.5f, 1.f) *
+           0.5f;
 
   // Only save if the score is high enough
   if (score < 1.f)

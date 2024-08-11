@@ -21,13 +21,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "gl_shaders.h"
-#include "q_ctype.h"
-#include "quakedef.h"
+#include "gl_shaders.hh"
+#include "q_ctype.hh"
+#include "quakedef.hh"
 
-#include "glquake.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
+#include "glquake.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
 #include <SDL2/SDL.h>
 
 glprogs_t glprogs;
@@ -213,7 +213,7 @@ GL_CreateProgramFromSources(int count,
 {
   char macros[1024];
   char eval[256];
-  char* pipe;
+  char const* pipe;
   int i, realcount;
   GLuint shaders[2];
 

@@ -19,19 +19,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "input.h"
-#include "keys.h"
-#include "menu.h"
-#include "net_defs.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "screen.h"
-#include "server.h"
-#include "sys.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "input.hh"
+#include "keys.hh"
+#include "menu.hh"
+#include "net_defs.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "screen.hh"
+#include "server.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 #include <netinet/in.h>
 

@@ -21,22 +21,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sbar.c -- status bar code
 
-#include "cdaudio.h"
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "draw.h"
-#include "glquake.h"
-#include "keys.h"
-#include "menu.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "sbar.h"
-#include "screen.h"
-#include "server.h"
-#include "vid.h"
-#include "view.h"
-#include "wad.h"
+#include "cdaudio.hh"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "draw.hh"
+#include "glquake.hh"
+#include "keys.hh"
+#include "menu.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "sbar.hh"
+#include "screen.hh"
+#include "server.hh"
+#include "vid.hh"
+#include "view.hh"
+#include "wad.hh"
 #include <SDL2/SDL.h>
 
 static int sb_updates; // if >= vid.numpages, no update needed

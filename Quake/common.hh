@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "q_stdinc.hh"
 #include "quakedef.hh"
 #include "sys.hh"
+#include <compare>
+#include <type_traits>
+#include <utility>
 
 // gcc needs a little hack to ignore
 // "not using return value" errors for some functions
@@ -112,20 +115,136 @@ GENERIC_TYPES(IMPL_GENERIC_FUNCS, NO_COMMA)
     const __typeof((a) + (b)) b_ = (b);                                        \
     (a_ < b_) ? a_ : b_;                                                       \
   })
-#define CLAMP(_minval, x, _maxval)                                             \
-  ({                                                                           \
-    const __typeof((_minval) + (x) + (_maxval)) x_ = (x);                      \
-    const __typeof((_minval) + (x) + (_maxval)) valmin_ = (_minval);           \
-    const __typeof((_minval) + (x) + (_maxval)) valmax_ = (_maxval);           \
-    (x_ < valmin_) ? valmin_ : (x_ > valmax_) ? valmax_ : x_;                  \
-  })
-
-#else
-#define q_min(a, b) (((a) < (b)) ? (a) : (b))
-#define q_max(a, b) (((a) > (b)) ? (a) : (b))
-#define CLAMP(_minval, x, _maxval)                                             \
-  ((x) < (_minval) ? (_minval) : (x) > (_maxval) ? (_maxval) : (x))
 #endif
+
+// #define CLAMP(_minval, x, _maxval)
+//   ({
+//     const __typeof((_minval) + (x) + (_maxval)) x_ = (x);
+//     const __typeof((_minval) + (x) + (_maxval)) valmin_ = (_minval);
+//     const __typeof((_minval) + (x) + (_maxval)) valmax_ = (_maxval);
+//     (x_ < valmin_) ? valmin_ : (x_ > valmax_) ? valmax_ : x_;
+//   })
+
+// #else
+// #define q_min(a, b) (((a) < (b)) ? (a) : (b))
+// #define q_max(a, b) (((a) > (b)) ? (a) : (b))
+// #define CLAMP(_minval, x, _maxval)
+//   ((x) < (_minval) ? (_minval) : (x) > (_maxval) ? (_maxval) : (x))
+// #endif
+
+namespace enumflag {
+template<typename T, typename U = unsigned>
+  requires(std::is_enum_v<T> &&
+           std::is_convertible_v<U, std::underlying_type_t<T>>)
+T
+operator^(T const lhs, T const rhs)
+{
+  return static_cast<T>(static_cast<U>(lhs) ^ static_cast<U>(rhs));
+}
+
+template<typename T, typename U = unsigned>
+  requires(std::is_enum_v<T> &&
+           std::is_convertible_v<U, std::underlying_type_t<T>>)
+T
+operator|(T const lhs, T const rhs)
+{
+  return static_cast<T>(static_cast<U>(lhs) | static_cast<U>(rhs));
+}
+
+template<typename T, typename U = unsigned>
+  requires(std::is_enum_v<T> &&
+           std::is_convertible_v<U, std::underlying_type_t<T>>)
+T
+operator&(T const lhs, T const rhs)
+{
+  return static_cast<T>(static_cast<U>(lhs) & static_cast<U>(rhs));
+}
+
+template<typename T, typename U = unsigned>
+  requires(std::is_enum_v<T> &&
+           std::is_convertible_v<U, std::underlying_type_t<T>>)
+T
+operator~(T const val)
+{
+  return static_cast<T>(~static_cast<U>(val));
+}
+
+template<typename T>
+T&
+operator^=(T& lhs, T const rhs)
+{
+  return lhs = lhs ^ rhs, lhs;
+}
+
+template<typename T>
+T&
+operator|=(T& lhs, T const rhs)
+{
+  return lhs = lhs | rhs, lhs;
+}
+
+template<typename T>
+T&
+operator&=(T& lhs, T const rhs)
+{
+  return lhs = lhs & rhs, lhs;
+}
+
+template<typename ET, typename RHS>
+  requires std::is_enum_v<ET> &&
+           std::is_convertible_v<std::underlying_type_t<ET>, RHS>
+std::partial_ordering
+operator<=>(ET const lhs, RHS const rhs)
+{
+  auto const lhs_u = std::to_underlying(lhs);
+  return static_cast<RHS>(lhs_u) <=> rhs;
+}
+
+template<typename ET, typename RHS>
+  requires std::is_enum_v<ET> &&
+           std::is_convertible_v<std::underlying_type_t<ET>, RHS>
+std::partial_ordering
+operator<=>(RHS const lhs, ET const rhs)
+{
+  return rhs <=> lhs;
+}
+
+#define ENUM_PREAMBLE                                                          \
+  template<typename ET, typename RHS>                                          \
+    requires std::is_enum_v<ET> &&                                             \
+             std::is_convertible_v<std::underlying_type_t<ET>, RHS>
+
+#define ENUM_FUNC1(op)                                                         \
+  ENUM_PREAMBLE bool operator op(RHS const lhs, ET const rhs)                  \
+  {                                                                            \
+    return lhs <=> rhs op 0;                                                   \
+  }
+#define ENUM_FUNC2(op)                                                         \
+  ENUM_PREAMBLE bool operator op(ET const lhs, RHS const rhs)                  \
+  {                                                                            \
+    return lhs <=> rhs op 0;                                                   \
+  }
+#define ENUM_FUNC(op) ENUM_FUNC1(op) ENUM_FUNC2(op)
+
+ENUM_FUNC(==);
+ENUM_FUNC(<);
+ENUM_FUNC(>);
+ENUM_FUNC(<=);
+ENUM_FUNC(>=);
+ENUM_FUNC(!=);
+
+};
+
+template<typename T>
+T constexpr CLAMP(T const minval, T const val, T const maxval)
+{
+  T out = val;
+  if (out < minval)
+    out = minval;
+  if (out >= maxval)
+    out = maxval;
+  return out;
+}
 
 #define LERP(a, b, t) ((a) + ((b) - (a)) * (t))
 

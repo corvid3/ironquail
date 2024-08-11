@@ -22,10 +22,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "common.h"
-#include "console.h"
-#include "q_sound.h"
-#include "q_stdinc.h"
+#include "common.hh"
+#include "console.hh"
+#include "q_sound.hh"
+#include "q_stdinc.hh"
 #include <SDL2/SDL.h>
 
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)

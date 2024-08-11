@@ -20,10 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "console.h"
-#include "net_defs.h"
-#include "net_sys.h"
-#include "q_stdinc.h"
+#include "console.hh"
+#include "net_defs.hh"
+#include "net_sys.hh"
+#include "q_stdinc.hh"
 
 static sys_socket_t net_acceptsocket =
   INVALID_SOCKET; // socket for fielding new connections
@@ -33,7 +33,7 @@ static struct sockaddr_in broadcastaddr;
 
 static in_addr_t myAddr;
 
-#include "net_udp.h"
+#include "net_udp.hh"
 
 //=============================================================================
 

@@ -22,13 +22,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_misc.c
 
-#include "client.h"
-#include "cmd.h"
-#include "console.h"
-#include "gl_texmgr.h"
-#include "glquake.h"
-#include "keys.h"
-#include "quakedef.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "console.hh"
+#include "gl_texmgr.hh"
+#include "glquake.hh"
+#include "keys.hh"
+#include "quakedef.hh"
 #include <SDL2/SDL.h>
 
 // johnfitz -- new cvars
@@ -802,7 +802,7 @@ GL_AllocFrameResources(frameres_bits_t bits)
       if (gl_buffer_storage_able) {
         GL_BufferStorageFunc(
           GL_ARRAY_BUFFER, frameres_host_buffer_size, NULL, flags);
-        frame->host_ptr = GL_MapBufferRangeFunc(
+        frame->host_ptr = (GLubyte*)GL_MapBufferRangeFunc(
           GL_ARRAY_BUFFER, 0, frameres_host_buffer_size, flags);
         if (!frame->host_ptr)
           Sys_Error(

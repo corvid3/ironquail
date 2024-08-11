@@ -19,12 +19,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "quakedef.h"
+#include "quakedef.hh"
 
 #if defined(USE_CODEC_MODPLUG)
-#include "snd_codec.h"
-#include "snd_codeci.h"
-#include "snd_modplug.h"
+#include "snd_codec.hh"
+#include "snd_codeci.hh"
+#include "snd_modplug.hh"
 #include <libmodplug/modplug.h>
 
 static void S_MODPLUG_SetSettings (snd_stream_t *stream)

@@ -41,6 +41,9 @@ line of sight checks trace->crosscontent, but bullets don't
 */
 #include <SDL2/SDL.h>
 
+// evil
+using namespace enumflag;
+
 typedef struct
 {
   vec3_t boxmins, boxmaxs; // enclose the test object along entire move

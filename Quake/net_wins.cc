@@ -18,11 +18,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#include "quakedef.h"
-#include "q_stdinc.h"
-#include "arch_def.h"
-#include "net_sys.h"
-#include "net_defs.h"
+#include "quakedef.hh"
+#include "q_stdinc.hh"
+#include "arch_def.hh"
+#include "net_sys.hh"
+#include "net_defs.hh"
 
 static sys_socket_t net_acceptsocket = INVALID_SOCKET;	// socket for fielding new connections
 static sys_socket_t net_controlsocket;
@@ -31,12 +31,12 @@ static struct sockaddr_in broadcastaddr;
 
 static in_addr_t	myAddr;
 
-#include "net_wins.h"
+#include "net_wins.hh"
 
 int winsock_initialized = 0;
 WSADATA		winsockdata;
 #define __wsaerr_static			/* not static: used by net_wipx.c too */
-#include "wsaerror.h"
+#include "wsaerror.hh"
 
 //=============================================================================
 

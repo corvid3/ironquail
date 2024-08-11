@@ -23,9 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _QUAKE_KEYS_H
 #define _QUAKE_KEYS_H
 
-#include "input.h"
-#include "q_stdinc.h"
+#include "input.hh"
+#include "q_stdinc.hh"
 #include <SDL2/SDL.h>
+#include <type_traits>
 
 //
 // gamepad button definitions
@@ -164,13 +165,16 @@ COMPILE_TIME_ASSERT(too_many_keycodes, NUM_KEYCODES <= MAX_KEYS);
 #define MAXCMDLINE 256
 
 typedef enum
+  : int
 {
   key_game,
   key_console,
   key_message,
   key_menu
 } keydest_t;
+
 typedef enum textmode_t
+  : int
 {
   TEXTMODE_OFF,     // no char events
   TEXTMODE_ON,      // char events, show on-screen keyboard
@@ -178,6 +182,7 @@ typedef enum textmode_t
 } textmode_t;
 
 typedef enum keydevice_t
+  : int
 {
   KD_NONE = -1,
   KD_KEYBOARD,
@@ -186,6 +191,7 @@ typedef enum keydevice_t
 } keydevice_t;
 
 typedef enum
+  : int
 {
   KDM_NONE = 0,
   KDM_KEYBOARD = 1 << KD_KEYBOARD,

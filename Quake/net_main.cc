@@ -19,19 +19,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "net_defs.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
+#include "net_defs.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "net.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "server.h"
-#include "sys.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "net.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "server.hh"
+#include "sys.hh"
 #include <SDL2/SDL.h>
 
 #ifndef WITHOUT_CURL

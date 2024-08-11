@@ -21,13 +21,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // zone.c
 
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "gl_texmgr.h"
-#include "q_stdinc.h"
-#include "sys.h"
-#include "zone.h"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "gl_texmgr.hh"
+#include "q_stdinc.hh"
+#include "sys.hh"
+#include "zone.hh"
 #include <SDL2/SDL.h>
 
 #define DYNAMIC_SIZE                                                           \
@@ -86,7 +86,7 @@ Z_Free
 void
 Z_Free(void* ptr)
 {
-  Z_alloc_t* alloc = ptr - sizeof(Z_alloc_t);
+  Z_alloc_t* alloc = &static_cast<Z_alloc_t*>(ptr)[-1];
 
   if (ptr == NULL)
     Sys_Error("Z_Free: NULL pointer");
@@ -104,7 +104,7 @@ Z_Malloc
 void*
 Z_Malloc(int size)
 {
-  Z_alloc_t* buf = malloc(sizeof(Z_alloc_t) + size);
+  Z_alloc_t* buf = (Z_alloc_t*)malloc(sizeof(Z_alloc_t) + size);
 
   if (!buf)
     Sys_Error("Z_Malloc: failed on allocation of %i bytes", size);
@@ -125,10 +125,10 @@ Z_Realloc
 void*
 Z_Realloc(void* ptr, int size)
 {
-  Z_alloc_t* buf = (ptr == NULL ? NULL : ptr - sizeof(Z_alloc_t));
+  Z_alloc_t* buf = (ptr == NULL ? NULL : &static_cast<Z_alloc_t*>(ptr)[-1]);
   if (buf != NULL)
     Z_zone_usage -= buf->size;
-  buf = realloc(buf, sizeof(Z_alloc_t) + size);
+  buf = (Z_alloc_t*)realloc(buf, sizeof(Z_alloc_t) + size);
 
   if (buf == NULL)
     Sys_Error("Z_Realloc: failed on allocation of %i bytes", size);

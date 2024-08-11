@@ -719,7 +719,7 @@ R_SortEntities(void)
         dist += delta * delta;
       }
       dist = sqrt(dist);
-      visedict_keys[i] = ~CLAMP(0, (int)dist, MODSORT_MASK);
+      visedict_keys[i] = ~CLAMP(0, (int)dist, static_cast<int>(MODSORT_MASK));
     } else if (translucent && !r_oit.value) {
       // Note: -1 (0xfffff) for non-static entities (firstleaf=0),
       // so they are sorted after static ones

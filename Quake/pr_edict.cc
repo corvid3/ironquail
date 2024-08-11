@@ -21,19 +21,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sv_edict.c -- entity dictionary
 
-#include "client.h"
-#include "cmd.h"
-#include "common.h"
-#include "console.h"
-#include "crc.h"
-#include "cvar.h"
-#include "mathlib.h"
-#include "q_stdinc.h"
-#include "quakedef.h"
-#include "server.h"
-#include "sys.h"
-#include "world.h"
+#include "client.hh"
+#include "cmd.hh"
+#include "common.hh"
+#include "console.hh"
+#include "crc.hh"
+#include "cvar.hh"
+#include "mathlib.hh"
+#include "q_stdinc.hh"
+#include "quakedef.hh"
+#include "server.hh"
+#include "sys.hh"
+#include "world.hh"
 #include <SDL2/SDL.h>
+
+using namespace enumflag;
+
 extern edict_t** bbox_linked;
 
 const int type_size[NUM_TYPE_SIZES] = {
@@ -1271,14 +1274,14 @@ ED_RezoneString(string_t* ref, const char* str)
     // that autocvars are initialised with
   }
 
-  buf = Z_Malloc(len);
+  buf = (char*)Z_Malloc(len);
   memcpy(buf, str, len);
   id = -1 - (*ref = PR_SetEngineString(buf));
   // make sure its flagged as zoned so we can clean up properly after.
   if (id >= qcvm->knownzonesize) {
     qcvm->knownzonesize = (id + 32) & ~7;
-    qcvm->knownzone =
-      Z_Realloc(qcvm->knownzone, (qcvm->knownzonesize + 7) >> 3);
+    qcvm->knownzone = (unsigned char*)Z_Realloc(qcvm->knownzone,
+                                                (qcvm->knownzonesize + 7) >> 3);
   }
   qcvm->knownzone[id >> 3] |= 1u << (id & 7);
 }
@@ -1728,11 +1731,11 @@ PR_EnableExtensions(void)
 
 #define QCEXTFUNC(n, t) qcvm->extfuncs.n = PR_FindExtFunction(#n);
 #define QCEXTGLOBAL_FLOAT(n)                                                   \
-  qcvm->extglobals.n = PR_FindExtGlobal(ev_float, #n);
+  qcvm->extglobals.n = (float*)PR_FindExtGlobal(ev_float, #n);
 #define QCEXTGLOBAL_INT(n)                                                     \
-  qcvm->extglobals.n = PR_FindExtGlobal(ev_ext_integer, #n);
+  qcvm->extglobals.n = (int*)PR_FindExtGlobal(ev_ext_integer, #n);
 #define QCEXTGLOBAL_VECTOR(n)                                                  \
-  qcvm->extglobals.n = PR_FindExtGlobal(ev_vector, #n);
+  qcvm->extglobals.n = (float*)PR_FindExtGlobal(ev_vector, #n);
 
   if (qcvm == &cl.qcvm) { // csqc
     QCEXTFUNCS_CS
@@ -1817,7 +1820,7 @@ PR_MergeEngineFieldDefs(void)
            //{"fatness",		ev_float},
            ////bloated rendering...
            //{"gravitydir",	ev_vector},	//says which
-           // direction gravity should act for this ent...
+    // direction gravity should act for this ent...
 
   };
   int maxofs = qcvm->progs->entityfields;
@@ -1840,7 +1843,7 @@ PR_MergeEngineFieldDefs(void)
       qcvm->progs
         ->numfielddefs) { // we now know how many entries we need to add...
     ddef_t* olddefs = qcvm->fielddefs;
-    qcvm->fielddefs = malloc(maxdefs * sizeof(*qcvm->fielddefs));
+    qcvm->fielddefs = (ddef_t*)malloc(maxdefs * sizeof(*qcvm->fielddefs));
     if (!qcvm->fielddefs)
       Sys_Error("PR_MergeEngineFieldDefs: out of memory (%d defs)", maxdefs);
     memcpy(qcvm->fielddefs,

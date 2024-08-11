@@ -17,12 +17,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "console.h"
-#include "quakedef.h"
+#include "console.hh"
+#include "quakedef.hh"
 
 #if defined(USE_CODEC_MP3)
-#include "q_ctype.h"
-#include "snd_codec.h"
+#include "q_ctype.hh"
+#include "snd_codec.hh"
 
 static inline qboolean
 is_id3v1(const unsigned char* data, long length)
