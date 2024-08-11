@@ -1,1 +1,12 @@
 scr_showzonemem 1
+scr_showzonemem 0
+scr_showzonemem 1
+sv_noclipspeed 3
+sv_noclipspeed 1
+sv_noclipspeed 10
+sv_noclipspeed 3
+sv_noclipspeed 10
+sv_noclipspeed 2
+map 
+maps
+map start
