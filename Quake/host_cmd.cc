@@ -358,11 +358,6 @@ ExtraMaps_GetMessage(const filelist_item_t* item)
   return (const char*)SDL_AtomicGetPtr((void**)&info->message);
 }
 
-/*
-==================
-ExtraMaps_IsStart
-==================
-*/
 qboolean
 ExtraMaps_IsStart(maptype_t type)
 {
@@ -370,11 +365,6 @@ ExtraMaps_IsStart(maptype_t type)
          type == MAPTYPE_CUSTOM_ID_START || type == MAPTYPE_ID_START;
 }
 
-/*
-==================
-ExtraMaps_Sort
-==================
-*/
 static void
 ExtraMaps_Sort(void)
 {
@@ -383,31 +373,33 @@ ExtraMaps_Sort(void)
   filelist_item_t* item;
 
   memset(counts, 0, sizeof(counts));
-  for (item = extralevels; item; item = item->next)
+  for (item = extralevels; item != nullptr; item = item->next)
     counts[ExtraMaps_GetType(item)]++;
 
-  for (i = sum = 0; i < MAPTYPE_COUNT; i++) {
+  i = 0;
+  sum = 0;
+  printf("i = %i\nmapytype_count = %i\ni < mp = %s\n",
+         i,
+         MAPTYPE_COUNT,
+         i < MAPTYPE_COUNT ? "true" : "false");
+  for (; i < MAPTYPE_COUNT; i++) {
     int tmp = counts[i];
     counts[i] = sum;
     sum += tmp;
   }
+
   sum++; // NULL terminator
 
   extralevels_sorted = (filelist_item_t**)realloc(
-    extralevels_sorted, sizeof(*extralevels_sorted) * sum);
-  if (!extralevels_sorted)
+    extralevels_sorted, sizeof(filelist_item_t*) * sum);
+  if (extralevels_sorted == nullptr)
     Sys_Error("ExtraMaps_Sort: out of memory on %d items", sum);
 
-  for (item = extralevels; item; item = item->next)
+  for (item = extralevels; item != nullptr; item = item->next)
     extralevels_sorted[counts[ExtraMaps_GetType(item)]++] = item;
   extralevels_sorted[sum - 1] = NULL;
 }
 
-/*
-==================
-ExtraMaps_Add
-==================
-*/
 static void
 ExtraMaps_Add(const char* name, const searchpath_t* source)
 {
@@ -418,11 +410,6 @@ ExtraMaps_Add(const char* name, const searchpath_t* source)
   maxlevelnamelen = q_max(maxlevelnamelen, strlen(name));
 }
 
-/*
-==================
-ExtraMaps_ParseDescriptions
-==================
-*/
 static int
 ExtraMaps_ParseDescriptions(__attribute__((unused)) void* unused)
 {

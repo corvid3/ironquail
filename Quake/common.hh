@@ -200,13 +200,14 @@ operator<=>(ET const lhs, RHS const rhs)
   return static_cast<RHS>(lhs_u) <=> rhs;
 }
 
-template<typename ET, typename RHS>
+template<typename ET, typename LHS>
   requires std::is_enum_v<ET> &&
-           std::is_convertible_v<std::underlying_type_t<ET>, RHS>
+           std::is_convertible_v<std::underlying_type_t<ET>, LHS>
 std::partial_ordering
-operator<=>(RHS const lhs, ET const rhs)
+operator<=>(LHS const lhs, ET const rhs)
 {
-  return rhs <=> lhs;
+  auto const rhs_u = std::to_underlying(rhs);
+  return lhs <=> static_cast<LHS>(rhs_u);
 }
 
 #define ENUM_PREAMBLE                                                          \
@@ -215,14 +216,14 @@ operator<=>(RHS const lhs, ET const rhs)
              std::is_convertible_v<std::underlying_type_t<ET>, RHS>
 
 #define ENUM_FUNC1(op)                                                         \
-  ENUM_PREAMBLE bool operator op(RHS const lhs, ET const rhs)                  \
+  ENUM_PREAMBLE bool constexpr operator op(RHS const lhs, ET const rhs)        \
   {                                                                            \
-    return lhs <=> rhs op 0;                                                   \
+    return (lhs <=> rhs) op 0;                                                 \
   }
 #define ENUM_FUNC2(op)                                                         \
-  ENUM_PREAMBLE bool operator op(ET const lhs, RHS const rhs)                  \
+  ENUM_PREAMBLE bool constexpr operator op(ET const lhs, RHS const rhs)        \
   {                                                                            \
-    return lhs <=> rhs op 0;                                                   \
+    return (lhs <=> rhs) op 0;                                                 \
   }
 #define ENUM_FUNC(op) ENUM_FUNC1(op) ENUM_FUNC2(op)
 

@@ -96,8 +96,6 @@ SV_CheckAllEnts(void)
         (check->v.movetype <=> MOVETYPE_NOCLIP) == 0)
       continue;
 
-    enumflag::operator<=>(check->v.movetype, MOVETYPE_PUSH);
-
     if (SV_TestEntityPosition(check))
       Con_Printf("entity in invalid position\n");
   }

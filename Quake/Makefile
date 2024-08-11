@@ -63,7 +63,8 @@ CXXFLAGS+=-std=c++23
 CXXFLAGS += $(CPUFLAGS)
 ifneq ($(DEBUG),0)
 DFLAGS += -DDEBUG
-CXXFLAGS += -g
+CXXFLAGS += -g -fsanitize=address
+LDFLAGS += -g -fsanitize=address
 do_strip=
 else
 DFLAGS += -DNDEBUG
