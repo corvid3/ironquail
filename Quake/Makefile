@@ -47,7 +47,7 @@ DEBUG ?= 0
 # ---------------------------
 
 CXX ?= g++
-LINKER = $(CXX)
+LINKER = g++ -fuse-ld=mold
 
 STRIP ?= strip
 PKG_CONFIG ?= pkg-config
