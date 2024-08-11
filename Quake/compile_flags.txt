@@ -7,6 +7,8 @@
 -DPLATFORM_UNIX
 -DUSE_SDL2
 
+--std=c++23
+
 -Wall
 -Wextra
 -Werror

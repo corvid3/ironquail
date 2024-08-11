@@ -46,8 +46,8 @@ DEBUG ?= 0
 # build variables
 # ---------------------------
 
-CC ?= gcc
-LINKER = $(CC)
+CXX ?= g++
+LINKER = $(CXX)
 
 STRIP ?= strip
 PKG_CONFIG ?= pkg-config
@@ -55,21 +55,21 @@ PKG_CONFIG ?= pkg-config
 CPUFLAGS=
 LDFLAGS?=
 DFLAGS ?=
-CFLAGS ?= -Wall -Wextra -Werror -Wno-trigraphs
-CFLAGS += -D_FILE_OFFSET_BITS=64
-CFLAGS += $(call check_gcc,-std=gnu11,)
-CFLAGS += $(call check_gcc,-Werror=format,)
-CFLAGS += $(CPUFLAGS)
+CXXFLAGS ?= -Wall -Wextra -Werror -Wno-trigraphs
+CXXFLAGS += -D_FILE_OFFSET_BITS=64
+CXXFLAGS += $(call check_gcc,-std=cxx23,)
+CXXFLAGS += $(call check_gcc,-Werror=format,)
+CXXFLAGS += $(CPUFLAGS)
 ifneq ($(DEBUG),0)
 DFLAGS += -DDEBUG
-CFLAGS += -g
+CXXFLAGS += -g
 do_strip=
 else
 DFLAGS += -DNDEBUG
-CFLAGS += -O2
-#CFLAGS += -fno-asynchronous-unwind-tables
-CFLAGS += $(call check_gcc,-fweb,)
-CFLAGS += $(call check_gcc,-frename-registers,)
+CXXFLAGS += -O2
+#CXXFLAGS += -fno-asynchronous-unwind-tables
+CXXFLAGS += $(call check_gcc,-fweb,)
+CXXFLAGS += $(call check_gcc,-frename-registers,)
 cmd_strip=$(STRIP) $(1)
 define do_strip
 	@echo Stripping $(1) && \
@@ -78,11 +78,11 @@ endef
 endif
 
 ifeq ($(DO_USERDIRS),1)
-CFLAGS += -DDO_USERDIRS=1
+CXXFLAGS += -DDO_USERDIRS=1
 endif
 
 ifeq ($(USE_SDL2),1)
-CFLAGS += -DUSE_SDL2
+CXXFLAGS += -DUSE_SDL2
 endif
 
 ifeq ($(USE_SDL2),1)
@@ -90,7 +90,7 @@ SDL_CONFIG ?= sdl2-config
 else
 SDL_CONFIG ?= sdl-config
 endif
-SDL_CFLAGS = $(shell $(SDL_CONFIG) --cflags)
+SDL_CXXFLAGS = $(shell $(SDL_CONFIG) --cflags)
 SDL_LIBS   = $(shell $(SDL_CONFIG) --libs)
 
 NET_LIBS   =
@@ -103,9 +103,9 @@ endif
 
 ifeq ($(USE_CURL),1)
 NET_LIBS   += -lcurl
-CFLAGS     += $(shell $(PKG_CONFIG) --cflags libcurl)
+CXXFLAGS     += $(shell $(PKG_CONFIG) --cflags libcurl)
 else
-CFLAGS     += -DWITHOUT_CURL
+CXXFLAGS     += -DWITHOUT_CURL
 endif
 
 ifneq ($(VORBISLIB),vorbis)
@@ -137,42 +137,42 @@ endif
 
 CODECLIBS  =
 ifeq ($(USE_CODEC_WAVE),1)
-CFLAGS+= -DUSE_CODEC_WAVE
+CXXFLAGS+= -DUSE_CODEC_WAVE
 endif
 ifeq ($(USE_CODEC_FLAC),1)
-CFLAGS+= -DUSE_CODEC_FLAC
+CXXFLAGS+= -DUSE_CODEC_FLAC
 CODECLIBS+= -lFLAC
 endif
 ifeq ($(USE_CODEC_OPUS),1)
 # opus and opusfile put their *.h under <includedir>/opus,
 # but they include the headers without the opus directory
 # prefix and rely on pkg-config. ewww...
-CFLAGS+= -DUSE_CODEC_OPUS
-CFLAGS+= $(shell $(PKG_CONFIG) --cflags opusfile)
+CXXFLAGS+= -DUSE_CODEC_OPUS
+CXXFLAGS+= $(shell $(PKG_CONFIG) --cflags opusfile)
 CODECLIBS+= $(shell $(PKG_CONFIG) --libs   opusfile)
 endif
 ifeq ($(USE_CODEC_VORBIS),1)
-CFLAGS+= -DUSE_CODEC_VORBIS $(cpp_vorbisdec)
+CXXFLAGS+= -DUSE_CODEC_VORBIS $(cpp_vorbisdec)
 CODECLIBS+= $(lib_vorbisdec)
 endif
 ifeq ($(USE_CODEC_MP3),1)
-CFLAGS+= -DUSE_CODEC_MP3
+CXXFLAGS+= -DUSE_CODEC_MP3
 CODECLIBS+= $(lib_mp3dec)
 endif
 ifeq ($(USE_CODEC_MIKMOD),1)
-CFLAGS+= -DUSE_CODEC_MIKMOD
+CXXFLAGS+= -DUSE_CODEC_MIKMOD
 CODECLIBS+= -lmikmod
 endif
 ifeq ($(USE_CODEC_XMP),1)
-CFLAGS+= -DUSE_CODEC_XMP
+CXXFLAGS+= -DUSE_CODEC_XMP
 CODECLIBS+= -lxmp
 endif
 ifeq ($(USE_CODEC_MODPLUG),1)
-CFLAGS+= -DUSE_CODEC_MODPLUG
+CXXFLAGS+= -DUSE_CODEC_MODPLUG
 CODECLIBS+= -lmodplug
 endif
 ifeq ($(USE_CODEC_UMX),1)
-CFLAGS+= -DUSE_CODEC_UMX
+CXXFLAGS+= -DUSE_CODEC_UMX
 endif
 
 ifeq ($(HOST_OS),haiku)
@@ -181,7 +181,7 @@ else
 COMMON_LIBS= -lGL -lm
 endif
 
-CFLAGS+=-DPLATFORM_UNIX
+CXXFLAGS+=-DPLATFORM_UNIX
 
 LIBS = $(COMMON_LIBS) $(NET_LIBS) $(CODECLIBS)
 
@@ -292,11 +292,13 @@ OBJS += $(SYSOBJ_RES)
 DEFAULT_TARGET = ironwail
 all: $(DEFAULT_TARGET)
 
-%.d:	%.c $(MAKEFILE)
+%.d:	%.cc $(MAKEFILE)
 	@echo "Generating dependencies for $<" && \
-	$(CC) $(DFLAGS) -c $(CFLAGS) $(SDL_CFLAGS) -MM $< -MF $@ -MT $@
-%.o:	%.c %.d $(MAKEFILE)
+	$(CXX) $(DFLAGS) -c $(CXXFLAGS) $(SDL_CXXFLAGS) -MM $< -MF $@ -MT $@
+%.o:	%.cc %.d $(MAKEFILE)
 	@echo "Compiling $<" && \
+	$(CXX) $(DFLAGS) -c $(CXXFLAGS) $(SDL_CXXFLAGS) -o $@ $<
+%.o: %.c %.d $(MAKEFILE)
 	$(CC) $(DFLAGS) -c $(CFLAGS) $(SDL_CFLAGS) -o $@ $<
 
 ironwail:	$(OBJS) $(MAKEFILE)
