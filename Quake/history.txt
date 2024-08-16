@@ -10,3 +10,6 @@ sv_noclipspeed 2
 map 
 maps
 map start
+map e2m3
+map end
+changelevel end

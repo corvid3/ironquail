@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "q_stdinc.hh"
 #include "quakedef.hh"
 #include "server.hh"
+#include "str.hh"
+#include "str.hh"
 #include "sys.hh"
 #include <SDL2/SDL.h>
 void
@@ -185,9 +187,11 @@ Spike: reworked 'wait' for renderer/server rate independance
 void
 Cbuf_Execute(void)
 {
+  int constexpr max_line_len = 1023;
+
   int i;
   char* text;
-  char line[1024];
+  char line[max_line_len + 1];
   int quotes, comment;
 
   while (cmd_text.cursize && !cmd_wait) {
@@ -208,8 +212,8 @@ Cbuf_Execute(void)
     }
 
     if (i > (int)sizeof(line) - 1) {
-      memcpy(line, text, sizeof(line) - 1);
-      line[sizeof(line) - 1] = 0;
+      memcpy(line, text, max_line_len);
+      line[max_line_len] = 0;
     } else {
       memcpy(line, text, i);
       line[i] = 0;
@@ -499,7 +503,7 @@ Cmd_Unaliasall_f(void)
 #define MAX_ARGS 80
 
 static int cmd_argc;
-static char* cmd_argv[MAX_ARGS];
+static q_str<> cmd_argv[MAX_ARGS];
 static char cmd_null_string[] = "";
 static const char* cmd_args = NULL;
 
@@ -674,7 +678,7 @@ Cmd_Argv(int arg)
 {
   if (arg < 0 || arg >= cmd_argc)
     return cmd_null_string;
-  return cmd_argv[arg];
+  return cmd_argv[arg].data();
 }
 
 /*
@@ -716,7 +720,7 @@ Cmd_TokenizeString(const char* text)
 
   // clear the args from the last string
   for (i = 0; i < cmd_argc; i++)
-    Z_Free(cmd_argv[i]);
+    cmd_argv[i].clear();
 
   cmd_argc = 0;
   cmd_args = NULL;
@@ -878,7 +882,7 @@ Cmd_ExecuteString(const char* text, cmd_source_t src)
 
   // check functions
   for (cmd = cmd_functions; cmd; cmd = cmd->next) {
-    if (!q_strcasecmp(cmd_argv[0], cmd->name)) {
+    if (!caseins_streq(cmd_argv[0], cmd->name)) {
       if (src == src_client && cmd->srctype != src_client)
         Con_DPrintf("%s tried to %s\n",
                     host_client->name,
@@ -908,7 +912,7 @@ Cmd_ExecuteString(const char* text, cmd_source_t src)
 
   // check alias
   for (a = cmd_alias; a; a = a->next) {
-    if (!q_strcasecmp(cmd_argv[0], a->name)) {
+    if (!caseins_streq(cmd_argv[0], a->name)) {
       Cbuf_InsertText(a->value);
       return true;
     }

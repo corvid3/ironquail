@@ -213,10 +213,12 @@ main(int argc, char* argv[])
       if (!VID_HasMouseOrInputFocus() || cl.paused) {
         SDL_Delay(16);
       }
-      /* If we're minimised, sleep a bit more */
+      /* If we're minimised, sleep a bit more
+         doesn't hurt to sleep longer! -crow
+      */
       if (VID_IsMinimized()) {
         scr_skipupdate = 1;
-        SDL_Delay(32);
+        SDL_Delay(100);
       } else {
         scr_skipupdate = 0;
       }

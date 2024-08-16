@@ -1238,6 +1238,8 @@ _Host_Frame(double time)
   static double time1, time2, time3;
   static qboolean ranserver = false;
 
+  // initialize the server arena allocator
+
   time1 = Sys_DoubleTime();
 
   if (setjmp(host_abortserver))

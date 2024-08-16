@@ -280,6 +280,8 @@ OBJS = strlcat.o \
 	sv_user.o \
 	world.o \
 	zone.o \
+	mem.o\
+	str.o\
 	$(SYSOBJ_SYS) $(SYSOBJ_MAIN)
 
 OBJDEPS := $(OBJS:%.o=%.d)
