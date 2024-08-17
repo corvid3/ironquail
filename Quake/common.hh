@@ -37,6 +37,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // making it a macro just makes it a little more clear
 #define IGNORE_RETURN (void)!
 
+constexpr inline auto
+kibi(auto const x)
+{
+  return x * 1024;
+}
+
+constexpr inline auto
+mibi(auto const x)
+{
+  return x * 1024 * 1024;
+}
+
 #if defined(_WIN32)
 #ifdef _MSC_VER
 #pragma warning(disable : 4244)

@@ -3,21 +3,26 @@
 
 template class std::basic_string<char, std::char_traits<char>, QAlloc<char>>;
 
-bool
+int
 caseins_streq(std::string_view const lhs, std::string_view const rhs)
 {
   if (lhs.size() != rhs.size())
-    return false;
+    return 1;
 
   using sty = decltype(lhs);
+  sty::iterator lhs_i = lhs.cbegin();
+  sty::iterator rhs_i = rhs.cbegin();
 
-  for (sty::size_type i = 0; i < lhs.size(); i++) {
-    sty::value_type const lhs_v = lhs[i];
-    sty::value_type const rhs_v = rhs[i];
+  while (lhs_i != lhs.cend()) {
+    sty::value_type const lhs_v = *lhs_i;
+    sty::value_type const rhs_v = *rhs_i;
 
     if (std::tolower(lhs_v) != std::tolower(rhs_v))
-      return false;
+      return 1;
+
+    lhs_i++;
+    rhs_i++;
   }
 
-  return true;
+  return 0;
 }

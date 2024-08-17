@@ -24,11 +24,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "client.hh"
 #include "common.hh"
 #include "mathlib.hh"
+#include "mem.hh"
 #include "quakedef.hh"
 #include "screen.hh"
+#include "str.hh"
 #include "sys.hh"
 #include "vid.hh"
 #include <SDL2/SDL.h>
+#include <iostream>
 
 #include "quakedef.hh"
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)
@@ -153,6 +156,11 @@ static quakeparms_t parms;
 int
 main(int argc, char* argv[])
 {
+  StackEngine stack_engine;
+  q_str<QStackAlloc> str(stack_engine);
+  str += "hello, world!";
+  std::cout << str << std::endl;
+
   int t;
   double time, oldtime, newtime;
 
