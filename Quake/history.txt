@@ -1,9 +1,3 @@
-supernailgun
-4
-list
-gun
-shotgun
-weapon
 gun
 cl_gun_fovscale 5
 cl_gun_fovscale 2
@@ -61,3 +55,9 @@ map e1m1
 map statr
 map start
 map e1m1
+map start
+map e1m1
+map start
+changelevel e1m1
+sv_cheats 1
+bind v noclip

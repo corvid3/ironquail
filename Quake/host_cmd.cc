@@ -2151,7 +2151,7 @@ Host_Changelevel_f(void)
   // johnfitz
 
   // q_strlcpy(level, Cmd_Argv(1), sizeof(level));
-  level.clear();
+  level.str("");
   level << Cmd_Argv(1);
 
   if (sv.name == level.str() && Host_AutoLoad())

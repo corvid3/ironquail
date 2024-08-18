@@ -1896,9 +1896,7 @@ COM_FindFile(std::string_view const filename,
   //
   // search through the path, one element at a time
   //
-  printf("%zu\n", com_searchpaths.size());
   for (auto const& search : com_searchpaths) {
-    printf("%s %s\n", search.filename.data(), search.pack ? "1" : "0");
     if (search.pack != nullptr) /* look through all the pak file elements */
     {
       pak = search.pack.get();
