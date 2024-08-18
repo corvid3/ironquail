@@ -252,6 +252,10 @@ typedef struct
   int memsize;
   int numcpus;
   int errstate;
+
+  // max memory allocation for
+  // Small allocations
+  int smallkb;
 } quakeparms_t;
 
 #include "cvar.hh"
@@ -283,6 +287,7 @@ extern cvar_t sys_ticrate;
 extern cvar_t sys_nostdout;
 extern cvar_t developer;
 extern cvar_t max_edicts; // johnfitz
+extern cvar_t sv_cheats;
 
 extern qboolean host_initialized; // true if into command execution
 extern double host_frametime;

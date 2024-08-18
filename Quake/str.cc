@@ -1,7 +1,10 @@
 #include "str.hh"
 #include <cctype>
 
-template class std::basic_string<char, std::char_traits<char>, QAlloc<char>>;
+template class std::
+  basic_string<char, std::char_traits<char>, QGeneralAlloc<char>>;
+template class std::
+  basic_stringstream<char, std::char_traits<char>, QGeneralAlloc<char>>;
 
 int
 caseins_streq(std::string_view const lhs, std::string_view const rhs)

@@ -156,10 +156,16 @@ static quakeparms_t parms;
 int
 main(int argc, char* argv[])
 {
-  StackEngine stack_engine;
-  q_str<QStackAlloc> str(stack_engine);
-  str += "hello, world!";
-  std::cout << str << std::endl;
+  // int smallsize = COM_CheckParm("-smallsize");
+
+  // parms.smallkb = 32;
+  // if (smallsize > 0) {
+  //   if (smallsize + 1 < com_argc)
+  //     parms.smallkb = Q_atoi(argv[smallsize + 1]);
+  // }
+
+  // SmallAllocEngine stack_engine(parms.smallkb);
+  // g_small_alloc = &stack_engine;
 
   int t;
   double time, oldtime, newtime;
@@ -177,12 +183,11 @@ main(int argc, char* argv[])
   isDedicated = (COM_CheckParm("-dedicated") != 0);
 
   Sys_InitSDL();
-
   Sys_Init();
-
   Sys_Printf("Initializing Ironwail v%s\n", IRONWAIL_VER_STRING);
 
   parms.memsize = DEFAULT_MEMORY;
+
   if (COM_CheckParm("-heapsize")) {
     t = COM_CheckParm("-heapsize") + 1;
     if (t < com_argc)

@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _QUAKE_SYS_H
 
 #include "q_stdinc.hh"
+#include <string_view>
 
 // sys.h -- non-portable functions
 
@@ -81,7 +82,7 @@ typedef int64_t qfileofs_t;
 // returns the file size or -1 if file is not present.
 // the file should be in BINARY mode for stupid OSs that care
 qfileofs_t
-Sys_FileOpenRead(const char* path, int* hndl);
+Sys_FileOpenRead(std::string_view const path, int* hndl);
 
 // Returns a file handle
 int
@@ -102,7 +103,7 @@ Sys_GetFileTime(const char* path, time_t* out);
 void
 Sys_mkdir(const char* path);
 FILE*
-Sys_fopen(const char* path, const char* mode);
+Sys_fopen(std::string_view const path, const char* mode);
 int
 Sys_fseek(FILE* file, qfileofs_t ofs, int origin);
 qfileofs_t
@@ -134,7 +135,7 @@ void
 Sys_FindClose(findfile_t* find);
 
 int
-Sys_FileType(const char* path);
+Sys_FileType(std::string_view const path);
 /* returns an FS entity type, i.e. FS_ENT_FILE or FS_ENT_DIRECTORY.
  * returns FS_ENT_NONE (0) if no such file or directory is present. */
 

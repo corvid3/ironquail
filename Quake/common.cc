@@ -38,12 +38,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "q_stdinc.hh"
 #include "quakedef.hh"
 #include "steam.hh"
+#include "str.hh"
 #include "sys.hh"
 #include "unicode_translit.hh"
 #include "vid.hh"
 #include <SDL2/SDL.h>
 #include <errno.h>
 #include <time.h>
+
+#include <filesystem>
 
 static const char* largv[MAX_NUM_ARGVS + 1];
 static char argvdummy[] = " ";
@@ -1170,23 +1173,22 @@ COM_StripExtension(const char* in, char* out, size_t outsize)
 COM_FileGetExtension - doesn't return NULL
 ============
 */
-const char*
-COM_FileGetExtension(const char* in)
+q_str<>
+COM_FileGetExtension(std::string_view const in)
 {
-  const char* src;
-  size_t len;
+  auto str = q_str<>(std::filesystem::path(in).extension().generic_string());
+  // get rid of the dot in the file extension
+  if (str.size() > 0)
+    str = q_str<>(str.begin() + 1, str.end());
+  return str;
 
-  len = strlen(in);
-  if (len < 2) /* nothing meaningful */
-    return "";
+  // src = in + len - 1;
+  // while (src != in && src[-1] != '.')
+  //   src--;
+  // if (src == in || strchr(src, '/') != NULL || strchr(src, '\\') != NULL)
+  //   return ""; /* no extension, or parent directory has a dot */
 
-  src = in + len - 1;
-  while (src != in && src[-1] != '.')
-    src--;
-  if (src == in || strchr(src, '/') != NULL || strchr(src, '\\') != NULL)
-    return ""; /* no extension, or parent directory has a dot */
-
-  return src;
+  // return src;
 }
 
 /*
@@ -1197,11 +1199,8 @@ COM_ExtractExtension
 void
 COM_ExtractExtension(const char* in, char* out, size_t outsize)
 {
-  const char* ext = COM_FileGetExtension(in);
-  if (!*ext)
-    *out = '\0';
-  else
-    q_strlcpy(out, ext, outsize);
+  q_str<> const ext = COM_FileGetExtension(in);
+  q_strlcpy(out, ext.data(), outsize);
 }
 
 /*
@@ -1276,7 +1275,8 @@ if path extension doesn't match .EXT, append it
 void
 COM_AddExtension(char* path, const char* extension, size_t len)
 {
-  if (strcmp(COM_FileGetExtension(path), extension + 1) != 0)
+  auto const file_ext = COM_FileGetExtension(path);
+  if (file_ext != extension)
     q_strlcat(path, extension, len);
 }
 
@@ -1864,13 +1864,15 @@ can be used for detecting a file's presence.
 ===========
 */
 static int
-COM_FindFile(const char* filename,
+COM_FindFile(std::string_view filename,
              int* handle,
              FILE** file,
              unsigned int* path_id)
 {
   searchpath_t* search;
-  char netpath[MAX_OSPATH];
+  // char netpath[MAX_OSPATH];
+  q_strstr<> netpath;
+
   pack_t* pak;
   int i;
 
@@ -1887,7 +1889,7 @@ COM_FindFile(const char* filename,
     {
       pak = search->pack;
       for (i = 0; i < pak->numfiles; i++) {
-        if (strcmp(pak->files[i].name, filename) != 0)
+        if (pak->files[i].name == filename)
           continue;
         // found it!
         com_filesize = pak->files[i].filelen;
@@ -1912,22 +1914,25 @@ COM_FindFile(const char* filename,
     {
       if (!registered.value) { /* if not a registered version, don't ever go
                                   beyond base */
-        if (strchr(filename, '/') || strchr(filename, '\\'))
+        if (filename.find_first_of('/') != filename.npos ||
+            filename.find_first_of('\\') != filename.npos)
           continue;
       }
 
-      q_snprintf(netpath, sizeof(netpath), "%s/%s", search->filename, filename);
-      if (!(Sys_FileType(netpath) & FS_ENT_FILE))
+      netpath << search->filename << "/" << filename;
+      // q_snprintf(netpath, sizeof(netpath), "%s/%s", search->filename,
+      // filename);
+      if (!(Sys_FileType(netpath.str()) & FS_ENT_FILE))
         continue;
 
       if (path_id)
         *path_id = search->path_id;
       if (handle) {
-        com_filesize = Sys_FileOpenRead(netpath, &i);
+        com_filesize = Sys_FileOpenRead(netpath.str(), &i);
         *handle = i;
         return com_filesize;
       } else if (file) {
-        *file = Sys_fopen(netpath, "rb");
+        *file = Sys_fopen(netpath.str(), "rb");
         com_filesize = (*file == NULL) ? -1 : COM_filelength(*file);
         return com_filesize;
       } else {
@@ -1937,14 +1942,13 @@ COM_FindFile(const char* filename,
   }
 
   if (developer.value) {
-    const char* ext = COM_FileGetExtension(filename);
+    q_str<> const ext = COM_FileGetExtension(filename);
 
-    if (strcmp(ext, "pcx") != 0 && strcmp(ext, "tga") != 0 &&
-        strcmp(ext, "lit") != 0 && strcmp(ext, "vis") != 0 &&
-        strcmp(ext, "ent") != 0)
-      Con_DPrintf("FindFile: can't find %s\n", filename);
+    if (ext != "pcx" and ext != "tga" and ext != "lit" and ext != "vis" and
+        ext != "ent")
+      Con_DPrintf("FindFile: can't find %s\n", filename.data());
     else
-      Con_DPrintf2("FindFile: can't find %s\n", filename);
+      Con_DPrintf2("FindFile: can't find %s\n", filename.data());
   }
 
   if (handle)
@@ -1963,7 +1967,7 @@ Returns whether the file is found in the quake filesystem.
 ===========
 */
 qboolean
-COM_FileExists(const char* filename, unsigned int* path_id)
+COM_FileExists(std::string_view filename, unsigned int* path_id)
 {
   int ret = COM_FindFile(filename, NULL, NULL, path_id);
   return (ret == -1) ? false : true;
@@ -2704,7 +2708,8 @@ COM_MigrateNightdiveUserFiles(void)
 {
   const char* episodes[] = { "id1", "hipnotic", "rogue", "dopa", "mg1" };
   const char* filetypes[] = { "cfg", "txt", "sav", "dem", "png", "jpg" };
-  const char *game, *ext;
+  const char* game;
+  q_str<> ext;
   char src[MAX_OSPATH];
   char dst[MAX_OSPATH];
   char* subdirs = NULL;
@@ -2777,7 +2782,7 @@ COM_MigrateNightdiveUserFiles(void)
 
       ext = COM_FileGetExtension(fileiter->name);
       for (i = 0; i < (int)countof(filetypes); i++)
-        if (!q_strcasecmp(ext, filetypes[i]))
+        if (!caseins_streq(ext, filetypes[i]))
           break;
       if (i == (int)countof(filetypes))
         continue;
@@ -2937,10 +2942,10 @@ COM_PatchCmdLine(const char* fullpath)
       return true;
 
     case FS_ENT_FILE: {
-      const char* ext = COM_FileGetExtension(qpath);
+      q_str<> ext = COM_FileGetExtension(qpath);
 
       // Map file
-      if (q_strcasecmp(ext, "bsp") == 0) {
+      if (caseins_streq(ext, "bsp") == 0) {
         if (!game[0]) {
           Con_SafePrintf("Map \"%s\" not in a mod dir, ignoring.\n", printpath);
           return false;
@@ -2956,14 +2961,14 @@ COM_PatchCmdLine(const char* fullpath)
       }
 
       // Save file
-      if (q_strcasecmp(ext, "sav") == 0) {
+      if (caseins_streq(ext, "sav") == 0) {
         const char* kex = game[0] ? "" : "kex";
         Cbuf_AddText(va("load \"%s\" %s\n", qpath, kex));
         return true;
       }
 
       // Demo file
-      if (q_strcasecmp(ext, "dem") == 0) {
+      if (caseins_streq(ext, "dem") == 0) {
         if (!game[0]) {
           Con_SafePrintf("Demo \"%s\" not in a mod dir, ignoring.\n",
                          printpath);

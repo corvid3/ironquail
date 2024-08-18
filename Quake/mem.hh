@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SDL_assert.h"
-#include "common.hh"
+#include "mathlib.hh"
 #include "sys.hh"
 #include <array>
 #include <cstdint>
@@ -35,20 +35,20 @@ unsigned inline get_free()
 };
 };
 
-// stack allocation engine
-// intended for small allocations, like strings
-// or small, short lived std::vectors
+// allocation engine
+// intended for lots of small allocations, short lived allocations
+// like strings or small vectors
 // use carefully
-class StackEngine
+class SmallAllocEngine
 {
   struct Header;
 
-  unsigned constexpr static max_kb = 64;
-  unsigned constexpr static max_b = kibi(max_kb);
+  unsigned const m_max_kb;
+  unsigned const m_max_b;
 
   unsigned m_used = 0;
   Header* m_last_dealloc = nullptr;
-  std::array<unsigned char, max_b> m_stack;
+  void* m_data_ptr = nullptr;
 
   char* get_data_ptr();
 
@@ -63,7 +63,8 @@ class StackEngine
   void* internal_allocate(std::size_t const size);
 
 public:
-  StackEngine();
+  SmallAllocEngine(unsigned const max_kb = 32);
+  ~SmallAllocEngine();
 
   void* allocate(std::size_t const bytes);
   void* realloc(void* ptr, std::size_t const bytes);
@@ -141,20 +142,20 @@ public:
 };
 
 template<typename T>
-class QStackAlloc
+class QSmallAlloc
 {
-  StackEngine& m_engine;
+  SmallAllocEngine& m_engine;
 
 public:
   using value_type = T;
 
-  QStackAlloc(StackEngine& engine)
+  QSmallAlloc(SmallAllocEngine& engine)
     : m_engine(engine)
   {
   }
 
   template<typename O>
-  QStackAlloc(QStackAlloc<O> const& rhs)
+  QSmallAlloc(QSmallAlloc<O> const& rhs)
     : m_engine(rhs.m_engine)
   {
   }
@@ -168,7 +169,7 @@ public:
 };
 
 template<typename T>
-struct QAlloc
+struct QGeneralAlloc
 {
   using value_type = T;
 
@@ -178,5 +179,10 @@ struct QAlloc
   }
   void deallocate(T* ptr, std::size_t) { QMem::free(ptr); }
 
-  bool operator==(QAlloc const&) const { return true; }
+  bool operator==(QGeneralAlloc const&) const { return true; }
 };
+
+// global small allocator engine
+// data is initialized in main (main_sdl.cc)
+// extern ptr is stored in mem.cc
+extern SmallAllocEngine* g_small_alloc;

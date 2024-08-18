@@ -29,6 +29,7 @@
 #include "quakedef.hh"
 #include "snd_codec.hh"
 #include "snd_codeci.hh"
+#include "str.hh"
 #include "zone.hh"
 #include <SDL2/SDL.h>
 
@@ -156,17 +157,17 @@ S_CodecOpenStreamExt(const char* filename, qboolean loop)
 {
   snd_codec_t* codec;
   snd_stream_t* stream;
-  const char* ext;
+  q_str<> ext;
 
   ext = COM_FileGetExtension(filename);
-  if (!*ext) {
+  if (ext.size() == 0) {
     Con_Printf("No extension for %s\n", filename);
     return NULL;
   }
 
   codec = codecs;
   while (codec) {
-    if (!q_strcasecmp(ext, codec->ext))
+    if (!caseins_streq(ext, codec->ext))
       break;
     codec = codec->next;
   }
@@ -189,10 +190,10 @@ S_CodecOpenStreamAny(const char* filename, qboolean loop)
 {
   snd_codec_t* codec;
   snd_stream_t* stream;
-  const char* ext;
+  q_str<> ext;
 
   ext = COM_FileGetExtension(filename);
-  if (!*ext) /* try all available */
+  if (ext.size() > 0) /* try all available */
   {
     char tmp[MAX_QPATH];
 
@@ -215,7 +216,7 @@ S_CodecOpenStreamAny(const char* filename, qboolean loop)
   {
     codec = codecs;
     while (codec) {
-      if (!q_strcasecmp(ext, codec->ext))
+      if (!caseins_streq(ext, codec->ext))
         break;
       codec = codec->next;
     }

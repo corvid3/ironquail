@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.hh"
 #include "screen.hh"
 #include "server.hh"
+#include "str.hh"
 #include "sys.hh"
 #include "world.hh"
 #include <SDL2/SDL.h>
@@ -55,6 +56,24 @@ extern cvar_t nomonsters;
 cvar_t sv_autoload = { "sv_autoload", "2", CVAR_ARCHIVE, 0, 0, 0, 0, 0 };
 
 int current_skill;
+
+static inline bool
+cheats_enabled(void)
+{
+  // if you're the host (sv.active),
+  // skip the check
+  if (sv_cheats.value == 0.0f && !sv.active) {
+    Con_SafePrintf("sv_cheats must be enabled for this server!\n");
+    return false;
+  } else
+    return true;
+}
+
+#define CHECK_CHEATS                                                           \
+  do {                                                                         \
+    if (!cheats_enabled())                                                     \
+      return;                                                                  \
+  } while (0)
 
 /*
 ==================
@@ -489,7 +508,7 @@ ExtraMaps_Init(void)
                      5) && // don't list files outside of maps/
             !strchr(pak->files[i].name + 5,
                     '/') && // don't list files in subdirectories
-            !strcmp(COM_FileGetExtension(pak->files[i].name), "bsp")) {
+            COM_FileGetExtension(pak->files[i].name) != "bsp") {
           COM_StripExtension(pak->files[i].name + 5, mapname, sizeof(mapname));
           ExtraMaps_Add(mapname, isbase ? NULL : search);
         }
@@ -1137,7 +1156,7 @@ Modlist_Add(const char* name)
   int i;
   unsigned int path_id;
 
-  memset(&info, 0, sizeof(info));
+  memset(&info, 0, sizeof(std::size_t));
   item = FileList_AddWithData(name, NULL, sizeof(*info), &modlist);
 
   info = (modinfo_t*)(item + 1);
@@ -1278,8 +1297,8 @@ Modlist_FindLocal(void)
       if (!strcmp(find->name, ".") || !strcmp(find->name, ".."))
         continue;
 #ifndef _WIN32
-      if (!q_strcasecmp(COM_FileGetExtension(find->name),
-                        "app")) // skip .app bundles on macOS
+      if (!caseins_streq(COM_FileGetExtension(find->name),
+                         "app")) // skip .app bundles on macOS
         continue;
 #endif
       if (Modlist_Check(find->name, com_basedirs[i])) {
@@ -1412,7 +1431,7 @@ DemoList_Init(void)
       if (!strstr(search->pack->filename,
                   ignorepakdir)) { // don't list standard id demos
         for (i = 0, pak = search->pack; i < pak->numfiles; i++) {
-          if (!strcmp(COM_FileGetExtension(pak->files[i].name), "dem")) {
+          if (COM_FileGetExtension(pak->files[i].name) != "dem") {
             COM_StripExtension(pak->files[i].name, demname, sizeof(demname));
             FileList_Add(demname, &demolist);
           }
@@ -1496,7 +1515,7 @@ SkyList_AddFile(const char* path)
 {
   const char prefix[] = "gfx/env/";
   const char suffix[] = "up";
-  const char* ext;
+  q_str<> ext;
   char skyname[MAX_QPATH];
   size_t len;
 
@@ -1509,7 +1528,7 @@ SkyList_AddFile(const char* path)
 
   // Only accept TGA files
   ext = COM_FileGetExtension(path);
-  if (q_strcasecmp(ext, "tga") != 0)
+  if (caseins_streq(ext, "tga") != 0)
     return false;
 
   // Check that the image has the right suffix
@@ -1766,6 +1785,8 @@ Host_Noclip_f
 static void
 Host_Noclip_f(void)
 {
+  CHECK_CHEATS;
+
   if (cmd_source == src_command) {
     Cmd_ForwardToServer();
     return;
@@ -1874,6 +1895,8 @@ Sets client to flymode
 static void
 Host_Fly_f(void)
 {
+  CHECK_CHEATS;
+
   if (cmd_source == src_command) {
     Cmd_ForwardToServer();
     return;
@@ -2092,25 +2115,33 @@ Goes to a new map, taking all clients along
 static void
 Host_Changelevel_f(void)
 {
-  char level[MAX_QPATH];
+  q_strstr<> level;
+
+  // char level[MAX_QPATH];
 
   if (Cmd_Argc() != 2) {
     Con_Printf("changelevel <levelname> : continue game on a new level\n");
     return;
   }
+
   if (!sv.active || cls.demoplayback) {
     Con_Printf("Only the server may changelevel\n");
     return;
   }
 
   // johnfitz -- check for client having map before anything else
-  q_snprintf(level, sizeof(level), "maps/%s.bsp", Cmd_Argv(1));
-  if (!COM_FileExists(level, NULL))
-    Host_Error("cannot find map %s", level);
+  // q_snprintf(level, sizeof(level), "maps/%s.bsp", Cmd_Argv(1));
+  level << "maps/" << Cmd_Argv(1) << ".bsp";
+
+  if (!COM_FileExists(level.view(), NULL))
+    Host_Error("cannot find map %s", level.str().data());
   // johnfitz
 
-  q_strlcpy(level, Cmd_Argv(1), sizeof(level));
-  if (!strcmp(sv.name, level) && Host_AutoLoad())
+  // q_strlcpy(level, Cmd_Argv(1), sizeof(level));
+  level.clear();
+  level << Cmd_Argv(1);
+
+  if (sv.name == level.str() && Host_AutoLoad())
     return;
 
   if (cls.state != ca_dedicated)
@@ -2118,11 +2149,11 @@ Host_Changelevel_f(void)
   key_dest = key_game; // remove console or menu
   PR_SwitchQCVM(&sv.qcvm);
   SV_SaveSpawnparms();
-  SV_SpawnServer(level);
+  SV_SpawnServer(level.str().data());
   PR_SwitchQCVM(NULL);
   // also issue an error if spawn failed -- O.S.
   if (!sv.active)
-    Host_Error("cannot run map %s", level);
+    Host_Error("cannot run map %s", level.str().data());
 }
 
 /*

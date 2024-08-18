@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // screen.c -- master for refresh, status bar, console, chat, notify, etc
 
 #include "cvar.hh"
+#include "mem.hh"
 #include "quakedef.hh"
 #include <time.h>
 
@@ -728,12 +729,21 @@ SCR_DrawZoneUsage(void)
 
   unsigned max_b = Z_GetMaxMemSize();
   unsigned used_b = Z_GetUsage();
+  unsigned heap_max_b = QMem::get_max();
+  unsigned heap_used_b = QMem::get_used();
 
   char st[64];
+  Draw_String(-300, 24, "ZONE:");
   sprintf(st, "MAX: %ikb", max_b / 1024);
-  Draw_String(24, 24, st);
+  Draw_String(-280, 32, st);
   sprintf(st, "USED: %ikb", used_b / 1024);
-  Draw_String(24, 32, st);
+  Draw_String(-280, 40, st);
+
+  Draw_String(-300, 48, "HEAP:");
+  sprintf(st, "MAX: %ikb", heap_max_b / 1024);
+  Draw_String(-280, 56, st);
+  sprintf(st, "USED: %ikb", heap_used_b / 1024);
+  Draw_String(-280, 64, st);
 }
 
 /*

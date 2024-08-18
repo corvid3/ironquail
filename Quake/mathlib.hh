@@ -30,6 +30,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "q_stdinc.hh"
 
+constexpr inline auto
+kibi(auto const x)
+{
+  return x * 1024;
+}
+
+constexpr inline auto
+mibi(auto const x)
+{
+  return x * 1024 * 1024;
+}
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846 // matches value in gcc v2 math.h
 #endif

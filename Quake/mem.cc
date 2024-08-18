@@ -1,6 +1,9 @@
 #include "mem.hh"
 #include <cstdint>
 #include <new>
+// #include<alloca.h>
+
+SmallAllocEngine* g_small_alloc;
 
 namespace QMem {
 
@@ -17,6 +20,7 @@ malloc(std::size_t const bytes)
 {
   Header* data = static_cast<Header*>(::operator new(bytes + sizeof(Header)));
   data->size = bytes;
+  used_mem_b += bytes;
   return data + 1;
 }
 
@@ -42,7 +46,7 @@ get_used()
 
 };
 
-struct StackEngine::Header
+struct SmallAllocEngine::Header
 {
   // uses the top bit of the size integer to determine
   // if this header is free...
@@ -59,28 +63,37 @@ struct StackEngine::Header
   void set_not_free() { m_size &= ~(1 << 31); }
 };
 
-StackEngine::StackEngine()
+SmallAllocEngine::SmallAllocEngine(unsigned const max_kb)
+  : m_max_kb(max_kb)
+  , m_max_b(kibi(m_max_kb))
 {
-  __builtin_memset(m_stack.data(), 0, m_stack.size());
-  Header* header = reinterpret_cast<Header*>(m_stack.data());
-  header->m_size = max_b - sizeof(Header);
+  m_data_ptr = QMem::malloc(m_max_b);
+  __builtin_memset(m_data_ptr, 0, m_max_b);
+
+  Header* header = reinterpret_cast<Header*>(m_data_ptr);
+  header->m_size = m_max_b - sizeof(Header);
   header->set_free();
 }
 
-char*
-StackEngine::get_data_ptr()
+SmallAllocEngine::~SmallAllocEngine()
 {
-  return reinterpret_cast<char*>(m_stack.data());
+  QMem::free(m_data_ptr);
 }
 
-StackEngine::Header*
-StackEngine::get_first_free_header(std::uint32_t const minimum_size)
+char*
+SmallAllocEngine::get_data_ptr()
+{
+  return reinterpret_cast<char*>(m_data_ptr);
+}
+
+SmallAllocEngine::Header*
+SmallAllocEngine::get_first_free_header(std::uint32_t const minimum_size)
 {
   char* data = get_data_ptr();
 
   std::uint32_t offset = 0;
 
-  while (offset < max_b) {
+  while (offset < m_max_b) {
     Header* header = reinterpret_cast<Header*>(data + offset);
     if (header->is_free() && header->m_size >= minimum_size)
       return header;
@@ -90,15 +103,15 @@ StackEngine::get_first_free_header(std::uint32_t const minimum_size)
   return nullptr;
 }
 
-StackEngine::Header*
-StackEngine::merge_free(std::uint32_t const until)
+SmallAllocEngine::Header*
+SmallAllocEngine::merge_free(std::uint32_t const until)
 {
   char* data = get_data_ptr();
   std::uint32_t offset = 0;
 
   Header* old_header = nullptr;
 
-  while (offset < max_b) {
+  while (offset < m_max_b) {
     Header* this_header = reinterpret_cast<Header*>(data + offset);
 
     offset += this_header->m_size + sizeof(Header);
@@ -119,7 +132,7 @@ StackEngine::merge_free(std::uint32_t const until)
 }
 
 void*
-StackEngine::internal_allocate(std::size_t const size)
+SmallAllocEngine::internal_allocate(std::size_t const size)
 {
   // get a free header, and if the header size is more than
   // or equal to 64 bytes longer than we need,
@@ -156,7 +169,7 @@ StackEngine::internal_allocate(std::size_t const size)
 }
 
 void*
-StackEngine::allocate(std::size_t const bytes)
+SmallAllocEngine::allocate(std::size_t const bytes)
 {
   if (m_last_dealloc != nullptr and m_last_dealloc->is_free() and
       m_last_dealloc->m_size >= bytes) {
@@ -168,7 +181,7 @@ StackEngine::allocate(std::size_t const bytes)
 }
 
 void*
-StackEngine::realloc(void* old_ptr, std::size_t const bytes)
+SmallAllocEngine::realloc(void* old_ptr, std::size_t const bytes)
 {
   Header* header = reinterpret_cast<Header*>(old_ptr) - 1;
   if (header->m_size >= bytes)
@@ -181,7 +194,7 @@ StackEngine::realloc(void* old_ptr, std::size_t const bytes)
 }
 
 void
-StackEngine::deallocate(void* ptr)
+SmallAllocEngine::deallocate(void* ptr)
 {
   Header* header = reinterpret_cast<Header*>(ptr) - 1;
   header->set_free();

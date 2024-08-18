@@ -27,8 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "q_stdinc.hh"
 #include "quakedef.hh"
+#include "str.hh"
 #include "sys.hh"
+
 #include <compare>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -36,18 +39,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // "not using return value" errors for some functions
 // making it a macro just makes it a little more clear
 #define IGNORE_RETURN (void)!
-
-constexpr inline auto
-kibi(auto const x)
-{
-  return x * 1024;
-}
-
-constexpr inline auto
-mibi(auto const x)
-{
-  return x * 1024 * 1024;
-}
 
 #if defined(_WIN32)
 #ifdef _MSC_VER
@@ -556,8 +547,8 @@ COM_AddExtension(char* path, const char* extension, size_t len);
 #if 0 /* COM_DefaultExtension can be dangerous */
 void COM_DefaultExtension (char *path, const char *extension, size_t len);
 #endif
-const char*
-COM_FileGetExtension(const char* in); /* doesn't return NULL */
+q_str<>
+COM_FileGetExtension(std::string_view const in); /* doesn't return NULL */
 void
 COM_ExtractExtension(const char* in, char* out, size_t outsize);
 char*
@@ -670,7 +661,7 @@ COM_OpenFile(const char* filename, int* handle, unsigned int* path_id);
 int
 COM_FOpenFile(const char* filename, FILE** file, unsigned int* path_id);
 qboolean
-COM_FileExists(const char* filename, unsigned int* path_id);
+COM_FileExists(std::string_view filename, unsigned int* path_id);
 void
 COM_CloseFile(int h);
 

@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "platform.hh"
 #include "q_stdinc.hh"
 #include "quakedef.hh"
+#include "str.hh"
 #include "sys.hh"
 #include <SDL2/SDL.h>
 
@@ -77,12 +78,12 @@ findhandle(void)
 }
 
 FILE*
-Sys_fopen(const char* path, const char* mode)
+Sys_fopen(std::string_view const path, const char* mode)
 {
   if (strchr(mode, 'w')) {
     char dir[MAX_OSPATH];
     int i, rc;
-    q_strlcpy(dir, path, sizeof(dir));
+    q_strlcpy(dir, path.data(), sizeof(dir));
     for (i = 1; dir[i]; i++) {
       if (dir[i] != '/')
         continue;
@@ -99,7 +100,7 @@ Sys_fopen(const char* path, const char* mode)
     }
   }
 
-  return fopen(path, mode);
+  return fopen(path.data(), mode);
 }
 
 COMPILE_TIME_ASSERT(CHECK_LARGE_FILE_SUPPORT,
@@ -143,14 +144,14 @@ Sys_filelength(FILE* f)
 }
 
 qfileofs_t
-Sys_FileOpenRead(const char* path, int* hndl)
+Sys_FileOpenRead(std::string_view const path, int* hndl)
 {
   FILE* f;
   int i;
   qfileofs_t retval;
 
   i = findhandle();
-  f = fopen(path, "rb");
+  f = fopen(path.data(), "rb");
 
   if (!f) {
     *hndl = -1;
@@ -212,7 +213,7 @@ Sys_FileExists(const char* path)
 }
 
 int
-Sys_FileType(const char* path)
+Sys_FileType(std::string_view const path)
 {
   /*
   if (access(path, R_OK) == -1)
@@ -220,7 +221,7 @@ Sys_FileType(const char* path)
   */
   struct stat st;
 
-  if (stat(path, &st) != 0)
+  if (stat(path.data(), &st) != 0)
     return FS_ENT_NONE;
   if (S_ISDIR(st.st_mode))
     return FS_ENT_DIRECTORY;
@@ -674,8 +675,7 @@ readdir_filtered(DIR* handle, const char* ext)
 {
   while (1) {
     struct dirent* data = readdir(handle);
-    if (!data || ext[0] == '*' ||
-        !strcmp(ext, COM_FileGetExtension(data->d_name)))
+    if (!data || ext[0] == '*' || ext == COM_FileGetExtension(data->d_name))
       return data;
   }
   return NULL;

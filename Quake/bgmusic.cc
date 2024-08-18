@@ -31,6 +31,7 @@
 #include "q_stdinc.hh"
 #include "quakedef.hh"
 #include "snd_codec.hh"
+#include "str.hh"
 #include <SDL2/SDL.h>
 
 #define MUSIC_DIRNAME "music"
@@ -244,7 +245,7 @@ void
 BGM_Play(const char* filename)
 {
   char tmp[MAX_QPATH];
-  const char* ext;
+  q_str<> ext;
   music_handler_t* handler;
 
   BGM_Stop();
@@ -258,7 +259,7 @@ BGM_Play(const char* filename)
   }
 
   ext = COM_FileGetExtension(filename);
-  if (!*ext) /* try all things */
+  if (ext.size() > 0) /* try all things */
   {
     BGM_Play_noext(filename, ANY_CODECTYPE);
     return;
@@ -266,7 +267,7 @@ BGM_Play(const char* filename)
 
   handler = music_handlers;
   while (handler) {
-    if (handler->is_available && !q_strcasecmp(ext, handler->ext))
+    if (handler->is_available && !caseins_streq(ext, handler->ext))
       break;
     handler = handler->next;
   }
