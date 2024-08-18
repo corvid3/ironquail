@@ -1630,7 +1630,8 @@ typedef struct cmdalias_s
   char name[MAX_ALIAS_NAME];
   char* value;
 } cmdalias_t;
-extern cmdalias_t* cmd_alias;
+
+extern q_list<cmdalias_t> cmd_alias;
 
 /*
 ============
@@ -1890,7 +1891,6 @@ BuildTabList -- johnfitz
 static void
 BuildTabList(const char* partial)
 {
-  cmdalias_t* alias;
   cvar_t* cvar;
   cmd_function_t* cmd;
   int i;
@@ -1943,9 +1943,9 @@ BuildTabList(const char* partial)
         !Cmd_IsReservedName(cmd->name))
       Con_AddToTabList(cmd->name, partial, "command");
 
-  for (alias = cmd_alias; alias; alias = alias->next)
-    if (q_strcasestr(alias->name, partial))
-      Con_AddToTabList(alias->name, partial, "alias");
+  for (auto const& alias : cmd_alias)
+    if (q_strcasestr(alias.name, partial))
+      Con_AddToTabList(alias.name, partial, "alias");
 }
 
 /*

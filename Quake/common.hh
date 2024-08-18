@@ -529,8 +529,17 @@ COM_InitArgv(int argc, char** argv);
 void
 COM_InitFilesystem(void);
 
+// frees all of the game bullshit
+// call this at the end of program
+// makes the sanitizers happy
 void
-COM_ResetGameDirectories(const char* newgamedirs);
+COM_ShutdownGameDirectories(void);
+// semicolon seperated
+void
+COM_ResetGameDirectories(std::string_view const);
+// if you'd prefer to do it yourself
+void
+COM_ResetGameDirectories(q_vec<std::string_view> const&);
 void
 COM_AddGameDirectory(const char* dir);
 void

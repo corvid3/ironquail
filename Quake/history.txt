@@ -1,7 +1,3 @@
-maps
-map start
-map e2m3
-map end
 changelevel end
 bind ` console
 unbind ~
@@ -61,3 +57,7 @@ noclip
 sv_cheats 0
 noclip
 scr_showzonemem 1
+alias x noclip
+x
+unalias x
+x

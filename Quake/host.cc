@@ -718,10 +718,10 @@ typedef struct asyncproc_s
 
 typedef struct asyncqueue_s
 {
-  size_t head;
-  size_t tail;
-  size_t capacity;
-  qboolean teardown;
+  size_t head = 0;
+  size_t tail = 0;
+  size_t capacity = 0;
+  qboolean teardown = 0;
   SDL_mutex* mutex = nullptr;
   SDL_cond* notfull = nullptr;
   q_vec<asyncproc_t> procs;
@@ -733,8 +733,6 @@ typedef struct asyncqueue_s
     else
       return Q_nextPow2(in);
   }
-
-  asyncqueue_s() = default;
 
   explicit asyncqueue_s(std::size_t capacity_in)
     : capacity(get_capacity(capacity_in))
@@ -1268,7 +1266,8 @@ _Host_Frame(double time)
   Host_AdvanceTime(time);
 
   // run async procs
-  async_queue->drain();
+  if (async_queue)
+    async_queue->drain();
   // AsyncQueue_Drain(&async_queue);
 
   // get new key events
@@ -1441,9 +1440,8 @@ Host_Init(void)
     Sys_Error("Only %4.1f megs of memory available, can't execute game",
               host_parms->memsize / (float)0x100000);
 
-  async_queue = new asyncqueue_s(1024);
-
   Memory_Init(host_parms->membase, host_parms->memsize);
+  async_queue = new asyncqueue_s(1024);
   Cbuf_Init();
   Cmd_Init();
   LOG_Init(host_parms);
@@ -1548,7 +1546,6 @@ Host_Shutdown(void)
 
   // stop downloads before shutting down networking
   Modlist_ShutDown();
-
   NET_Shutdown();
 
   if (cls.state != ca_dedicated) {
@@ -1560,9 +1557,9 @@ Host_Shutdown(void)
     S_Shutdown();
     IN_Shutdown();
     VID_Shutdown();
+    COM_ShutdownGameDirectories();
   }
 
   LOG_Close();
-
   LOC_Shutdown();
 }

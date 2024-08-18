@@ -1,5 +1,6 @@
 #pragma once
 
+#include <list>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -12,6 +13,8 @@ template<template<typename M> typename A = QGeneralAlloc>
 using q_strstr = std::basic_stringstream<char, std::char_traits<char>, A<char>>;
 template<typename T, template<typename M> typename A = QGeneralAlloc>
 using q_vec = std::vector<T, A<T>>;
+template<typename T, template<typename M> typename A = QGeneralAlloc>
+using q_list = std::list<T, A<T>>;
 
 extern template class std::
   basic_string<char, std::char_traits<char>, QGeneralAlloc<char>>;

@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <SDL2/SDL.h>
 #include <array>
 #include <errno.h>
+#include <string_view>
 #include <time.h>
 
 #include <filesystem>
@@ -2419,11 +2420,9 @@ COM_AddGameDirectory(const char* dir)
 }
 
 void
-COM_ResetGameDirectories(const char* newgamedirs)
+COM_ShutdownGameDirectories(void)
 {
-  const char *newpath, *path;
   searchpath_t* search;
-  // Kill the extra game if it is loaded
   while (com_searchpaths != com_base_searchpaths) {
     if (com_searchpaths->pack) {
       Sys_FileClose(com_searchpaths->pack->handle);
@@ -2434,6 +2433,34 @@ COM_ResetGameDirectories(const char* newgamedirs)
     Z_Free(com_searchpaths);
     com_searchpaths = search;
   }
+}
+
+void
+COM_ResetGameDirectories(std::string_view const dir)
+{
+  q_vec<q_str<>> game_paths;
+
+  uint32_t idx = 0;
+  while (idx < dir.size()) {
+    auto nidx = dir.find_first_of(';');
+    if (nidx == dir.npos)
+      break;
+  }
+
+  q_vec<std::string_view> game_paths_views;
+  for (auto const& str : game_paths)
+    game_paths_views.push_back(str);
+
+  COM_ResetGameDirectories(game_paths_views);
+}
+
+void
+COM_ResetGameDirectories(q_vec<std::string_view> const& newgames)
+{
+  // const char *newpath, *path;
+  // Kill the extra game if it is loaded
+  COM_ShutdownGameDirectories();
+
   hipnotic = false;
   rogue = false;
   quake64 = false;
@@ -2445,23 +2472,29 @@ COM_ResetGameDirectories(const char* newgamedirs)
             va("%s/%s", com_basedirs[com_numbasedirs - 1], GAMENAME),
             sizeof(com_gamedir));
 
-  for (newpath = newgamedirs; newpath && *newpath;) {
-    char* e = const_cast<char*>(strchr(newpath, ';'));
-    if (e)
-      *e++ = 0;
-
-    if (!q_strcasecmp(GAMENAME, newpath))
-      path = NULL;
-    else
-      for (path = newgamedirs; path < newpath; path += strlen(path) + 1) {
-        if (!q_strcasecmp(path, newpath))
-          break;
-      }
-
-    if (path == newpath) // not already loaded
-      COM_AddGameDirectory(newpath);
-    newpath = e;
+  for (auto const& game : newgames) {
+    if (caseins_streq(GAMENAME, game))
+      continue;
+    COM_AddGameDirectory(game.data());
   }
+
+  // for (newpath = newgamedirs; newpath && *newpath;) {
+  //   char* e = const_cast<char*>(strchr(newpath, ';'));
+  //   if (e)
+  //     *e++ = 0;
+
+  //   if (!q_strcasecmp(GAMENAME, newpath))
+  //     path = NULL;
+  //   else
+  //     for (path = newgamedirs; path < newpath; path += strlen(path) + 1) {
+  //       if (!q_strcasecmp(path, newpath))
+  //         break;
+  //     }
+
+  //   if (path == newpath) // not already loaded
+  //     COM_AddGameDirectory(newpath);
+  //   newpath = e;
+  // }
 }
 
 //==============================================================================

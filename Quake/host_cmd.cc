@@ -126,8 +126,9 @@ FileList_AddWithData(const char* name,
   if (datasize) {
     if (data)
       memcpy(item + 1, data, datasize);
-    else
-      memset(item + 1, 0, datasize);
+    // what if we just didn't rely on memset?
+    // else
+    //   memset(item + 1, 0, datasize);
   }
 
   // insert each entry in alphabetical order
@@ -688,17 +689,23 @@ done:
 #endif
 }
 
-typedef struct
+typedef struct modinfo_s
 {
-  const char* full_name;
-  const char* author;
-  const char* description;
-  const char* date;
-  const char* download;
-  double bytes_total;
-  const jsonentry_t* json;
-  SDL_atomic_t bytes_downloaded;
-  SDL_atomic_t status;
+  q_str<> full_name;
+  q_str<> author;
+  q_str<> description;
+  q_str<> date;
+  q_str<> download;
+  // const char* full_name;
+  // const char* author;
+  // const char* description;
+  // const char* date;
+  // const char* download;
+  double bytes_total = 0;
+  const jsonentry_t* json = nullptr;
+  SDL_atomic_t bytes_downloaded = {};
+  SDL_atomic_t status = {};
+
 } modinfo_t;
 
 filelist_item_t* modlist;
@@ -713,7 +720,7 @@ const char*
 Modlist_GetFullName(const filelist_item_t* item)
 {
   const modinfo_t* info = (const modinfo_t*)(item + 1);
-  const char* full_name = info->full_name;
+  const char* full_name = info->full_name.data();
   // 2021 rerelease episode names are localized
   if (full_name && full_name[0] == '$')
     full_name = LOC_GetRawString(full_name);
@@ -724,21 +731,21 @@ const char*
 Modlist_GetDescription(const filelist_item_t* item)
 {
   const modinfo_t* info = (const modinfo_t*)(item + 1);
-  return info->description;
+  return info->description.data();
 }
 
 const char*
 Modlist_GetAuthor(const filelist_item_t* item)
 {
   const modinfo_t* info = (const modinfo_t*)(item + 1);
-  return info->author;
+  return info->author.data();
 }
 
 const char*
 Modlist_GetDate(const filelist_item_t* item)
 {
   const modinfo_t* info = (const modinfo_t*)(item + 1);
-  return info->date;
+  return info->date.data();
 }
 
 modstatus_t
@@ -824,7 +831,7 @@ Modlist_RegisterAddons(void* param)
 
     if (!info->json) {
       info->json = entry;
-      info->full_name = name;
+      info->full_name = name != nullptr ? name : "";
       info->download = download;
       if (size)
         info->bytes_total = *size;
@@ -1087,7 +1094,8 @@ Modlist_InstallerThread(void* param)
   download.write_data = &mod;
   download.abort = &extramods_install_cancel;
 
-  q_snprintf(url, sizeof(url), "%s/%s", extramods_addons_url, info->download);
+  q_snprintf(
+    url, sizeof(url), "%s/%s", extramods_addons_url, info->download.data());
   ok = Download(url, &download);
   fclose(file);
 
@@ -1158,7 +1166,7 @@ Modlist_Add(const char* name)
   int i;
   unsigned int path_id;
 
-  memset(&info, 0, sizeof(std::size_t));
+  // memset(&info, 0, sizeof(std::size_t));
   item = FileList_AddWithData(name, NULL, sizeof(*info), &modlist);
 
   info = (modinfo_t*)(item + 1);
@@ -1166,7 +1174,7 @@ Modlist_Add(const char* name)
 
   // look for descript.ion file in mod dir and use first non-empty line as full
   // name
-  if (!info->full_name) {
+  if (info->full_name.empty()) {
     for (i = com_numbasedirs - 1; i >= 0; i--) {
       char path[MAX_OSPATH];
       char *buf, *description, *end;
@@ -1187,16 +1195,16 @@ Modlist_Add(const char* name)
       if (end)
         *end = '\0';
       if (*description)
-        info->full_name = strdup(description);
+        info->full_name = description != nullptr ? description : "";
       free(buf);
 
-      if (info->full_name)
+      if (info->full_name.data())
         break;
     }
   }
 
   // look for mapdb.json file
-  if (!info->full_name) {
+  if (info->full_name.empty()) {
     char* mapdb = (char*)COM_LoadMallocFile("mapdb.json", &path_id);
     if (mapdb) {
       qboolean is_base_mapdb =
@@ -1228,7 +1236,8 @@ Modlist_Add(const char* name)
               if (q_strcasecmp(mod_dir, name) != 0)
                 continue;
 
-            info->full_name = strdup(mod_name);
+            info->full_name = mod_name ? mod_name : "";
+
             break;
           }
         }
@@ -1238,10 +1247,11 @@ Modlist_Add(const char* name)
   }
 
   // look for mod in hard-coded list
-  if (!info->full_name) {
+  if (info->full_name.empty()) {
     for (i = 0; i < (int)countof(knownmods); i++) {
       if (!q_strcasecmp(name, knownmods[i][0])) {
-        info->full_name = strdup(knownmods[i][1]);
+        if (knownmods[i][1])
+          info->full_name = knownmods[i][1];
         break;
       }
     }

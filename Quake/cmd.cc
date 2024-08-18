@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "str.hh"
 #include "sys.hh"
 #include <SDL2/SDL.h>
+#include <algorithm>
 void
 Cmd_ForwardToServer(void);
 
@@ -41,12 +42,13 @@ Cmd_ForwardToServer(void);
 
 typedef struct cmdalias_s
 {
-  struct cmdalias_s* next;
-  char name[MAX_ALIAS_NAME];
-  char* value;
+  q_str<> name;
+  q_str<> value;
+
+  bool operator==(cmdalias_s const& rhs) const { return name == rhs.name; }
 } cmdalias_t;
 
-cmdalias_t* cmd_alias;
+q_list<cmdalias_t> cmd_alias;
 
 qboolean cmd_wait;
 
@@ -367,24 +369,25 @@ Creates a new command that executes a command string (possibly ; seperated)
 void
 Cmd_Alias_f(void)
 {
-  cmdalias_t* a;
   char cmd[1024];
   int i, c;
   const char* s;
 
   switch (Cmd_Argc()) {
     case 1: // list all aliases
-      for (a = cmd_alias, i = 0; a; a = a->next, i++)
-        Con_SafePrintf("   %s: %s", a->name, a->value);
+      i = 0;
+
+      for (auto const& alias : cmd_alias)
+        Con_SafePrintf("   %s: %s", alias.name.data(), alias.value.data()), i++;
       if (i)
         Con_SafePrintf("%i alias command(s)\n", i);
       else
         Con_SafePrintf("no alias commands found\n");
       break;
     case 2: // output current alias string
-      for (a = cmd_alias; a; a = a->next)
-        if (!strcmp(Cmd_Argv(1), a->name))
-          Con_Printf("   %s: %s", a->name, a->value);
+      for (auto const& alias : cmd_alias)
+        if (alias.name == Cmd_Argv(1))
+          Con_Printf("   %s: %s", alias.name.data(), alias.value.data());
       break;
     default: // set alias string
       s = Cmd_Argv(1);
@@ -393,20 +396,19 @@ Cmd_Alias_f(void)
         return;
       }
 
-      // if the alias already exists, reuse it
-      for (a = cmd_alias; a; a = a->next) {
-        if (!strcmp(s, a->name)) {
-          Z_Free(a->value);
-          break;
-        }
-      }
+      auto alias =
+        std::find_if(cmd_alias.begin(),
+                     cmd_alias.end(),
+                     [s](cmdalias_t const& alias) { return alias.name == s; });
 
-      if (!a) {
-        a = (cmdalias_t*)Z_Malloc(sizeof(cmdalias_t));
-        a->next = cmd_alias;
-        cmd_alias = a;
+      // if the alias already exists, reuse it
+      // if not, initialize a new one
+      if (alias == cmd_alias.end()) {
+        cmd_alias.push_back({});
+        alias = cmd_alias.end();
+        alias--;
+        alias->name = s;
       }
-      strcpy(a->name, s);
 
       // copy the rest of the command line
       cmd[0] = 0; // start out with a null string
@@ -422,7 +424,7 @@ Cmd_Alias_f(void)
         cmd[1] = 0;
       }
 
-      a->value = Z_Strdup(cmd);
+      alias->value = cmd;
       break;
   }
 }
@@ -435,27 +437,18 @@ Cmd_Unalias_f -- johnfitz
 void
 Cmd_Unalias_f(void)
 {
-  cmdalias_t *a, *prev;
-
   switch (Cmd_Argc()) {
     default:
     case 1:
       Con_Printf("unalias <name> : delete alias\n");
       break;
     case 2:
-      prev = NULL;
-      for (a = cmd_alias; a; a = a->next) {
-        if (!strcmp(Cmd_Argv(1), a->name)) {
-          if (prev)
-            prev->next = a->next;
-          else
-            cmd_alias = a->next;
 
-          Z_Free(a->value);
-          Z_Free(a);
+      for (auto a = cmd_alias.begin(); a != cmd_alias.end(); a++) {
+        if (a->name == Cmd_Argv(1)) {
+          cmd_alias.erase(a);
           return;
         }
-        prev = a;
       }
       Con_Printf("No alias named %s\n", Cmd_Argv(1));
       break;
@@ -465,12 +458,11 @@ Cmd_Unalias_f(void)
 qboolean
 Cmd_AliasExists(const char* aliasname)
 {
-  cmdalias_t* a;
-  for (a = cmd_alias; a; a = a->next) {
-    if (!q_strcasecmp(aliasname, a->name))
-      return true;
-  }
-  return false;
+  return std::find_if(cmd_alias.begin(),
+                      cmd_alias.end(),
+                      [aliasname](cmdalias_t const& alias) {
+                        return aliasname == alias.name;
+                      }) != cmd_alias.end();
 }
 
 /*
@@ -481,14 +473,7 @@ Cmd_Unaliasall_f -- johnfitz
 void
 Cmd_Unaliasall_f(void)
 {
-  cmdalias_t* blah;
-
-  while (cmd_alias) {
-    blah = cmd_alias->next;
-    Z_Free(cmd_alias->value);
-    Z_Free(cmd_alias);
-    cmd_alias = blah;
-  }
+  cmd_alias.clear();
 }
 
 /*
@@ -700,7 +685,7 @@ void
 Cmd_AddArg(const char* arg)
 {
   if (cmd_argc < MAX_ARGS) {
-    cmd_argv[cmd_argc] = Z_Strdup(arg);
+    cmd_argv[cmd_argc] = arg;
     cmd_argc++;
   }
 }
@@ -870,7 +855,6 @@ qboolean
 Cmd_ExecuteString(const char* text, cmd_source_t src)
 {
   cmd_function_t* cmd;
-  cmdalias_t* a;
 
   cmd_source = src;
   Cmd_TokenizeString(text);
@@ -910,9 +894,9 @@ Cmd_ExecuteString(const char* text, cmd_source_t src)
     return false;
 
   // check alias
-  for (a = cmd_alias; a; a = a->next) {
-    if (!caseins_streq(cmd_argv[0], a->name)) {
-      Cbuf_InsertText(a->value);
+  for (auto const& a : cmd_alias) {
+    if (!caseins_streq(cmd_argv[0], a.name)) {
+      Cbuf_InsertText(a.value.data());
       return true;
     }
   }
