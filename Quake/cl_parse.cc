@@ -88,20 +88,20 @@ const char* svc_strings[] = {
   "svc_sellscreen",
   "svc_cutscene",
   // johnfitz -- new server messages
-  "",                   // 35
-  "",                   // 36
-  "svc_skybox",         // 37					// [string] skyname
-  "svc_botchat",        // 38 (2021 RE-RELEASE)
-  "",                   // 39
-  "svc_bf",             // 40						// no data
-  "svc_fog",            // 41					// [byte] density [byte]
-                        // red [byte] green [byte] blue [float] time
-  "svc_spawnbaseline2", // 42			// support for large modelindex,
-                        // large framenum, alpha, using flags
+  "",                      // 35
+  "",                      // 36
+  "svc_skybox",            // 37					// [string] skyname
+  "svc_botchat",           // 38 (2021 RE-RELEASE)
+  "",                      // 39
+  "svc_bf",                // 40						// no data
+  "svc_fog",               // 41					// [byte] density [byte]
+                           // red [byte] green [byte] blue [float] time
+  "svc_spawnbaseline2",    // 42			// support for large modelindex,
+                           // large framenum, alpha, using flags
   "svc_spawnstatic2",      // 43			// support for large modelindex,
                            // large framenum, alpha, using flags
   "svc_spawnstaticsound2", //	44		// [coord3] [short] samp [byte]
-                           //vol [byte] aten
+                           // vol [byte] aten
                            // johnfitz
 
   // 2021 RE-RELEASE:
@@ -441,12 +441,12 @@ CL_ParseServerInfo(void)
     CL_KeepaliveMessage();
   }
 
-  S_BeginPrecaching();
+  // S_BeginPrecaching();
   for (i = 1; i < numsounds; i++) {
     cl.sound_precache[i] = S_PrecacheSound(sound_precache[i]);
     CL_KeepaliveMessage();
   }
-  S_EndPrecaching();
+  // S_EndPrecaching();
 
   // local state
   cl_entities[0].model = cl.worldmodel = cl.model_precache[1];

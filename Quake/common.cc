@@ -2215,13 +2215,12 @@ Loads the header and directory, adding the files at the beginning
 of the list so they override previous pack files.
 =================
 */
-static pack_t*
+static q_uptr<pack_t>
 COM_LoadPackFile(const char* packfile)
 {
   dpackheader_t header;
   int i;
   int numpackfiles;
-  pack_t* pack;
   int packhandle;
   dpackfile_t info[MAX_FILES_IN_PACK];
 
@@ -2277,11 +2276,9 @@ COM_LoadPackFile(const char* packfile)
   }
 
   allocd += sizeof(pack_t);
-  printf("PACK: %s | allocated: %d\n", packfile, allocd);
 
-  // pack = (pack_t*)Z_Malloc(sizeof(pack_t));
-  pack = QGeneralAlloc<pack_t>().allocate(1);
-  new (pack)(pack_t);
+  q_uptr<pack_t> pack(QGeneralAlloc<pack_t>().allocate(1));
+  new (&*pack)(pack_t);
   pack->filename = packfile;
   pack->handle = packhandle;
   pack->numfiles = numpackfiles;
@@ -2314,7 +2311,7 @@ COM_AddEnginePak(void)
 {
   int i;
   char pakfile[MAX_OSPATH];
-  pack_t* pak = NULL;
+  q_uptr<pack_t> pak;
   qboolean modified = com_modified;
 
   if (host_parms->exedir) {
@@ -2340,7 +2337,7 @@ COM_AddEnginePak(void)
     searchpath_t new_path;
     new_path.path_id =
       !com_searchpaths.empty() ? com_searchpaths.front().path_id : 1u;
-    new_path.pack = std::unique_ptr<pack_t, QMem::Deleter>(pak);
+    new_path.pack = std::move(pak);
     com_searchpaths.push_front(std::move(new_path));
   }
 
@@ -2358,7 +2355,7 @@ COM_AddGameDirectory(const char* dir)
   const char* base;
   int i, j;
   unsigned int path_id;
-  pack_t* pak;
+  q_uptr<pack_t> pak;
   char pakfile[MAX_OSPATH];
 
   if (*com_gamenames)
@@ -2406,7 +2403,7 @@ COM_AddGameDirectory(const char* dir)
       {
         searchpath_t new_path;
         new_path.path_id = path_id;
-        new_path.pack = std::unique_ptr<pack_t, QMem::Deleter>(pak);
+        new_path.pack = std::move(pak);
         com_searchpaths.push_front(std::move(new_path));
       } // search = (searchpath_t*)Z_Malloc(sizeof(searchpath_t));
       // search->path_id = path_id;

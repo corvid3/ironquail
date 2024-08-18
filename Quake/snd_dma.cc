@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.hh"
 #include "sys.hh"
 #include <SDL2/SDL.h>
+#include <string_view>
 
 #include "quakedef.hh"
 #include "snd_codec.hh"
@@ -290,29 +291,27 @@ S_FindName
 ==================
 */
 static sfx_t*
-S_FindName(const char* name)
+S_FindName(std::string_view const name)
 {
   int i;
   sfx_t* sfx;
 
-  if (!name)
+  if (name.empty())
     Sys_Error("S_FindName: NULL");
 
-  if (strlen(name) >= MAX_QPATH)
-    Sys_Error("Sound name too long: %s", name);
+  if (name.length() >= MAX_QPATH)
+    Sys_Error("Sound name too long: %s", name.data());
 
   // see if already loaded
-  for (i = 0; i < num_sfx; i++) {
-    if (!strcmp(known_sfx[i].name, name)) {
+  for (i = 0; i < num_sfx; i++)
+    if (known_sfx[i].name == name)
       return &known_sfx[i];
-    }
-  }
 
   if (num_sfx == MAX_SFX)
     Sys_Error("S_FindName: out of sfx_t");
 
   sfx = &known_sfx[i];
-  q_strlcpy(sfx->name, name, sizeof(sfx->name));
+  q_strlcpy(sfx->name, name.data(), sizeof(sfx->name));
 
   num_sfx++;
 
@@ -477,7 +476,7 @@ S_StartSound(int entnum,
   if (!sound_started)
     return;
 
-  if (!sfx)
+  if (sfx == nullptr)
     return;
 
   if (nosound.value)

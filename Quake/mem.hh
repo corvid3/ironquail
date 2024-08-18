@@ -5,6 +5,7 @@
 #include "sys.hh"
 #include <array>
 #include <cstdint>
+#include <memory>
 
 /*
 
@@ -41,9 +42,8 @@ unsigned inline get_free()
 };
 
 // allocation engine
-// intended for lots of small allocations, short lived allocations
-// like strings or small vectors
-// use carefully
+// intended for lots of small allocations, short lived
+// allocations like strings or small vectors use carefully
 class SmallAllocEngine
 {
   struct Header;
@@ -178,14 +178,33 @@ struct QGeneralAlloc
 {
   using value_type = T;
 
-  T* allocate(std::size_t const n)
+  T* allocate(std::size_t const n) { return _allocate(n); }
+  void deallocate(T* ptr, std::size_t) { return _deallocate(ptr, 0); }
+
+  bool operator==(QGeneralAlloc const&) const { return true; }
+
+  static T* _allocate(std::size_t const n)
   {
     return reinterpret_cast<T*>(QMem::malloc(sizeof(T) * n));
   }
-  void deallocate(T* ptr, std::size_t) { QMem::free(ptr); }
+  static void _deallocate(T* ptr, std::size_t) { QMem::free(ptr); }
 
-  bool operator==(QGeneralAlloc const&) const { return true; }
+  class Deleter
+  {
+  public:
+    void operator()(T* ptr)
+    {
+      if (ptr)
+        ptr->~T();
+      QGeneralAlloc::_deallocate(ptr, 0);
+    }
+  };
 };
+
+template<typename T, template<typename M> typename A = QGeneralAlloc>
+using q_uptr = std::unique_ptr<T, typename A<T>::Deleter>;
+template<typename T>
+using q_wptr = std::weak_ptr<T>;
 
 // global small allocator engine
 // data is initialized in main (main_sdl.cc)

@@ -644,8 +644,7 @@ typedef struct searchpath_s
                         // Note that <install_dir>/game1 and
                         // <userdir>/game1 have the same id.
   q_str<> filename;
-  std::unique_ptr<pack_t, QMem::Deleter>
-    pack; // only one of filename / pack will be used
+  q_uptr<pack_t> pack; // only one of filename / pack will be used
 } searchpath_t;
 
 extern q_list<searchpath_t> com_searchpaths;
