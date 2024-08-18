@@ -1185,7 +1185,6 @@ COM_FileGetExtension(std::string_view const in)
   // get rid of the dot in the file extension
   if (str.size() > 1)
     str = q_str<>(str.begin() + 1, str.end());
-  printf("gorbj: %s | %s\n", in.data(), str.data());
   return str;
 
   // src = in + len - 1;
@@ -1914,7 +1913,6 @@ COM_FindFile(std::string_view const filename,
         if (path_id)
           *path_id = search->path_id;
         if (handle) {
-          printf("tlorb %s | size: %li\n", pak->files[i].name, com_filesize);
           *handle = pak->handle;
           Sys_FileSeek(pak->handle, pak->files[i].filepos);
           return com_filesize;
@@ -2177,6 +2175,7 @@ COM_NormalizeLineEndings(char* buffer)
   return buffer;
 }
 
+static int allocd = 0;
 const char*
 COM_ParseIntNewline(const char* buffer, int* value)
 {
@@ -2283,6 +2282,8 @@ COM_LoadPackFile(const char* packfile)
     newfiles[i].filelen = LittleLong(info[i].filelen);
   }
 
+  allocd += sizeof(pack_t);
+  printf("PACK: %s | allocated: %d\n", packfile, allocd);
   pack = (pack_t*)Z_Malloc(sizeof(pack_t));
   q_strlcpy(pack->filename, packfile, sizeof(pack->filename));
   pack->handle = packhandle;
@@ -2424,7 +2425,10 @@ COM_ShutdownGameDirectories(void)
 {
   searchpath_t* search;
   while (com_searchpaths != com_base_searchpaths) {
+    printf("TEST\n");
     if (com_searchpaths->pack) {
+      printf("freeing: %s\n", com_searchpaths->pack->filename);
+      allocd -= sizeof(pack_t);
       Sys_FileClose(com_searchpaths->pack->handle);
       Z_Free(com_searchpaths->pack->files);
       Z_Free(com_searchpaths->pack);

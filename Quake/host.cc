@@ -1557,8 +1557,9 @@ Host_Shutdown(void)
     S_Shutdown();
     IN_Shutdown();
     VID_Shutdown();
-    COM_ShutdownGameDirectories();
   }
+
+  COM_ShutdownGameDirectories();
 
   LOG_Close();
   LOC_Shutdown();

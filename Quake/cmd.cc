@@ -369,7 +369,7 @@ Creates a new command that executes a command string (possibly ; seperated)
 void
 Cmd_Alias_f(void)
 {
-  char cmd[1024];
+  q_str<> cmd;
   int i, c;
   const char* s;
 
@@ -414,15 +414,12 @@ Cmd_Alias_f(void)
       cmd[0] = 0; // start out with a null string
       c = Cmd_Argc();
       for (i = 2; i < c; i++) {
-        q_strlcat(cmd, Cmd_Argv(i), sizeof(cmd));
+        cmd += Cmd_Argv(i);
         if (i != c - 1)
-          q_strlcat(cmd, " ", sizeof(cmd));
+          cmd += " ";
       }
-      if (q_strlcat(cmd, "\n", sizeof(cmd)) >= sizeof(cmd)) {
-        Con_Printf("alias value too long!\n");
-        cmd[0] = '\n'; // nullify the string
-        cmd[1] = 0;
-      }
+
+      cmd += "\n";
 
       alias->value = cmd;
       break;
