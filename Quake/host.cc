@@ -1537,10 +1537,6 @@ Host_Shutdown(void)
   // keep Con_Printf from trying to update the screen
   scr_disabled_for_loading = true;
 
-  // queue gets destroyed at shutdown time anyways...
-  // AsyncQueue_Destroy(&async_queue);
-
-  delete async_queue;
   Host_ShutdownSave();
   Host_WriteConfiguration();
 
@@ -1559,8 +1555,12 @@ Host_Shutdown(void)
     VID_Shutdown();
   }
 
-  COM_ShutdownGameDirectories();
-
   LOG_Close();
   LOC_Shutdown();
+
+  COM_ShutdownGameDirectories();
+
+  // queue gets destroyed at shutdown time anyways...
+  // AsyncQueue_Destroy(&async_queue);
+  delete async_queue;
 }

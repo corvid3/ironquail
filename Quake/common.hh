@@ -641,13 +641,11 @@ typedef struct searchpath_s
   unsigned int path_id; // identifier assigned to the game directory
                         // Note that <install_dir>/game1 and
                         // <userdir>/game1 have the same id.
-  char filename[MAX_OSPATH];
+  q_str<> filename;
   pack_t* pack; // only one of filename / pack will be used
-  struct searchpath_s* next;
 } searchpath_t;
 
-extern searchpath_t* com_searchpaths;
-extern searchpath_t* com_base_searchpaths;
+extern q_list<searchpath_t> com_searchpaths;
 
 extern THREAD_LOCAL qfileofs_t com_filesize;
 struct cache_user_s;

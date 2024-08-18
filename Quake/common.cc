@@ -1687,8 +1687,7 @@ char com_userprefdir[MAX_OSPATH];
 THREAD_LOCAL int
   file_from_pak; // ZOID: global indicating that file came from a pak
 
-searchpath_t* com_searchpaths;
-searchpath_t* com_base_searchpaths;
+q_list<searchpath_t> com_searchpaths;
 
 /*
 ============
@@ -1698,14 +1697,12 @@ COM_Path_f
 static void
 COM_Path_f(void)
 {
-  searchpath_t* s;
-
   Con_Printf("Current search path:\n");
-  for (s = com_searchpaths; s; s = s->next) {
-    if (s->pack) {
-      Con_Printf("%s (%i files)\n", s->pack->filename, s->pack->numfiles);
+  for (auto const& s : com_searchpaths) {
+    if (s.pack) {
+      Con_Printf("%s (%i files)\n", s.pack->filename, s.pack->numfiles);
     } else
-      Con_Printf("%s\n", s->filename);
+      Con_Printf("%s\n", s.filename.data());
   }
 }
 
@@ -1883,7 +1880,6 @@ COM_FindFile(std::string_view const filename,
              FILE** file,
              unsigned int* path_id)
 {
-  searchpath_t* search;
   // char netpath[MAX_OSPATH];
   q_strstr<> netpath;
 
@@ -1899,10 +1895,10 @@ COM_FindFile(std::string_view const filename,
   //
   // search through the path, one element at a time
   //
-  for (search = com_searchpaths; search; search = search->next) {
-    if (search->pack) /* look through all the pak file elements */
+  for (auto const& search : com_searchpaths) {
+    if (search.pack) /* look through all the pak file elements */
     {
-      pak = search->pack;
+      pak = search.pack;
       for (i = 0; i < pak->numfiles; i++) {
         if (pak->files[i].name != filename)
           continue;
@@ -1911,7 +1907,7 @@ COM_FindFile(std::string_view const filename,
         com_filesize = pak->files[i].filelen;
         file_from_pak = 1;
         if (path_id)
-          *path_id = search->path_id;
+          *path_id = search.path_id;
         if (handle) {
           *handle = pak->handle;
           Sys_FileSeek(pak->handle, pak->files[i].filepos);
@@ -1934,14 +1930,14 @@ COM_FindFile(std::string_view const filename,
           continue;
       }
 
-      netpath << search->filename << "/" << filename;
+      netpath << search.filename << "/" << filename;
       // q_snprintf(netpath, sizeof(netpath), "%s/%s", search->filename,
       // filename);
       if (!(Sys_FileType(netpath.str()) & FS_ENT_FILE))
         continue;
 
       if (path_id)
-        *path_id = search->path_id;
+        *path_id = search.path_id;
       if (handle) {
         com_filesize = Sys_FileOpenRead(netpath.str(), &i);
         *handle = i;
@@ -2027,10 +2023,8 @@ If it is a pak file handle, don't really close it
 void
 COM_CloseFile(int h)
 {
-  searchpath_t* s;
-
-  for (s = com_searchpaths; s; s = s->next)
-    if (s->pack && s->pack->handle == h)
+  for (auto const& s : com_searchpaths)
+    if (s.pack && s.pack->handle == h)
       return;
 
   Sys_FileClose(h);
@@ -2340,11 +2334,11 @@ COM_AddEnginePak(void)
   }
 
   if (pak) {
-    searchpath_t* search = (searchpath_t*)Z_Malloc(sizeof(searchpath_t));
-    search->path_id = com_searchpaths ? com_searchpaths->path_id : 1u;
-    search->pack = pak;
-    search->next = com_searchpaths;
-    com_searchpaths = search;
+    searchpath_t new_path;
+    new_path.path_id =
+      !com_searchpaths.empty() ? com_searchpaths.end()->path_id : 1u;
+    new_path.pack = pak;
+    com_searchpaths.push_back(new_path);
   }
 
   com_modified = modified;
@@ -2361,7 +2355,6 @@ COM_AddGameDirectory(const char* dir)
   const char* base;
   int i, j;
   unsigned int path_id;
-  searchpath_t* search;
   pack_t* pak;
   char pakfile[MAX_OSPATH];
 
@@ -2384,8 +2377,8 @@ COM_AddGameDirectory(const char* dir)
   }
 
   // assign a path_id to this game directory
-  if (com_searchpaths)
-    path_id = com_searchpaths->path_id << 1;
+  if (com_searchpaths.empty())
+    path_id = com_searchpaths.back().path_id << 1;
   else
     path_id = 1U;
 
@@ -2394,11 +2387,10 @@ COM_AddGameDirectory(const char* dir)
     q_snprintf(com_gamedir, sizeof(com_gamedir), "%s/%s", base, dir);
 
     // add the directory to the search path
-    search = (searchpath_t*)Z_Malloc(sizeof(searchpath_t));
-    search->path_id = path_id;
-    q_strlcpy(search->filename, com_gamedir, sizeof(search->filename));
-    search->next = com_searchpaths;
-    com_searchpaths = search;
+    searchpath_t new_path;
+    new_path.path_id = path_id;
+    new_path.filename = com_gamedir;
+    com_searchpaths.push_back(new_path);
 
     // add any pak files in the format pak0.pak pak1.pak, ...
     for (i = 0;; i++) {
@@ -2407,11 +2399,15 @@ COM_AddGameDirectory(const char* dir)
       if (!pak)
         break;
 
-      search = (searchpath_t*)Z_Malloc(sizeof(searchpath_t));
-      search->path_id = path_id;
-      search->pack = pak;
-      search->next = com_searchpaths;
-      com_searchpaths = search;
+      searchpath_t new_path;
+      new_path.path_id = path_id;
+      new_path.pack = pak;
+      com_searchpaths.push_back(new_path);
+      // search = (searchpath_t*)Z_Malloc(sizeof(searchpath_t));
+      // search->path_id = path_id;
+      // search->pack = pak;
+      // search->next = com_searchpaths;
+      // com_searchpaths = search;
 
       // add engine pak after pak0.pak
       if (i == 0 && j == 0 && path_id == 1u && !fitzmode)
@@ -2423,20 +2419,14 @@ COM_AddGameDirectory(const char* dir)
 void
 COM_ShutdownGameDirectories(void)
 {
-  searchpath_t* search;
-  while (com_searchpaths != com_base_searchpaths) {
-    printf("TEST\n");
-    if (com_searchpaths->pack) {
-      printf("freeing: %s\n", com_searchpaths->pack->filename);
-      allocd -= sizeof(pack_t);
-      Sys_FileClose(com_searchpaths->pack->handle);
-      Z_Free(com_searchpaths->pack->files);
-      Z_Free(com_searchpaths->pack);
+  for (auto const& search : com_searchpaths) {
+    if (search.pack) {
+      Sys_FileClose(search.pack->handle);
+      Z_Free(search.pack->files);
+      Z_Free(search.pack);
     }
-    search = com_searchpaths->next;
-    Z_Free(com_searchpaths);
-    com_searchpaths = search;
   }
+  com_searchpaths.clear();
 }
 
 void
@@ -3322,7 +3312,7 @@ COM_InitFilesystem(void) // johnfitz -- modified based on topaz's tutorial
    * any set gamedirs, such as those from -game command line
    * arguments or by the 'game' console command will be freed
    * up to here upon a new game command. */
-  com_base_searchpaths = com_searchpaths;
+  // com_base_searchpaths = com_searchpaths;
   COM_ResetGameDirectories("");
 
   Modlist_Init();
