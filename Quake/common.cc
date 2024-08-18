@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_texmgr.hh"
 #include "glquake.hh"
 #include "mathlib.hh"
+#include "mem.hh"
 #include "miniz.hh"
 #include "net.hh"
 #include "q_ctype.hh"
@@ -1700,7 +1701,7 @@ COM_Path_f(void)
   Con_Printf("Current search path:\n");
   for (auto const& s : com_searchpaths) {
     if (s.pack) {
-      Con_Printf("%s (%i files)\n", s.pack->filename, s.pack->numfiles);
+      Con_Printf("%s (%i files)\n", s.pack->filename.data(), s.pack->numfiles);
     } else
       Con_Printf("%s\n", s.filename.data());
   }
@@ -1895,10 +1896,12 @@ COM_FindFile(std::string_view const filename,
   //
   // search through the path, one element at a time
   //
+  printf("%zu\n", com_searchpaths.size());
   for (auto const& search : com_searchpaths) {
-    if (search.pack) /* look through all the pak file elements */
+    printf("%s %s\n", search.filename.data(), search.pack ? "1" : "0");
+    if (search.pack != nullptr) /* look through all the pak file elements */
     {
-      pak = search.pack;
+      pak = search.pack.get();
       for (i = 0; i < pak->numfiles; i++) {
         if (pak->files[i].name != filename)
           continue;
@@ -2219,7 +2222,6 @@ COM_LoadPackFile(const char* packfile)
 {
   dpackheader_t header;
   int i;
-  packfile_t* newfiles;
   int numpackfiles;
   pack_t* pack;
   int packhandle;
@@ -2256,7 +2258,7 @@ COM_LoadPackFile(const char* packfile)
   if (numpackfiles != PAK0_COUNT)
     com_modified = true; // not the original file
 
-  newfiles = (packfile_t*)Z_Malloc(numpackfiles * sizeof(packfile_t));
+  q_vec<packfile_t> newfiles(numpackfiles);
 
   Sys_FileSeek(packhandle, header.dirofs);
   if (Sys_FileRead(packhandle, info, header.dirlen) != header.dirlen)
@@ -2278,8 +2280,11 @@ COM_LoadPackFile(const char* packfile)
 
   allocd += sizeof(pack_t);
   printf("PACK: %s | allocated: %d\n", packfile, allocd);
-  pack = (pack_t*)Z_Malloc(sizeof(pack_t));
-  q_strlcpy(pack->filename, packfile, sizeof(pack->filename));
+
+  // pack = (pack_t*)Z_Malloc(sizeof(pack_t));
+  pack = QGeneralAlloc<pack_t>().allocate(1);
+  new (pack)(pack_t);
+  pack->filename = packfile;
   pack->handle = packhandle;
   pack->numfiles = numpackfiles;
   pack->files = newfiles;
@@ -2336,9 +2341,9 @@ COM_AddEnginePak(void)
   if (pak) {
     searchpath_t new_path;
     new_path.path_id =
-      !com_searchpaths.empty() ? com_searchpaths.end()->path_id : 1u;
-    new_path.pack = pak;
-    com_searchpaths.push_back(new_path);
+      !com_searchpaths.empty() ? com_searchpaths.front().path_id : 1u;
+    new_path.pack = std::unique_ptr<pack_t, QMem::Deleter>(pak);
+    com_searchpaths.push_front(std::move(new_path));
   }
 
   com_modified = modified;
@@ -2377,8 +2382,8 @@ COM_AddGameDirectory(const char* dir)
   }
 
   // assign a path_id to this game directory
-  if (com_searchpaths.empty())
-    path_id = com_searchpaths.back().path_id << 1;
+  if (!com_searchpaths.empty())
+    path_id = com_searchpaths.front().path_id << 1;
   else
     path_id = 1U;
 
@@ -2387,11 +2392,12 @@ COM_AddGameDirectory(const char* dir)
     q_snprintf(com_gamedir, sizeof(com_gamedir), "%s/%s", base, dir);
 
     // add the directory to the search path
-    searchpath_t new_path;
-    new_path.path_id = path_id;
-    new_path.filename = com_gamedir;
-    com_searchpaths.push_back(new_path);
-
+    {
+      searchpath_t new_path;
+      new_path.path_id = path_id;
+      new_path.filename = com_gamedir;
+      com_searchpaths.push_front(std::move(new_path));
+    }
     // add any pak files in the format pak0.pak pak1.pak, ...
     for (i = 0;; i++) {
       q_snprintf(pakfile, sizeof(pakfile), "%s/pak%i.pak", com_gamedir, i);
@@ -2399,11 +2405,12 @@ COM_AddGameDirectory(const char* dir)
       if (!pak)
         break;
 
-      searchpath_t new_path;
-      new_path.path_id = path_id;
-      new_path.pack = pak;
-      com_searchpaths.push_back(new_path);
-      // search = (searchpath_t*)Z_Malloc(sizeof(searchpath_t));
+      {
+        searchpath_t new_path;
+        new_path.path_id = path_id;
+        new_path.pack = std::unique_ptr<pack_t, QMem::Deleter>(pak);
+        com_searchpaths.push_front(std::move(new_path));
+      } // search = (searchpath_t*)Z_Malloc(sizeof(searchpath_t));
       // search->path_id = path_id;
       // search->pack = pak;
       // search->next = com_searchpaths;
@@ -2422,8 +2429,8 @@ COM_ShutdownGameDirectories(void)
   for (auto const& search : com_searchpaths) {
     if (search.pack) {
       Sys_FileClose(search.pack->handle);
-      Z_Free(search.pack->files);
-      Z_Free(search.pack);
+      // Z_Free(search.pack->files);
+      // Z_Free(search.pack);
     }
   }
   com_searchpaths.clear();
@@ -3312,10 +3319,15 @@ COM_InitFilesystem(void) // johnfitz -- modified based on topaz's tutorial
    * any set gamedirs, such as those from -game command line
    * arguments or by the 'game' console command will be freed
    * up to here upon a new game command. */
-  // com_base_searchpaths = com_searchpaths;
-  COM_ResetGameDirectories("");
 
-  Modlist_Init();
+  // TODO (re-enable mods):
+  // disable mods for now
+  // gonna have to go through the pak-filesystem-ish thing
+  // and clean it allllll the way up
+  // -crow
+
+  // COM_ResetGameDirectories("");
+  // Modlist_Init();
 
   // add mission pack requests (only one should be specified)
   if (COM_CheckParm("-rogue"))

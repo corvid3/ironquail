@@ -317,7 +317,7 @@ ExtraMaps_Categorize(const char* name, const searchpath_t* source)
     len--;
   is_dm = (len >= 2 && !memcmp(name + len - 2, "dm", 2));
 
-  if (source->path_id != com_searchpaths.back().path_id) {
+  if (source->path_id != com_searchpaths.front().path_id) {
     if (is_start)
       return MAPTYPE_CUSTOM_ID_START;
     if (is_end)
@@ -485,7 +485,7 @@ ExtraMaps_Init(void)
   // because these are not "add-on" levels
   q_snprintf(ignorepakdir, sizeof(ignorepakdir), "/%s/", GAMENAME);
 
-  for (auto search : com_searchpaths) {
+  for (auto const& search : com_searchpaths) {
     if (!search.filename.empty()) // directory
     {
       char dir[MAX_OSPATH];
@@ -503,8 +503,8 @@ ExtraMaps_Init(void)
       }
     } else // pakfile
     {
-      qboolean isbase = (strstr(search.pack->filename, ignorepakdir) != NULL);
-      for (i = 0, pak = search.pack; i < pak->numfiles; i++) {
+      qboolean const isbase = search.pack->filename.contains(ignorepakdir);
+      for (i = 0, pak = search.pack.get(); i < pak->numfiles; i++) {
         if (pak->files[i].filelen >
               32 * 1024 && // don't list files under 32k (ammo boxes etc)
             !strncmp(pak->files[i].name,
@@ -1211,7 +1211,7 @@ Modlist_Add(const char* name)
     char* mapdb = (char*)COM_LoadMallocFile("mapdb.json", &path_id);
     if (mapdb) {
       qboolean is_base_mapdb =
-        !com_searchpaths.empty() || path_id < com_searchpaths.back().path_id;
+        !com_searchpaths.empty() || path_id < com_searchpaths.front().path_id;
       json_t* json = JSON_Parse(mapdb);
       free(mapdb);
       if (json) {
@@ -1442,9 +1442,9 @@ DemoList_Init(void)
       }
     } else // pakfile
     {
-      if (!strstr(search.pack->filename,
-                  ignorepakdir)) { // don't list standard id demos
-        for (i = 0, pak = search.pack; i < pak->numfiles; i++) {
+      if (!search.pack->filename.contains(
+            ignorepakdir)) { // don't list standard id demos
+        for (i = 0, pak = search.pack.get(); i < pak->numfiles; i++) {
           if (COM_FileGetExtension(pak->files[i].name) == "dem") {
             COM_StripExtension(pak->files[i].name, demname, sizeof(demname));
             FileList_Add(demname, &demolist);
@@ -1591,7 +1591,7 @@ SkyList_Init(void)
     if (!search.filename.empty()) // directory
       SkyList_AddDirRec(search.filename.data(), "gfx/env");
     else // pakfile
-      for (i = 0, pak = search.pack; i < pak->numfiles; i++)
+      for (i = 0, pak = search.pack.get(); i < pak->numfiles; i++)
         SkyList_AddFile(pak->files[i].name);
   }
 }

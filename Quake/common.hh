@@ -25,12 +25,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // comndef.h  -- general definitions
 
+#include "mem.hh"
 #include "q_stdinc.hh"
 #include "quakedef.hh"
 #include "str.hh"
 #include "sys.hh"
 
 #include <compare>
+#include <memory>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -630,10 +632,10 @@ typedef struct
 
 typedef struct pack_s
 {
-  char filename[MAX_OSPATH];
+  q_str<> filename;
   int handle;
   int numfiles;
-  packfile_t* files;
+  q_vec<packfile_t> files;
 } pack_t;
 
 typedef struct searchpath_s
@@ -642,7 +644,8 @@ typedef struct searchpath_s
                         // Note that <install_dir>/game1 and
                         // <userdir>/game1 have the same id.
   q_str<> filename;
-  pack_t* pack; // only one of filename / pack will be used
+  std::unique_ptr<pack_t, QMem::Deleter>
+    pack; // only one of filename / pack will be used
 } searchpath_t;
 
 extern q_list<searchpath_t> com_searchpaths;

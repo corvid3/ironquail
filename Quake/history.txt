@@ -1,8 +1,3 @@
-bind ` toggleconsole 
-wep
-weap
-weapon
-nailgun
 supernailgun
 4
 list
@@ -61,3 +56,8 @@ alias x noclip
 x
 unalias x
 x
+scr_showzonemem 1
+map e1m1
+map statr
+map start
+map e1m1
