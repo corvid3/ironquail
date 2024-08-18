@@ -508,7 +508,7 @@ ExtraMaps_Init(void)
                      5) && // don't list files outside of maps/
             !strchr(pak->files[i].name + 5,
                     '/') && // don't list files in subdirectories
-            COM_FileGetExtension(pak->files[i].name) != "bsp") {
+            COM_FileGetExtension(pak->files[i].name) == "bsp") {
           COM_StripExtension(pak->files[i].name + 5, mapname, sizeof(mapname));
           ExtraMaps_Add(mapname, isbase ? NULL : search);
         }
@@ -1431,7 +1431,7 @@ DemoList_Init(void)
       if (!strstr(search->pack->filename,
                   ignorepakdir)) { // don't list standard id demos
         for (i = 0, pak = search->pack; i < pak->numfiles; i++) {
-          if (COM_FileGetExtension(pak->files[i].name) != "dem") {
+          if (COM_FileGetExtension(pak->files[i].name) == "dem") {
             COM_StripExtension(pak->files[i].name, demname, sizeof(demname));
             FileList_Add(demname, &demolist);
           }

@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "unicode_translit.hh"
 #include "vid.hh"
 #include <SDL2/SDL.h>
+#include <array>
 #include <errno.h>
 #include <time.h>
 
@@ -90,7 +91,7 @@ char com_cmdline[CMDLINE_LENGTH];
 qboolean standard_quake = true, rogue, hipnotic, quake64;
 
 // this graphic needs to be in the pak file to use registered features
-static unsigned short pop[] = {
+static unsigned short pop[128] = {
   0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
   0x0000, 0x6600, 0x0000, 0x0000, 0x0000, 0x6600, 0x0000, 0x0000, 0x0066,
   0x0000, 0x0000, 0x0000, 0x0000, 0x0067, 0x0000, 0x0000, 0x6665, 0x0000,
@@ -1176,10 +1177,14 @@ COM_FileGetExtension - doesn't return NULL
 q_str<>
 COM_FileGetExtension(std::string_view const in)
 {
-  auto str = q_str<>(std::filesystem::path(in).extension().generic_string());
+  if (in.contains('/') or in.contains('\\'))
+    return "";
+
+  auto str = q_str<>(std::filesystem::path(in).extension().c_str());
   // get rid of the dot in the file extension
-  if (str.size() > 0)
+  if (str.size() > 1)
     str = q_str<>(str.begin() + 1, str.end());
+  printf("gorbj: %s | %s\n", in.data(), str.data());
   return str;
 
   // src = in + len - 1;
@@ -1200,7 +1205,10 @@ void
 COM_ExtractExtension(const char* in, char* out, size_t outsize)
 {
   q_str<> const ext = COM_FileGetExtension(in);
-  q_strlcpy(out, ext.data(), outsize);
+  if (ext.size() == 0)
+    *out = 0;
+  else
+    q_strlcpy(out, ext.data(), outsize);
 }
 
 /*
@@ -1276,7 +1284,7 @@ void
 COM_AddExtension(char* path, const char* extension, size_t len)
 {
   auto const file_ext = COM_FileGetExtension(path);
-  if (file_ext != extension)
+  if (file_ext != (extension + 1))
     q_strlcat(path, extension, len);
 }
 
@@ -1476,7 +1484,7 @@ static void
 COM_CheckRegistered(void)
 {
   int h;
-  unsigned short check[128];
+  std::array<unsigned short, 128> check;
   int i;
 
   COM_OpenFile("gfx/pop.lmp", &h, NULL);
@@ -1495,13 +1503,19 @@ COM_CheckRegistered(void)
     return;
   }
 
-  i = Sys_FileRead(h, check, sizeof(check));
+  constexpr uint32_t check_bytesize =
+    check.size() * sizeof(decltype(check)::value_type);
+
+  i = Sys_FileRead(h, check.data(), check_bytesize);
   COM_CloseFile(h);
-  if (i != (int)sizeof(check))
+
+  if (i != check_bytesize)
     goto corrupt;
 
+  unsigned short bs;
   for (i = 0; i < 128; i++) {
-    if (pop[i] != (unsigned short)BigShort(check[i])) {
+    bs = BigShort(check[i]);
+    if (pop[i] != bs) {
     corrupt:
       Sys_Error("Corrupted data file.");
     }
@@ -1864,7 +1878,7 @@ can be used for detecting a file's presence.
 ===========
 */
 static int
-COM_FindFile(std::string_view filename,
+COM_FindFile(std::string_view const filename,
              int* handle,
              FILE** file,
              unsigned int* path_id)
@@ -1876,6 +1890,7 @@ COM_FindFile(std::string_view filename,
   pack_t* pak;
   int i;
 
+  // printf("TEST: %i | NAME: %s\n", *handle, filename.data());
   if (file && handle)
     Sys_Error("COM_FindFile: both handle and file set");
 
@@ -1889,14 +1904,16 @@ COM_FindFile(std::string_view filename,
     {
       pak = search->pack;
       for (i = 0; i < pak->numfiles; i++) {
-        if (pak->files[i].name == filename)
+        if (pak->files[i].name != filename)
           continue;
+
         // found it!
         com_filesize = pak->files[i].filelen;
         file_from_pak = 1;
         if (path_id)
           *path_id = search->path_id;
         if (handle) {
+          printf("tlorb %s | size: %li\n", pak->files[i].name, com_filesize);
           *handle = pak->handle;
           Sys_FileSeek(pak->handle, pak->files[i].filepos);
           return com_filesize;
@@ -1914,8 +1931,7 @@ COM_FindFile(std::string_view filename,
     {
       if (!registered.value) { /* if not a registered version, don't ever go
                                   beyond base */
-        if (filename.find_first_of('/') != filename.npos ||
-            filename.find_first_of('\\') != filename.npos)
+        if (filename.contains('/') or filename.contains('\\'))
           continue;
       }
 
