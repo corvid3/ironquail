@@ -1,4 +1,3 @@
-map 
 maps
 map start
 map e2m3
@@ -61,3 +60,4 @@ noclip 0
 noclip
 sv_cheats 0
 noclip
+scr_showzonemem 1

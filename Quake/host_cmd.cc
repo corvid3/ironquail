@@ -847,6 +847,8 @@ Modlist_RegisterAddons(void* param)
 
   extramods_json = json;
 
+  // JSON_Free(json);
+
   M_RefreshMods();
 }
 

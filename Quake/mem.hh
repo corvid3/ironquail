@@ -25,6 +25,11 @@ malloc(std::size_t const bytes);
 void
 free(void* ptr);
 
+struct Deleter
+{
+  void operator()(void* ptr) { QMem::free(ptr); }
+};
+
 unsigned
 get_max();
 unsigned

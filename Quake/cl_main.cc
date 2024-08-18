@@ -814,11 +814,6 @@ CL_AccumulateCmd(void)
   }
 }
 
-/*
-=================
-CL_SendCmd
-=================
-*/
 void
 CL_SendCmd(void)
 {

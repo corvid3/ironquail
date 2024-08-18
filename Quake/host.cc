@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // host.c -- coordinates spawning and killing of local servers
 
+#include "SDL_mutex.h"
 #include "bgmusic.hh"
 #include "cdaudio.hh"
 #include "client.hh"
@@ -721,92 +722,105 @@ typedef struct asyncqueue_s
   size_t tail;
   size_t capacity;
   qboolean teardown;
-  SDL_mutex* mutex;
-  SDL_cond* notfull;
-  asyncproc_t* procs;
+  SDL_mutex* mutex = nullptr;
+  SDL_cond* notfull = nullptr;
+  q_vec<asyncproc_t> procs;
+
+  static std::size_t get_capacity(std::size_t const in)
+  {
+    if (in == 0)
+      return 1024;
+    else
+      return Q_nextPow2(in);
+  }
+
+  asyncqueue_s() = default;
+
+  explicit asyncqueue_s(std::size_t capacity_in)
+    : capacity(get_capacity(capacity_in))
+    , mutex(SDL_CreateMutex())
+    , notfull(SDL_CreateCond())
+    , procs(capacity)
+  {
+    if (mutex == nullptr)
+      Sys_Error("AsyncQueue_Init: could not create mutex");
+
+    if (notfull == nullptr)
+      Sys_Error("AsyncQueue_Init: could not create condition variable");
+  }
+
+  ~asyncqueue_s()
+  {
+    if (!mutex)
+      return;
+
+    SDL_LockMutex(mutex);
+    teardown = true;
+    SDL_UnlockMutex(mutex);
+    SDL_CondBroadcast(notfull);
+
+    drain();
+
+    SDL_DestroyCond(notfull);
+    SDL_DestroyMutex(mutex);
+    // __builtin_memset(this, 0, sizeof(decltype(*this)));
+  }
+
+  void drain()
+  {
+    SDL_LockMutex(mutex);
+    while (head != tail) {
+      auto* proc = &procs[(head++) & (capacity - 1)];
+      proc->func(proc->param);
+      SDL_CondSignal(notfull);
+    }
+    SDL_UnlockMutex(mutex);
+  }
+
+  void push(void (*func)(void* param), void* param)
+  {
+    asyncproc_t* proc;
+    if (mutex == nullptr)
+      return;
+    SDL_LockMutex(mutex);
+    while (!teardown && tail - head >= capacity)
+      SDL_CondWait(notfull, mutex);
+    if (!teardown) {
+      proc = &procs[(tail++) & (capacity - 1)];
+      proc->func = func;
+      proc->param = param;
+    }
+
+    SDL_UnlockMutex(mutex);
+  }
 } asyncqueue_t;
 
-static asyncqueue_t async_queue;
+static asyncqueue_t* async_queue;
 
-static void
-AsyncQueue_Init(asyncqueue_t* queue, size_t capacity)
-{
-  memset(queue, 0, sizeof(*queue));
+// static void
+// AsyncQueue_Push(asyncqueue_t* queue, void (*func)(void* param), void* param)
+// {
+//   asyncproc_t* proc;
 
-  if (!capacity)
-    capacity = 1024;
-  else
-    capacity = Q_nextPow2(capacity);
-  queue->capacity = capacity;
-  capacity *= sizeof(queue->procs[0]);
-  queue->procs = (asyncproc_t*)malloc(capacity);
-  if (!queue->procs)
-    Sys_Error("AsyncQueue_Init: malloc failed on %" SDL_PRIu64 " bytes",
-              (uint64_t)capacity);
+//   if (!queue->mutex)
+//     return;
+//   SDL_LockMutex(queue->mutex);
+//   while (!queue->teardown && queue->tail - queue->head >= queue->capacity)
+//     SDL_CondWait(queue->notfull, queue->mutex);
 
-  queue->mutex = SDL_CreateMutex();
-  if (!queue->mutex)
-    Sys_Error("AsyncQueue_Init: could not create mutex");
+//   if (!queue->teardown) {
+//     proc = &queue->procs[(queue->tail++) & (queue->capacity - 1)];
+//     proc->func = func;
+//     proc->param = param;
+//   }
 
-  queue->notfull = SDL_CreateCond();
-  if (!queue->notfull)
-    Sys_Error("AsyncQueue_Init: could not create condition variable");
-}
-
-static void
-AsyncQueue_Push(asyncqueue_t* queue, void (*func)(void* param), void* param)
-{
-  asyncproc_t* proc;
-
-  if (!queue->mutex)
-    return;
-  SDL_LockMutex(queue->mutex);
-  while (!queue->teardown && queue->tail - queue->head >= queue->capacity)
-    SDL_CondWait(queue->notfull, queue->mutex);
-
-  if (!queue->teardown) {
-    proc = &queue->procs[(queue->tail++) & (queue->capacity - 1)];
-    proc->func = func;
-    proc->param = param;
-  }
-
-  SDL_UnlockMutex(queue->mutex);
-}
-
-static void
-AsyncQueue_Drain(asyncqueue_t* queue)
-{
-  SDL_LockMutex(queue->mutex);
-  while (queue->head != queue->tail) {
-    asyncproc_t* proc = &queue->procs[(queue->head++) & (queue->capacity - 1)];
-    proc->func(proc->param);
-    SDL_CondSignal(queue->notfull);
-  }
-  SDL_UnlockMutex(queue->mutex);
-}
-
-static void
-AsyncQueue_Destroy(asyncqueue_t* queue)
-{
-  if (!queue->mutex)
-    return;
-
-  SDL_LockMutex(queue->mutex);
-  queue->teardown = true;
-  SDL_UnlockMutex(queue->mutex);
-  SDL_CondBroadcast(queue->notfull);
-
-  AsyncQueue_Drain(queue);
-
-  SDL_DestroyCond(queue->notfull);
-  SDL_DestroyMutex(queue->mutex);
-  memset(queue, 0, sizeof(*queue));
-}
+//   SDL_UnlockMutex(queue->mutex);
+// }
 
 void
 Host_InvokeOnMainThread(void (*func)(void* param), void* param)
 {
-  AsyncQueue_Push(&async_queue, func, param);
+  async_queue->push(func, param);
 }
 
 //==============================================================================
@@ -1254,7 +1268,8 @@ _Host_Frame(double time)
   Host_AdvanceTime(time);
 
   // run async procs
-  AsyncQueue_Drain(&async_queue);
+  async_queue->drain();
+  // AsyncQueue_Drain(&async_queue);
 
   // get new key events
   Key_UpdateForDest();
@@ -1324,13 +1339,16 @@ _Host_Frame(double time)
 
   // update audio
   BGM_Update(); // adds music raw samples and/or advances midi driver
+
   if (cls.signon == SIGNONS) {
     S_Update(r_origin, vpn, vright, vup);
     CL_DecayLights();
   } else
     S_Update(vec3_origin, vec3_origin, vec3_origin, vec3_origin);
 
-  CDAudio_Update();
+  // ... dont need this ... -crow
+  // CDAudio_Update();
+
   UpdateWindowTitle();
 
   if (host_speeds.value) {
@@ -1423,8 +1441,9 @@ Host_Init(void)
     Sys_Error("Only %4.1f megs of memory available, can't execute game",
               host_parms->memsize / (float)0x100000);
 
+  async_queue = new asyncqueue_s(1024);
+
   Memory_Init(host_parms->membase, host_parms->memsize);
-  AsyncQueue_Init(&async_queue, 1024);
   Cbuf_Init();
   Cmd_Init();
   LOG_Init(host_parms);
@@ -1520,8 +1539,10 @@ Host_Shutdown(void)
   // keep Con_Printf from trying to update the screen
   scr_disabled_for_loading = true;
 
-  AsyncQueue_Destroy(&async_queue);
+  // queue gets destroyed at shutdown time anyways...
+  // AsyncQueue_Destroy(&async_queue);
 
+  delete async_queue;
   Host_ShutdownSave();
   Host_WriteConfiguration();
 
