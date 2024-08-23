@@ -303,9 +303,11 @@ S_FindName(std::string_view const name)
     Sys_Error("Sound name too long: %s", name.data());
 
   // see if already loaded
-  for (i = 0; i < num_sfx; i++)
-    if (known_sfx[i].name == name)
+  for (i = 0; i < num_sfx; i++) {
+    if (known_sfx[i].name == name) {
       return &known_sfx[i];
+    }
+  }
 
   if (num_sfx == MAX_SFX)
     Sys_Error("S_FindName: out of sfx_t");

@@ -67,7 +67,7 @@ typedef struct
 /* !!! if this is changed, it must be changed in asm_i386.h too !!! */
 typedef struct
 {
-  sfx_t sfx;    /* sfx number					*/
+  sfx_t* sfx;   /* sfx number					*/
   int leftvol;  /* 0-255 volume					*/
   int rightvol; /* 0-255 volume					*/
   int end;      /* end time in global paintsamples		*/
@@ -127,6 +127,12 @@ sfx_t*
 S_PrecacheSound(const char* sample);
 void
 S_TouchSound(const char* sample);
+void
+S_ClearPrecache(void);
+void
+S_BeginPrecaching(void);
+void
+S_EndPrecaching(void);
 void
 S_PaintChannels(int endtime);
 void

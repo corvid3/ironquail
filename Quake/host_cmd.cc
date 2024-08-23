@@ -1996,7 +1996,7 @@ static void
 Host_Map_f(void)
 {
   int i;
-  char name[MAX_QPATH], *p;
+  q_str<> name;
 
   if (Cmd_Argc() < 2) // no map name given
   {
@@ -2027,13 +2027,12 @@ Host_Map_f(void)
   SCR_BeginLoadingPlaque();
 
   svs.serverflags = 0; // haven't completed an episode yet
-  q_strlcpy(name, Cmd_Argv(1), sizeof(name));
+  name = Cmd_Argv(1);
   // remove (any) trailing ".bsp" from mapname -- S.A.
-  p = strstr(name, ".bsp");
-  if (p && p[4] == '\0')
-    *p = '\0';
+  name = name.substr(0, name.find_last_of(".bsp"));
+
   PR_SwitchQCVM(&sv.qcvm);
-  SV_SpawnServer(name);
+  SV_SpawnServer(name.data());
   PR_SwitchQCVM(NULL);
   if (!sv.active)
     return;

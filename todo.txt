@@ -1,0 +1,10 @@
+(A) 2024-08-18 get everything memory allocated into "safer" types
+(A) 2024-08-19 do something about the cache, i don't like it
+(A) 2024-08-19 new bsp format, with blackjack and hookers
+(B) 2024-08-18 runtime shader recompiling
+(B) 2024-08-19 optional shaders stored in map files
+(C) 2024-08-18 add wren as a scripting language
+(C) 2024-08-18 protect the server from cheaters (sv_cheats)
+(C) 2024-08-19 rip up the qcvm & decouple entities from it
+(C) 2024-08-20 sound rewrite, maybe use miniaudio?
+(D) 2024-08-18 add crouching

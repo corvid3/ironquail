@@ -23,43 +23,36 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef QUAKE_SERVER_H
 #define QUAKE_SERVER_H
 
-#include "client.hh"
 #include "common.hh"
+#include "progs.hh"
 #include "q_stdinc.hh"
 #include "quakedef.hh"
 #include <SDL2/SDL.h>
 
 // server.h
 
-typedef struct
-{
+typedef struct {
   int maxclients;
   int maxclientslimit;
-  struct client_s* clients;    // [maxclients]
+  struct client_s *clients;    // [maxclients]
   int serverflags;             // episode completion information
   qboolean changelevel_issued; // cleared when at SV_SpawnServer
 } server_static_t;
 
-struct svcustomstat_s
-{
+struct svcustomstat_s {
   int idx;
   int type;
   int fld;
-  eval_t* ptr;
+  eval_t *ptr;
 };
 
 //=============================================================================
 
 #define MAX_SIGNON_BUFFERS 256
 
-typedef enum
-{
-  ss_loading,
-  ss_active
-} server_state_t;
+typedef enum { ss_loading, ss_active } server_state_t;
 
-typedef struct
-{
+typedef struct {
   qboolean active; // false if only a net client
 
   qboolean paused;
@@ -73,11 +66,11 @@ typedef struct
 
   char name[64];      // map name
   char modelname[64]; // maps/<name>.bsp, for model_precache[0]
-  struct qmodel_s* worldmodel;
-  const char* model_precache[MAX_MODELS]; // NULL terminated
-  struct qmodel_s* models[MAX_MODELS];
-  const char* sound_precache[MAX_SOUNDS]; // NULL terminated
-  const char* lightstyles[MAX_LIGHTSTYLES];
+  struct qmodel_s *worldmodel;
+  const char *model_precache[MAX_MODELS]; // NULL terminated
+  struct qmodel_s *models[MAX_MODELS];
+  const char *sound_precache[MAX_SOUNDS]; // NULL terminated
+  const char *lightstyles[MAX_LIGHTSTYLES];
   server_state_t state; // some actions are only valid during load
 
   sizebuf_t datagram;
@@ -86,9 +79,9 @@ typedef struct
   sizebuf_t reliable_datagram; // copied to all clients at end of frame
   byte reliable_datagram_buf[MAX_DATAGRAM];
 
-  sizebuf_t* signon;
+  sizebuf_t *signon;
   int num_signon_buffers;
-  sizebuf_t* signon_buffers[MAX_SIGNON_BUFFERS];
+  sizebuf_t *signon_buffers[MAX_SIGNON_BUFFERS];
 
   unsigned protocol; // johnfitz
   unsigned protocolflags;
@@ -99,8 +92,7 @@ typedef struct
   char lastsave[MAX_OSPATH];
   qboolean autoloading;
 
-  struct
-  {
+  struct {
     float secret_boost;
     float teleport_boost;
     float prev_health;
@@ -114,16 +106,14 @@ typedef struct
 
 #define NUM_PING_TIMES 16
 
-enum sendsignon_e
-{
+enum sendsignon_e {
   PRESPAWN_DONE,
   PRESPAWN_FLUSH = 1,
   PRESPAWN_SIGNONBUFS,
   PRESPAWN_SIGNONMSG,
 };
 
-typedef struct client_s
-{
+typedef struct client_s {
   qboolean active;              // false = client is free
   qboolean spawned;             // false = don't send datagrams
   qboolean dropasap;            // has been told to go to another level
@@ -133,7 +123,7 @@ typedef struct client_s
   double last_message; // reliable messages must be sent
                        // periodically
 
-  struct qsocket_s* netconnection; // communications handle
+  struct qsocket_s *netconnection; // communications handle
 
   usercmd_t cmd;  // movement
   vec3_t wishdir; // intended motion calced from cmd
@@ -141,7 +131,7 @@ typedef struct client_s
   sizebuf_t message; // can be added to at any time,
                      // copied and clear once per frame
   byte msgbuf[MAX_MSGLEN];
-  edict_t* edict; // EDICT_NUM(clientnum+1)
+  edict_t *edict; // EDICT_NUM(clientnum+1)
   char name[32];  // for printing to other people
   int colors;
 
@@ -157,17 +147,15 @@ typedef struct client_s
   int oldstats_i[MAX_CL_STATS]; // previous values of stats. if these differ
                                 // from the current values, reflag resendstats.
   float
-    oldstats_f[MAX_CL_STATS]; // previous values of stats. if these differ from
-                              // the current values, reflag resendstats.
-  char* oldstats_s[MAX_CL_STATS];
+      oldstats_f[MAX_CL_STATS]; // previous values of stats. if these differ
+                                // from the current values, reflag resendstats.
+  char *oldstats_s[MAX_CL_STATS];
 } client_t;
 
 //=============================================================================
 
 // edict->movetype values
-typedef enum
-  : int
-{
+typedef enum : int {
   MOVETYPE_NONE = 0, // never moves
   MOVETYPE_ANGLENOCLIP = 1,
   MOVETYPE_ANGLECLIP = 2,
@@ -183,9 +171,7 @@ typedef enum
 } emovetype_t;
 
 // edict->solid values
-typedef enum
-  : int
-{
+typedef enum : int {
   SOLID_NOT = 0,      // no interaction with other objects
   SOLID_TRIGGER = 1,  // touch on edge, but not blocking
   SOLID_BBOX = 2,     // touch on edge, block
@@ -194,9 +180,7 @@ typedef enum
 } esolid_t;
 
 // edict->deadflag values
-typedef enum
-  : int
-{
+typedef enum : int {
   DEAD_NO = 0,
   DEAD_DYING = 1,
   DEAD_DEAD = 2,
@@ -204,18 +188,14 @@ typedef enum
 } edeadflag_t;
 
 // edict->takedamage
-typedef enum
-  : int
-{
+typedef enum : int {
   DAMAGE_NO = 0,
   DAMAGE_YES = 1,
   DAMAGE_AIM = 2,
 } etakedamage_t;
 
 // edict->flags
-typedef enum
-  : int
-{
+typedef enum : int {
   FL_FLY = 1,
   FL_SWIM = 2,
   //	FL_GLIMPSE					= 4,
@@ -233,8 +213,7 @@ typedef enum
 } eflags_t;
 
 // entity effects
-typedef enum
-{
+typedef enum {
   EF_BRIGHTFIELD = 1,
   EF_MUZZLEFLASH = 2,
   EF_BRIGHTLIGHT = 4,
@@ -245,8 +224,7 @@ typedef enum
 } efx_t;
 
 // spawnflags
-typedef enum
-{
+typedef enum {
   SPAWNFLAG_NOT_EASY = 256,
   SPAWNFLAG_NOT_MEDIUM = 512,
   SPAWNFLAG_NOT_HARD = 1024,
@@ -265,76 +243,49 @@ extern cvar_t timelimit;
 extern server_static_t svs; // persistant server info
 extern server_t sv;         // local server
 
-extern client_t* host_client;
+extern client_t *host_client;
 
-extern edict_t* sv_player;
+extern edict_t *sv_player;
 
 //===========================================================
 
-void
-SV_Init(void);
+void SV_Init(void);
 
-void
-SV_StartParticle(vec3_t org, vec3_t dir, int color, int count);
-void
-SV_StartSound(edict_t* entity,
-              int channel,
-              const char* sample,
-              int volume,
-              float attenuation);
-void
-SV_LocalSound(client_t* client, const char* sample); // for 2021 rerelease
+void SV_StartParticle(vec3_t org, vec3_t dir, int color, int count);
+void SV_StartSound(edict_t *entity, int channel, const char *sample, int volume,
+                   float attenuation);
+void SV_LocalSound(client_t *client, const char *sample); // for 2021 rerelease
 
-void
-SV_DropClient(qboolean crash);
+void SV_DropClient(qboolean crash);
 
-void
-SV_SendClientMessages(void);
-void
-SV_ClearDatagram(void);
-void
-SV_ReserveSignonSpace(int numbytes);
+void SV_SendClientMessages(void);
+void SV_ClearDatagram(void);
+void SV_ReserveSignonSpace(int numbytes);
 
-int
-SV_ModelIndex(const char* name);
+int SV_ModelIndex(const char *name);
 
-void
-SV_SetIdealPitch(void);
+void SV_SetIdealPitch(void);
 
-void
-SV_AddUpdates(void);
+void SV_AddUpdates(void);
 
-void
-SV_ClientThink(void);
-void
-SV_AddClientToServer(struct qsocket_s* ret);
+void SV_ClientThink(void);
+void SV_AddClientToServer(struct qsocket_s *ret);
 
-void
-SV_ClientPrintf(const char* fmt, ...) FUNC_PRINTF(1, 2);
-void
-SV_BroadcastPrintf(const char* fmt, ...) FUNC_PRINTF(1, 2);
+void SV_ClientPrintf(const char *fmt, ...) FUNC_PRINTF(1, 2);
+void SV_BroadcastPrintf(const char *fmt, ...) FUNC_PRINTF(1, 2);
 
-void
-SV_Physics(void);
+void SV_Physics(void);
 
-qboolean
-SV_CheckBottom(edict_t* ent);
-qboolean
-SV_movestep(edict_t* ent, vec3_t move, qboolean relink);
+qboolean SV_CheckBottom(edict_t *ent);
+qboolean SV_movestep(edict_t *ent, vec3_t move, qboolean relink);
 
-void
-SV_WriteClientdataToMessage(edict_t* ent, sizebuf_t* msg);
+void SV_WriteClientdataToMessage(edict_t *ent, sizebuf_t *msg);
 
-void
-SV_MoveToGoal(void);
+void SV_MoveToGoal(void);
 
-void
-SV_CheckForNewClients(void);
-void
-SV_RunClients(void);
-void
-SV_SaveSpawnparms(void);
-void
-SV_SpawnServer(const char* server);
+void SV_CheckForNewClients(void);
+void SV_RunClients(void);
+void SV_SaveSpawnparms(void);
+void SV_SpawnServer(const char *server);
 
 #endif /* QUAKE_SERVER_H */

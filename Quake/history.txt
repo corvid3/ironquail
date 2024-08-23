@@ -1,6 +1,3 @@
-gun
-cl_gun_fovscale 5
-cl_gun_fovscale 2
 cl_gun_fovscale 0.2
 cl_gun_fovscale 0.5
 cl_gun_fovscale 5
@@ -61,3 +58,6 @@ map start
 changelevel e1m1
 sv_cheats 1
 bind v noclip
+developer 1
+map start
+quit
