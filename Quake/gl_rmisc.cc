@@ -375,8 +375,8 @@ R_TranslateNewPlayerSkin(int playernum)
     skinnum = 0;
   }
 
-  pixels = (byte*)paliashdr +
-           paliashdr->texels[skinnum]; // This is not a persistent place!
+  pixels = (byte*)paliashdr + (size_t)paliashdr->texels[skinnum]
+                                .data(); // This is not a persistent place!
 
   // upload new image
   q_snprintf(name, sizeof(name), "player_%i", playernum);
@@ -438,7 +438,7 @@ R_ParseWorldspawn(void)
                      ? r_slimealpha.value
                      : 1;
 
-  data = COM_Parse(cl.worldmodel->entities);
+  data = COM_Parse(cl.worldmodel->entities.data());
   if (!data)
     return; // error
   if (com_token[0] != '{')

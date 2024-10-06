@@ -98,7 +98,6 @@ sfxcache_t*
 S_LoadSound(sfx_t* s)
 {
   char namebuffer[256];
-  byte* data;
   wavinfo_t info;
   int len;
   float stepscale;
@@ -117,22 +116,23 @@ S_LoadSound(sfx_t* s)
 
   //	Con_Printf ("loading %s\n",namebuffer);
 
-  data = COM_LoadMallocFile(namebuffer, NULL);
+  q_str<> data;
 
-  if (!data) {
+  if (auto datao = COM_LoadFile(namebuffer, NULL))
+    data = *datao;
+  else {
     Con_Printf("Couldn't load %s\n", namebuffer);
     return NULL;
-  }
+  };
 
-  info = GetWavinfo(s->name, data, com_filesize);
+  info =
+    GetWavinfo(s->name, reinterpret_cast<byte*>(data.data()), com_filesize);
   if (info.channels != 1) {
-    free(data);
     Con_Printf("%s is a stereo sample\n", s->name);
     return NULL;
   }
 
   if (info.width != 1 && info.width != 2) {
-    free(data);
     Con_Printf("%s is not 8 or 16 bit\n", s->name);
     return NULL;
   }
@@ -143,14 +143,12 @@ S_LoadSound(sfx_t* s)
   len = len * info.width * info.channels;
 
   if (info.samples == 0 || len == 0) {
-    free(data);
     Con_Printf("%s has zero samples\n", s->name);
     return NULL;
   }
 
   sc = (sfxcache_t*)Cache_Alloc(&s->cache, len + sizeof(sfxcache_t), s->name);
   if (!sc) {
-    free(data);
     return NULL;
   }
 
@@ -160,9 +158,10 @@ S_LoadSound(sfx_t* s)
   sc->width = info.width;
   sc->stereo = info.channels;
 
-  ResampleSfx(s, sc->speed, sc->width, data + info.dataofs);
-
-  free(data);
+  ResampleSfx(s,
+              sc->speed,
+              sc->width,
+              reinterpret_cast<byte*>(data.data()) + info.dataofs);
 
   return sc;
 }

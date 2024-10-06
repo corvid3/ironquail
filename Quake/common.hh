@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <compare>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -674,15 +675,8 @@ COM_FileExists(std::string_view filename, unsigned int* path_id);
 void
 COM_CloseFile(int h);
 
-// these procedures open a file using COM_FindFile and loads it into a proper
-// buffer. the buffer is allocated with a total size of com_filesize + 1. the
-// procedures differ by their buffer allocation method.
-byte*
-COM_LoadHunkFile(const char* path, unsigned int* path_id);
-// allocates the buffer on the hunk.
-byte*
-COM_LoadMallocFile(const char* path, unsigned int* path_id);
-// allocates the buffer on the system mem (malloc).
+std::optional<q_str<>>
+COM_LoadFile(std::string_view const path, unsigned int* path_id);
 
 // Opens the given path directly, ignoring search paths.
 // Returns NULL on failure, or else a '\0'-terminated malloc'ed buffer.

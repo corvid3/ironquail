@@ -734,8 +734,9 @@ R_SortEntities(void)
     }
 
     if ((unsigned)ent->model->type >= (unsigned)mod_numtypes)
-      Sys_Error(
-        "Model '%s' has invalid type %d", ent->model->name, ent->model->type);
+      Sys_Error("Model '%s' has invalid type %d",
+                ent->model->name.data(),
+                ent->model->type);
     typebins[ent->model->type * 2 + translucent]++;
 
     visedict_order[0][i] = i;
@@ -1585,7 +1586,8 @@ R_ShowBoundingBoxes(void)
       qboolean inpvs =
         ed->num_leafs
           ? SV_EdictInPVS(ed, pvs)
-          : SV_BoxInPVS(ed->v.absmin, ed->v.absmax, pvs, sv.worldmodel->nodes);
+          : SV_BoxInPVS(
+              ed->v.absmin, ed->v.absmax, pvs, sv.worldmodel->nodes.data());
       if (!inpvs)
         continue;
     }

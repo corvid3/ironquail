@@ -90,49 +90,4 @@ extern "C"
 }
 #endif
 
-void*
-Hunk_Alloc(int size); // returns 0 filled memory
-void*
-Hunk_AllocNoFill(int size); // returns uninitialized memory
-void*
-Hunk_AllocName(int size, const char* name); // returns 0 filled memory
-void*
-Hunk_AllocNameNoFill(int size,
-                     const char* name); // returns uninitialized memory
-char*
-Hunk_Strdup(const char* s, const char* name);
-
-int
-Hunk_LowMark(void);
-void
-Hunk_FreeToLowMark(int mark);
-
-void
-Hunk_Check(void);
-
-typedef struct cache_user_s
-{
-  void* data;
-} cache_user_t;
-
-void
-Cache_Flush(void);
-
-void*
-Cache_Check(cache_user_t* c);
-// returns the cached data, and moves to the head of the LRU list
-// if present, otherwise returns NULL
-
-void
-Cache_Free(cache_user_t* c,
-           qboolean freetextures); // johnfitz -- added second argument
-
-void*
-Cache_Alloc(cache_user_t* c, int size, const char* name);
-// Returns NULL if all purgable data was tossed and there still
-// wasn't enough room.
-
-void
-Cache_Report(void);
-
 #endif /* __ZZONE_H */

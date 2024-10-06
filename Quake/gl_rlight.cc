@@ -331,7 +331,7 @@ loc0:
     msurface_t* surf;
     // check for impact on this node
 
-    surf = cl.worldmodel->surfaces + node->firstsurface;
+    surf = cl.worldmodel->surfaces.data() + node->firstsurface;
     for (i = 0; i < node->numsurfaces; i++, surf++) {
       float sfront, sback, dist;
       vec3_t raydelta;
@@ -382,7 +382,7 @@ loc0:
       }
 
       if (dist < *maxdist) {
-        cache->surfidx = surf - cl.worldmodel->surfaces + 1;
+        cache->surfidx = surf - cl.worldmodel->surfaces.data() + 1;
         cache->ds = ds;
         cache->dt = dt;
       } else {
@@ -425,19 +425,19 @@ R_LightPoint(vec3_t p, float ofs, lightcache_t* cache)
   lightcolor[0] = lightcolor[1] = lightcolor[2] = 0;
 
   if (cache->surfidx <= 0 // no cache or pitch black
-      || cache->surfidx > cl.worldmodel->numsurfaces ||
+      || cache->surfidx > (int)cl.worldmodel->surfaces.size() ||
       fabsf(cache->pos[0] - p[0]) >= 1.f ||
       fabsf(cache->pos[1] - p[1]) >= 1.f ||
       fabsf(cache->pos[2] - p[2]) >= 1.f) {
     cache->surfidx = 0;
     VectorCopy(p, cache->pos);
     RecursiveLightPoint(
-      cache, cl.worldmodel->nodes, start, start, end, &maxdist);
+      cache, cl.worldmodel->nodes.data(), start, start, end, &maxdist);
   }
 
   if (cache->surfidx > 0)
     InterpolateLightmap(lightcolor,
-                        cl.worldmodel->surfaces + cache->surfidx - 1,
+                        cl.worldmodel->surfaces.data() + cache->surfidx - 1,
                         cache->ds,
                         cache->dt);
 

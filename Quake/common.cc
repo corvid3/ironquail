@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <SDL2/SDL.h>
 #include <array>
 #include <errno.h>
+#include <optional>
 #include <string_view>
 #include <time.h>
 
@@ -61,8 +62,8 @@ cvar_t registered = {
 }; /* set to correct value in COM_CheckRegistered() */
 cvar_t cmdline = {
   "cmdline", "", CVAR_ROM, 0, 0, 0, 0, 0 /*|CVAR_SERVERINFO*/
-};                                       /* sending cmdline upon
-                             CCREQ_RULE_INFO is evil */
+}; /* sending cmdline upon
+CCREQ_RULE_INFO is evil */
 cvar_t language = {
   "language", "auto", CVAR_ARCHIVE, 0, 0, 0, 0, 0
 }; /* for 2021 rerelease text */
@@ -2042,59 +2043,29 @@ Allways appends a 0 byte.
 #define LOADFILE_HUNK 0
 #define LOADFILE_MALLOC 1
 
-byte*
-COM_LoadFile(const char* path, int usehunk, unsigned int* path_id)
+std::optional<q_str<>>
+COM_LoadFile(std::string_view const path, unsigned int* path_id)
 {
   int h;
-  byte* buf;
   char base[32];
   int len, nread;
 
-  buf = NULL; // quiet compiler warning
-
   // look for it in the filesystem or pack files
-  len = COM_OpenFile(path, &h, path_id);
+  len = COM_OpenFile(path.data(), &h, path_id);
   if (h == -1)
-    return NULL;
+    return std::nullopt;
 
   // extract the filename base name for hunk tag
-  COM_FileBase(path, base, sizeof(base));
+  COM_FileBase(path.data(), base, sizeof(base));
 
-  switch (usehunk) {
-    case LOADFILE_HUNK:
-      buf = (byte*)Hunk_AllocNameNoFill(len + 1, base);
-      break;
-    case LOADFILE_MALLOC:
-      buf = (byte*)malloc(len + 1);
-      break;
-    default:
-      Sys_Error("COM_LoadFile: bad usehunk");
-  }
+  q_str<> data(len, 0);
 
-  if (!buf)
-    Sys_Error("COM_LoadFile: not enough space for %s", path);
-
-  ((byte*)buf)[len] = 0;
-
-  nread = Sys_FileRead(h, buf, len);
+  nread = Sys_FileRead(h, data.data(), len);
   COM_CloseFile(h);
   if (nread != len)
-    Sys_Error("COM_LoadFile: Error reading %s", path);
+    Sys_Error("COM_LoadFile: Error reading %s", path.data());
 
-  return buf;
-}
-
-byte*
-COM_LoadHunkFile(const char* path, unsigned int* path_id)
-{
-  return COM_LoadFile(path, LOADFILE_HUNK, path_id);
-}
-
-// returns malloc'd memory
-byte*
-COM_LoadMallocFile(const char* path, unsigned int* path_id)
-{
-  return COM_LoadFile(path, LOADFILE_MALLOC, path_id);
+  return data;
 }
 
 byte*

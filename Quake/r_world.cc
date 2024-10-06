@@ -68,7 +68,7 @@ R_MarkVisSurfaces(byte* vis)
   int i;
   GLuint buf;
   GLbyte* ofs;
-  size_t vissize = (cl.worldmodel->numleafs + 7) >> 3;
+  size_t vissize = (cl.worldmodel->leafs.size() + 7) >> 3;
   gpumark_frame_t frame;
 
   GL_BeginGroup("Mark surfaces");
@@ -111,22 +111,23 @@ R_MarkVisSurfaces(byte* vis)
                      4,
                      gl_bmodel_leaf_buffer,
                      0,
-                     cl.worldmodel->numleafs * sizeof(bmodel_gpu_leaf_t));
+                     cl.worldmodel->leafs.size() * sizeof(bmodel_gpu_leaf_t));
   GL_BindBufferRange(GL_SHADER_STORAGE_BUFFER,
                      5,
                      gl_bmodel_marksurf_buffer,
                      0,
-                     cl.worldmodel->nummarksurfaces *
+                     cl.worldmodel->marksurfaces.size() *
                        sizeof(cl.worldmodel->marksurfaces[0]));
   GL_BindBufferRange(GL_SHADER_STORAGE_BUFFER,
                      6,
                      gl_bmodel_surf_buffer,
                      0,
-                     cl.worldmodel->numsurfaces * sizeof(bmodel_gpu_surf_t));
+                     cl.worldmodel->surfaces.size() *
+                       sizeof(bmodel_gpu_surf_t));
   GL_Upload(GL_UNIFORM_BUFFER, &frame, sizeof(frame), &buf, &ofs);
   GL_BindBufferRange(GL_UNIFORM_BUFFER, 1, buf, (GLintptr)ofs, sizeof(frame));
 
-  GL_DispatchComputeFunc((cl.worldmodel->numleafs + 63) / 64, 1, 1);
+  GL_DispatchComputeFunc((cl.worldmodel->leafs.size() + 63) / 64, 1, 1);
   GL_MemoryBarrierFunc(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT |
                        GL_ELEMENT_ARRAY_BARRIER_BIT);
 

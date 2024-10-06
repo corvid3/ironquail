@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "q_stdinc.hh"
 #include "quakedef.hh"
 #include "sbar.hh"
+#include "str.hh"
 #include "sys.hh"
 #include "view.hh"
 #include <SDL2/SDL.h>
@@ -78,7 +79,8 @@ softemu_t softemu;
 
 #define MAX_GLTEXTURES 4096
 static int numgltextures;
-static gltexture_t *active_gltextures, *free_gltextures;
+static gltexture_t* active_gltextures;
+static q_unique_vec<gltexture_t> free_gltextures;
 gltexture_t *notexture, *nulltexture, *whitetexture, *greytexture,
   *blacktexture;
 
@@ -815,32 +817,32 @@ rewritten
 void
 TexMgr_LoadPalette(void)
 {
-  byte *pal, *src, *colormap;
-  int i, j, mark, numfb;
+  q_unique_vec<byte> pal, colormap;
+  byte* src;
+  int i, j, numfb;
   FILE* f;
 
   COM_FOpenFile("gfx/palette.lmp", &f, NULL);
   if (!f)
     Sys_Error("Couldn't load gfx/palette.lmp");
 
-  mark = Hunk_LowMark();
-  pal = (byte*)Hunk_AllocNoFill(768);
-  if (fread(pal, 768, 1, f) != 1)
+  pal = decltype(pal)(768);
+  if (fread(pal.data(), 768, 1, f) != 1)
     Sys_Error("Failed reading gfx/palette.lmp");
   fclose(f);
 
   COM_FOpenFile("gfx/colormap.lmp", &f, NULL);
   if (!f)
     Sys_Error("Couldn't load gfx/colormap.lmp");
-  colormap = (byte*)Hunk_AllocNoFill(256 * 64);
-  if (fread(colormap, 256 * 64, 1, f) != 1)
+  colormap = decltype(colormap)(256 * 64);
+  if (fread(colormap.data(), 256 * 64, 1, f) != 1)
     Sys_Error("TexMgr_LoadPalette: colormap read error");
   fclose(f);
 
   // find fullbright colors
   memset(is_fullbright, 0, sizeof(is_fullbright));
   numfb = 0;
-  src = pal;
+  src = pal.data();
   for (i = 0; i < 256; i++, src += 3) {
     if (!src[0] && !src[1] && !src[2])
       continue; // black can't be fullbright
@@ -858,7 +860,7 @@ TexMgr_LoadPalette(void)
     Con_SafePrintf("Colormap has %d fullbright colors\n", numfb);
 
   // fill color tables
-  src = pal;
+  src = pal.data();
   for (i = 0; i < 256; i++, src += 3) {
     SetColor(&d_8to24table_opaque[i], src[0], src[1], src[2], 255);
     if (GetBit(is_fullbright, i)) {
@@ -886,8 +888,6 @@ TexMgr_LoadPalette(void)
   // conchars palette, 0 and 255 are transparent
   memcpy(d_8to24table_conchars, d_8to24table, 256 * 4);
   ((byte*)&d_8to24table_conchars[0])[3] = 0;
-
-  Hunk_FreeToLowMark(mark);
 }
 
 /*
@@ -1835,9 +1835,6 @@ TexMgr_LoadImageEx(qmodel_t* owner,
   glt->source_height = height;
   glt->source_crc = crc;
 
-  // upload it
-  mark = Hunk_LowMark();
-
   switch (glt->source_format) {
     case SRC_INDEXED:
       TexMgr_LoadImage8(glt, data);
@@ -1855,8 +1852,6 @@ TexMgr_LoadImageEx(qmodel_t* owner,
     glt->bindless_handle = GL_GetTextureHandleARBFunc(glt->texnum);
     GL_MakeTextureHandleResidentARBFunc(glt->bindless_handle);
   }
-
-  Hunk_FreeToLowMark(mark);
 
   return glt;
 }

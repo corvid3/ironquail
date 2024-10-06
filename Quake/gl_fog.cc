@@ -218,7 +218,7 @@ Fog_ParseWorldspawn(void)
   fade_time = 0.0;
   fade_done = 0.0;
 
-  data = COM_Parse(cl.worldmodel->entities);
+  data = COM_Parse(cl.worldmodel->entities.data());
   if (!data)
     return; // error
   if (com_token[0] != '{')

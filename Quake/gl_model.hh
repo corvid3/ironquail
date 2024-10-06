@@ -27,9 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "q_stdinc.hh"
 #include "quakedef.hh"
 #include "spritegn.hh"
-#include "zone.hh"
 
 #include "modelgen.hh"
+#include "str.hh"
+#include <memory>
 
 /*
 
@@ -88,7 +89,7 @@ typedef enum
 } textype_t;
 
 #define TEXTYPE_ISLIQUID(x)                                                    \
-  ((unsigned)((x)-TEXTYPE_FIRSTLIQUID) < (unsigned)TEXTYPE_NUMLIQUIDS)
+  ((unsigned)((x) - TEXTYPE_FIRSTLIQUID) < (unsigned)TEXTYPE_NUMLIQUIDS)
 
 typedef struct texture_s
 {
@@ -207,7 +208,7 @@ typedef struct mclipnode_s
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct
 {
-  mclipnode_t* clipnodes; // johnfitz -- was dclipnode_t
+  q_unique_vec<mclipnode_t> clipnodes;
   mplane_t* planes;
   int firstclipnode;
   int lastclipnode;
@@ -283,6 +284,15 @@ typedef struct meshst_s
 {
   float st[2];
 } meshst_t;
+
+typedef struct
+{
+  float xyz[3];
+  int8_t norm[4];
+  float st[2];
+  uint8_t weight[4];
+  uint8_t idx[4];
+} iqmvert_t;
 //--
 
 typedef struct
@@ -318,8 +328,13 @@ typedef struct mtriangle_s
 } mtriangle_t;
 
 #define MAX_SKINS 32
-typedef struct
+typedef struct aliashdr_t
 {
+  aliashdr_t(const aliashdr_t&) = delete;
+  aliashdr_t(aliashdr_t&&) = default;
+  aliashdr_t& operator=(const aliashdr_t&) = delete;
+  aliashdr_t& operator=(aliashdr_t&&) = default;
+
   int ident;
   int version;
   vec3_t scale;
@@ -340,8 +355,11 @@ typedef struct
   int numverts_vbo;  // number of verts with unique x,y,z,s,t
   intptr_t meshdesc; // offset into extradata: numverts_vbo aliasmesh_t
   int numindexes;
-  intptr_t indexes;  // offset into extradata: numindexes unsigned shorts
-  intptr_t vertexes; // offset into extradata: numposes*vertsperframe trivertx_t
+  intptr_t indexes; // offset into extradata: numindexes unsigned shorts
+  // intptr_t vertexes; // offset into extradata: numposes*vertsperframe
+  // trivertx_t
+
+  q_vec<iqmvert_t> vertices;
 
   intptr_t vbovertofs;
   intptr_t vbostofs;
@@ -350,7 +368,6 @@ typedef struct
   // ericw --
 
   int numposes;
-  intptr_t nextsurface; // spike
   // int					nummorphposes;		//spike
   // -- renamed from numposes
   int numboneposes;      // spike -- for iqm
@@ -364,18 +381,26 @@ typedef struct
   } poseverttype;                               // spike
   struct gltexture_s* gltextures[MAX_SKINS][4]; // johnfitz
   struct gltexture_s* fbtextures[MAX_SKINS][4]; // johnfitz
-  int texels[MAX_SKINS];                        // only for player skins
-  maliasframedesc_t frames[1];                  // variable sized
+
+  // umm we'll see if this works
+  q_array<q_vec<byte>, MAX_SKINS> texels;
+  // int texels[MAX_SKINS];       // only for player skins
+
+  // WHO HASN'T TRIED UPDATING THIS???? -crow
+  q_vec<maliasframedesc_t> frames;
+  // maliasframedesc_t frames[1]; // variable sized
 } aliashdr_t;
 
-typedef struct
+struct aliashdrs_t
 {
-  float xyz[3];
-  int8_t norm[4];
-  float st[2];
-  uint8_t weight[4];
-  uint8_t idx[4];
-} iqmvert_t;
+  aliashdrs_t(const aliashdrs_t&) = delete;
+  aliashdrs_t(aliashdrs_t&&) = default;
+  aliashdrs_t& operator=(const aliashdrs_t&) = delete;
+  aliashdrs_t& operator=(aliashdrs_t&&) = default;
+
+  q_vec<aliashdr_t> headers;
+};
+
 typedef struct
 {
   float mat[12];
@@ -445,7 +470,12 @@ enum
 
 typedef struct qmodel_s
 {
-  char name[MAX_QPATH];
+  qmodel_s(const qmodel_s&) = delete;
+  qmodel_s(qmodel_s&&) = delete;
+  qmodel_s& operator=(const qmodel_s&) = delete;
+  qmodel_s& operator=(qmodel_s&&) = delete;
+
+  q_str<> name;
   unsigned int path_id; // path id of the game directory
                         // that this model came from
   qboolean needload;    // bmodels and sprites don't cache normally
@@ -477,38 +507,23 @@ typedef struct qmodel_s
   //
   int firstmodelsurface, nummodelsurfaces;
 
-  int numsubmodels;
-  dmodel_t* submodels;
-
-  int numplanes;
-  mplane_t* planes;
-
-  int numleafs; // number of visible leafs, not counting 0
-  mleaf_t* leafs;
-
-  int numvertexes;
-  mvertex_t* vertexes;
-
-  int numedges;
-  medge_t* edges;
-
-  int numnodes;
-  mnode_t* nodes;
-
-  int numtexinfo;
-  mtexinfo_t* texinfo;
-
-  int numsurfaces;
-  msurface_t* surfaces;
-
-  int numsurfedges;
-  int* surfedges;
-
-  int numclipnodes;
-  mclipnode_t* clipnodes; // johnfitz -- was dclipnode_t
-
-  int nummarksurfaces;
-  int* marksurfaces;
+  // TODO(crow): went through all of the effort of
+  // using q_vec's here... but now that i'm thinking about it
+  // i should probably just use std::unique_ptr<T*> or something of the like
+  // theres a couple of data structures in here that have sort of house of cards
+  // setup, and using a resizable array could mess things up/make it harder to
+  // reason?
+  q_unique_vec<dmodel_t> submodels;
+  q_unique_vec<mplane_t> planes;
+  q_unique_vec<mleaf_t> leafs;
+  q_unique_vec<mvertex_t> vertexes;
+  q_unique_vec<medge_t> edges;
+  q_unique_vec<mnode_t> nodes;
+  q_unique_vec<mtexinfo_t> texinfo;
+  q_unique_vec<msurface_t> surfaces;
+  q_unique_vec<int> surfedges;
+  q_unique_vec<mclipnode_t> clipnodes;
+  q_unique_vec<int> marksurfaces;
 
   hull_t hulls[MAX_MAP_HULLS];
 
@@ -516,12 +531,12 @@ typedef struct qmodel_s
   texture_t** textures;
   int firstcmd;                  // index of first indirect draw command
   int texofs[TEXTYPE_COUNT + 1]; // index of first texture of the given type in
-                                 // the usedtextures array
-  int* usedtextures;
 
-  byte* visdata;
-  byte* lightdata;
-  char* entities;
+  q_unique_vec<int> usedtextures;
+
+  q_unique_vec<byte> visdata;
+  q_unique_vec<byte> lightdata;
+  q_unique_vec<char> entities;
 
   qboolean litfile;
   qboolean viswarn; // for Mod_DecompressVis()
@@ -541,11 +556,16 @@ typedef struct qmodel_s
   //
   // additional model data
   //
-  cache_user_t cache; // only access through Mod_Extradata
+  // one aliashdr_t per joint
+  q_vec<aliashdr_t> cache;
+  // cache_user_t cache; // only access through Mod_Extradata
 
 } qmodel_t;
 
 //============================================================================
+
+void
+Mod_ClearMemory(void);
 
 void
 Mod_Init(void);

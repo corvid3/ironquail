@@ -244,7 +244,7 @@ main(int argc, char* argv[])
       oldtime = newtime;
     }
 
-  // Host_Shutdown();
+  Host_Shutdown();
 
   return 0;
 }

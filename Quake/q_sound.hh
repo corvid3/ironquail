@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.hh"
 #include "zone.hh"
+#include <memory>
 
 /* !!! if this is changed, it must be changed in asm_i386.h too !!! */
 typedef struct
@@ -38,11 +39,11 @@ typedef struct
 typedef struct sfx_s
 {
   char name[MAX_QPATH];
-  cache_user_t cache;
+  std::shared_ptr<struct sfxcache_t> cache;
 } sfx_t;
 
 /* !!! if this is changed, it must be changed in asm_i386.h too !!! */
-typedef struct
+typedef struct sfxcache_t
 {
   int length;
   int loopstart;

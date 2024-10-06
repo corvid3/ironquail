@@ -488,7 +488,7 @@ CL_ParseUpdate(int bits)
   int modnum;
   qboolean forcelink;
   entity_t* ent;
-  int num;
+  int ent_num;
   int skin;
   int prevframe;
 
@@ -512,11 +512,11 @@ CL_ParseUpdate(int bits)
   // johnfitz
 
   if (bits & U_LONGENTITY)
-    num = MSG_ReadShort();
+    ent_num = MSG_ReadShort();
   else
-    num = MSG_ReadByte();
+    ent_num = MSG_ReadByte();
 
-  ent = CL_EntityNum(num);
+  ent = CL_EntityNum(ent_num);
 
   if (ent->msgtime != cl.mtime[1])
     forcelink = true; // no previous frame to lerp from
@@ -550,6 +550,7 @@ CL_ParseUpdate(int bits)
     i = MSG_ReadByte();
   else
     i = ent->baseline.colormap;
+
   if (!i)
     ent->colormap = vid.colormap;
   else {
@@ -557,16 +558,19 @@ CL_ParseUpdate(int bits)
       Sys_Error("i >= cl.maxclients");
     ent->colormap = cl.scores[i - 1].translations;
   }
+
   if (bits & U_SKIN)
     skin = MSG_ReadByte();
   else
     skin = ent->baseline.skin;
+
   if (skin != ent->skinnum) {
     ent->skinnum = skin;
-    if (num > 0 && num <= cl.maxclients)
-      R_TranslateNewPlayerSkin(num - 1); // johnfitz -- was
-                                         // R_TranslatePlayerSkin
+    if (ent_num > 0 && ent_num <= cl.maxclients)
+      R_TranslateNewPlayerSkin(ent_num - 1); // johnfitz -- was
+                                             // R_TranslatePlayerSkin
   }
+
   if (bits & U_EFFECTS)
     ent->effects = MSG_ReadByte();
   else
@@ -666,9 +670,9 @@ CL_ParseUpdate(int bits)
         ent->syncbase = 0.0;
     } else
       forcelink = true; // hack to make null model players work
-    if (num > 0 && num <= cl.maxclients)
-      R_TranslateNewPlayerSkin(num - 1); // johnfitz -- was
-                                         // R_TranslatePlayerSkin
+    if (ent_num > 0 && ent_num <= cl.maxclients)
+      R_TranslateNewPlayerSkin(ent_num - 1); // johnfitz -- was
+                                             // R_TranslatePlayerSkin
 
     ent->lerpflags |=
       LERP_RESETANIM; // johnfitz -- don't lerp animation across model changes

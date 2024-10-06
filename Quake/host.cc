@@ -119,7 +119,7 @@ cvar_t noexit = { "noexit", "0", CVAR_NOTIFY | CVAR_SERVERINFO, 0, 0, 0, 0, 0 };
 cvar_t skill = { "skill", "1", CVAR_NONE, 0, 0, 0, 0, 0 }; // 0 - 3
 cvar_t deathmatch = {
   "deathmatch", "0", CVAR_NONE, 0, 0, 0, 0, 0
-};                                                       // 0, 1, or 2
+}; // 0, 1, or 2
 cvar_t coop = { "coop", "0", CVAR_NONE, 0, 0, 0, 0, 0 }; // 0 or 1
 
 cvar_t pausable = { "pausable", "1", CVAR_NONE, 0, 0, 0, 0, 0 };
@@ -696,8 +696,15 @@ Host_ClearMemory(void)
   Sky_ClearAll();
   PR_ClearProgs(&sv.qcvm);
   PR_ClearProgs(&cl.qcvm);
+
   /* host_hunklevel MUST be set at this point */
-  Hunk_FreeToLowMark(host_hunklevel);
+  // Hunk_FreeToLowMark(host_hunklevel);
+  cl_arena.reset();
+  sv_arena.reset();
+
+  // clear all of the client memory
+  Mod_ClearMemory();
+
   cls.signon = 0; // not CL_ClearSignons()
   memset(&sv, 0, sizeof(sv));
 

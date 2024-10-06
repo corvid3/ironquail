@@ -180,7 +180,7 @@ endif
 ifeq ($(HOST_OS),haiku)
 COMMON_LIBS= -lGL
 else
-COMMON_LIBS= -lGL -lm
+COMMON_LIBS= -lGL -lm -lGLEW
 endif
 
 CXXFLAGS+=-DPLATFORM_UNIX

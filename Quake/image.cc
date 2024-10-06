@@ -28,10 +28,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "q_stdinc.hh"
 #include "sys.hh"
 #include <SDL2/SDL.h>
+#include <optional>
 
-static byte*
+static std::optional<q_vec<byte>>
 Image_LoadPCX(FILE* f, int* width, int* height);
-static byte*
+static std::optional<q_vec<byte>>
 Image_LoadLMP(FILE* f, int* width, int* height);
 
 #ifdef __GNUC__
@@ -115,7 +116,7 @@ Image_LoadImage
 returns a pointer to hunk allocated RGBA data
 ============
 */
-byte*
+std::optional<q_vec<byte>>
 Image_LoadImage(const char* name, int* width, int* height, enum srcformat* fmt)
 {
   static const char* const stbi_formats[] = { "png", "tga", "jpg", NULL };
@@ -130,16 +131,17 @@ Image_LoadImage(const char* name, int* width, int* height, enum srcformat* fmt)
       byte* data = stbi_load_from_file(f, width, height, NULL, 4);
       if (data) {
         int numbytes = (*width) * (*height) * 4;
-        byte* hunkdata = (byte*)Hunk_AllocName(numbytes, stbi_formats[i]);
-        memcpy(hunkdata, data, numbytes);
-        free(data);
-        data = hunkdata;
+        q_vec<byte> vec(numbytes);
+        __builtin_memcpy(vec.data(), data, numbytes);
         *fmt = SRC_RGBA;
-      } else
+        fclose(f);
+        return vec;
+      } else {
         Con_Warning(
           "couldn't load %s (%s)\n", loadfilename, stbi_failure_reason());
-      fclose(f);
-      return data;
+        fclose(f);
+        return std::nullopt;
+      }
     }
   }
 
@@ -157,7 +159,7 @@ Image_LoadImage(const char* name, int* width, int* height, enum srcformat* fmt)
     return Image_LoadLMP(f, width, height);
   }
 
-  return NULL;
+  return std::nullopt;
 }
 
 //==============================================================================
@@ -251,12 +253,12 @@ typedef struct
 Image_LoadPCX
 ============
 */
-static byte*
+static std::optional<q_vec<byte>>
 Image_LoadPCX(FILE* f, int* width, int* height)
 {
   pcxheader_t pcx;
   int x, y, w, h, readbyte, runlength, start;
-  byte *p, *data;
+  byte* p;
   byte palette[768];
   stdio_buffer_t* buf;
 
@@ -284,8 +286,8 @@ Image_LoadPCX(FILE* f, int* width, int* height)
   w = pcx.xmax - pcx.xmin + 1;
   h = pcx.ymax - pcx.ymin + 1;
 
-  data = (byte*)Hunk_Alloc((w * h + 1) *
-                           4); //+1 to allow reading padding byte on last line
+  //+1 to allow reading padding byte on last line
+  q_vec<byte> data((w * h + 1) * 4);
 
   // load palette
   fseek(f, start + com_filesize - 768, SEEK_SET);
@@ -298,7 +300,7 @@ Image_LoadPCX(FILE* f, int* width, int* height)
   buf = Buf_Alloc(f);
 
   for (y = 0; y < h; y++) {
-    p = data + y * w * 4;
+    p = data.data() + y * w * 4;
 
     for (x = 0;
          x < (pcx.bytes_per_line);) // read the extra padding byte if necessary
@@ -346,12 +348,11 @@ typedef struct
 Image_LoadLMP
 ============
 */
-static byte*
+static std::optional<q_vec<byte>>
 Image_LoadLMP(FILE* f, int* width, int* height)
 {
   lmpheader_t qpic;
   size_t pix;
-  void* data;
 
   (void)!fread(&qpic, sizeof(qpic), 1, f);
 
@@ -362,17 +363,18 @@ Image_LoadLMP(FILE* f, int* width, int* height)
 
   if ((size_t)com_filesize != 8 + pix) {
     fclose(f);
-    return NULL;
+    return std::nullopt;
   }
 
-  data = (byte*)Hunk_Alloc(pix); //+1 to allow reading padding byte on last line
-  (void)!fread(data, 1, pix, f);
+  //+1 to allow reading padding byte on last line
+  q_vec<byte> data(pix);
+  (void)!fread(data.data(), 1, pix, f);
   fclose(f);
 
   *width = qpic.width;
   *height = qpic.height;
 
-  return (byte*)data;
+  return data;
 }
 
 //==============================================================================

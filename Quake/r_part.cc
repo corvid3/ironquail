@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "glquake.hh"
 #include "mathlib.hh"
 #include "quakedef.hh"
+#include "str.hh"
 
 #define MAX_PARTICLES                                                          \
   16384 // default max # of particles at one
@@ -37,7 +38,7 @@ static int ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 static int ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
 static int ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
 
-particle_t* particles;
+q_vec<particle_t> particles;
 int r_numparticles, r_numactiveparticles;
 
 static float uvscale;
@@ -113,8 +114,7 @@ R_InitParticles(void)
     r_numparticles = MAX_PARTICLES;
   }
 
-  particles = (particle_t*)Hunk_AllocName(r_numparticles * sizeof(particle_t),
-                                          "particles");
+  particles = decltype(particles)(r_numparticles);
   r_numactiveparticles = 0;
 
   Cvar_RegisterVariable(&r_particles); // johnfitz
@@ -613,7 +613,7 @@ CL_RunParticles(void)
   grav = frametime * sv_gravity.value * 0.05;
   dvel = 4 * frametime;
 
-  for (cur = active = 0, p = particles; cur < r_numactiveparticles;
+  for (cur = active = 0, p = particles.data(); cur < r_numactiveparticles;
        cur++, p++) {
     if (p->die < cl.time || p->spawn > cl.time)
       continue;
@@ -774,7 +774,7 @@ R_DrawParticles_Real(qboolean alpha, qboolean showtris)
                 GLS_INSTANCED_ATTRIBS(2));
 
   numpartverts = 0;
-  for (i = 0, p = particles; i < r_numactiveparticles; i++, p++) {
+  for (i = 0, p = particles.data(); i < r_numactiveparticles; i++, p++) {
     if (numpartverts == countof(partverts))
       R_FlushParticleBatch();
 

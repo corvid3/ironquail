@@ -1,9 +1,12 @@
 #include "mem.hh"
+#include "str.hh"
 #include <cstdint>
 #include <new>
 // #include<alloca.h>
 
-SmallAllocEngine* g_small_alloc;
+QMemAllocEngine g_qmem_alloc_engine{};
+ArenaEngine<g_qmem_alloc_engine> cl_arena{};
+ArenaEngine<g_qmem_alloc_engine> sv_arena{};
 
 namespace QMem {
 
@@ -28,8 +31,16 @@ void
 free(void* ptr)
 {
   Header* data = static_cast<Header*>(ptr) - 1;
+
   used_mem_b -= data->size;
   ::operator delete(data);
+}
+
+unsigned
+allocation_size(void const* ptr)
+{
+  Header const* hdr = reinterpret_cast<Header const*>(ptr);
+  return hdr->size;
 }
 
 unsigned

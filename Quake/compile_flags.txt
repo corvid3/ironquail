@@ -7,6 +7,7 @@
 -DPLATFORM_UNIX
 -DUSE_SDL2
 
+-ferror-limit=50
 --std=c++23
 
 -Wall

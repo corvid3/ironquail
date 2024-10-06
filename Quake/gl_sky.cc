@@ -78,7 +78,9 @@ Sky_LoadTexture(qmodel_t* mod, texture_t* mt)
 {
   char texturename[64];
   unsigned x, y, p, r, g, b, count, halfwidth, *rgba;
-  byte *src, *front_data, *back_data;
+
+  byte *src, *front_data;
+  q_unique_vec<byte> back_data;
 
   if (mt->width != 256 || mt->height != 128) {
     Con_Warning("Sky texture %s is %d x %d, expected 256 x 128\n",
@@ -90,23 +92,24 @@ Sky_LoadTexture(qmodel_t* mod, texture_t* mt)
   }
 
   halfwidth = mt->width / 2;
-  back_data = (byte*)Hunk_AllocName(halfwidth * mt->height * 2, "skytex");
-  front_data = back_data + halfwidth * mt->height;
+  back_data = decltype(back_data)(halfwidth * mt->height * 2);
+  front_data = (byte*)back_data.data() + halfwidth * mt->height;
   src = (byte*)(mt + 1);
 
   // extract back layer and upload
   for (y = 0; y < mt->height; y++)
-    memcpy(
-      back_data + y * halfwidth, src + halfwidth + y * mt->width, halfwidth);
+    memcpy(back_data.data() + y * halfwidth,
+           src + halfwidth + y * mt->width,
+           halfwidth);
 
   q_snprintf(
-    texturename, sizeof(texturename), "%s:%s_back", mod->name, mt->name);
+    texturename, sizeof(texturename), "%s:%s_back", mod->name.data(), mt->name);
   mt->gltexture = TexMgr_LoadImage(mod,
                                    texturename,
                                    halfwidth,
                                    mt->height,
                                    SRC_INDEXED,
-                                   back_data,
+                                   back_data.data(),
                                    "",
                                    (src_offset_t)back_data,
                                    TEXPREF_BINDLESS);
@@ -129,9 +132,12 @@ Sky_LoadTexture(qmodel_t* mod, texture_t* mt)
     }
   }
 
-  front_data = back_data + halfwidth * mt->height;
-  q_snprintf(
-    texturename, sizeof(texturename), "%s:%s_front", mod->name, mt->name);
+  front_data = back_data.data() + halfwidth * mt->height;
+  q_snprintf(texturename,
+             sizeof(texturename),
+             "%s:%s_front",
+             mod->name.data(),
+             mt->name);
   mt->fullbright = TexMgr_LoadImage(mod,
                                     texturename,
                                     halfwidth,
@@ -160,7 +166,8 @@ Sky_LoadTextureQ64(qmodel_t* mod, texture_t* mt)
 {
   char texturename[64];
   unsigned i, p, r, g, b, count, halfheight, *rgba;
-  byte *front, *back, *front_rgba;
+  byte *front, *back;
+  q_unique_vec<byte> front_rgba;
 
   if (mt->width != 32 || mt->height != 64) {
     Con_DWarning("Q64 sky texture %s is %d x %d, expected 32 x 64\n",
@@ -175,7 +182,7 @@ Sky_LoadTextureQ64(qmodel_t* mod, texture_t* mt)
   halfheight = mt->height / 2;
   front = (byte*)(mt + 1);
   back = (byte*)(mt + 1) + mt->width * halfheight;
-  front_rgba = (byte*)Hunk_AllocName(4 * mt->width * halfheight, "q64_skytex");
+  front_rgba = decltype(front_rgba)(4 * mt->width * halfheight);
 
   // Normal indexed texture for the back layer
   q_snprintf(

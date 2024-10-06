@@ -71,7 +71,7 @@ R_SplitEntityOnNode(mnode_t* node)
   // add an efrag if the node is a leaf
 
   if (node->contents < 0) {
-    idx = (mleaf_t*)node - cl.worldmodel->leafs;
+    idx = (mleaf_t*)node - cl.worldmodel->leafs.data();
     if (idx >= 1)
       VEC_PUSH(cl_efrags, idx - 1);
     return;
@@ -147,7 +147,7 @@ R_AddEfrags(entity_t* ent)
   i = VEC_SIZE(cl_efrags);
   VEC_PUSH(cl_efrags, 0); // write dummy count
 
-  R_SplitEntityOnNode(cl.worldmodel->nodes);
+  R_SplitEntityOnNode(cl.worldmodel->nodes.data());
   cl_efrags[i] = VEC_SIZE(cl_efrags) - i - 1; // write actual count
   cl.num_efrags += cl_efrags[i];
 
