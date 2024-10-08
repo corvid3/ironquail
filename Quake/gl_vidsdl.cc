@@ -22,8 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_vidsdl.c -- SDL GL vid component
 
+#include <GL/glew.h>
+
 #include "bgmusic.hh"
 #include "cfgfile.hh"
+#include "common.hh"
 #include "cvar.hh"
 #include "quakedef.hh"
 #if defined(SDL_FRAMEWORK) || defined(NO_SDL_CONFIG)
@@ -114,40 +117,22 @@ GLint ssbo_align;
 GLint ubo_align;
 static GLuint globalvao;
 
-#define QGL_DEFINE_FUNC(ret, name, args)                                       \
-  ret(APIENTRYP GL_##name##Func) args = NULL;
-QGL_ALL_FUNCTIONS(QGL_DEFINE_FUNC)
-#undef QGL_DEFINE_FUNC
-
 typedef struct glfunc_t
 {
   void** ptr;
   const char* name;
 } glfunc_t;
 
-#define QGL_REGISTER_NAMED_FUNC(ret, name, args)                               \
-  { (void**)&GL_##name##Func, "gl" #name },
-static const glfunc_t gl_core_functions[] = { QGL_CORE_FUNCTIONS(
-  QGL_REGISTER_NAMED_FUNC){ NULL, NULL } };
-
-static const glfunc_t gl_arb_buffer_storage_functions[] = {
-  QGL_ARB_buffer_storage_FUNCTIONS(QGL_REGISTER_NAMED_FUNC){ NULL, NULL }
-};
-
-static const glfunc_t gl_arb_multi_bind_functions[] = {
-  QGL_ARB_multi_bind_FUNCTIONS(QGL_REGISTER_NAMED_FUNC){ NULL, NULL }
-};
-
-static const glfunc_t gl_arb_bindless_texture_functions[] = {
-  QGL_ARB_bindless_texture_FUNCTIONS(QGL_REGISTER_NAMED_FUNC){ NULL, NULL }
-};
-
-static const glfunc_t gl_arb_clip_control_functions[] = {
-  QGL_ARB_clip_control_FUNCTIONS(QGL_REGISTER_NAMED_FUNC){ NULL, NULL }
-};
-#undef QGL_REGISTER_NAMED_FUNC
-
 //====================================
+
+void
+t()
+{
+  GLEW_ARB_buffer_storage;
+  GLEW_ARB_multi_bind;
+  GLEW_ARB_bindless_texture;
+  GLEW_ARB_clip_control;
+}
 
 // johnfitz -- new cvars
 cvar_t vid_fullscreen = {
@@ -709,7 +694,7 @@ VID_FSAAMode_f(cvar_t* cvar)
 {
   if (!host_initialized)
     return;
-  GL_MinSampleShadingFunc(cvar->value);
+  glMinSampleShading(cvar->value);
   gl_lodbias.callback(&gl_lodbias);
 }
 
@@ -893,7 +878,7 @@ GL_Info_Completion_f(const char* partial)
 {
   int i;
   for (i = 0; i < gl_num_extensions; i++) {
-    const char* ext = (const char*)GL_GetStringiFunc(GL_EXTENSIONS, i);
+    const char* ext = (const char*)glGetStringi(GL_EXTENSIONS, i);
     Con_AddToTabList(ext, partial, NULL);
   }
 }
@@ -918,7 +903,7 @@ GL_Info_f(void)
     int filterlen = strlen(filter);
     int count = 0;
     for (i = 0; i < gl_num_extensions; i++) {
-      const char* ext = (const char*)GL_GetStringiFunc(GL_EXTENSIONS, i);
+      const char* ext = (const char*)glGetStringi(GL_EXTENSIONS, i);
       const char* match = q_strcasestr(ext, filter);
       if (match) {
         Con_Printf("%3d. %.*s", i + 1, (int)(match - ext), ext);
@@ -930,7 +915,7 @@ GL_Info_f(void)
     Con_Printf("%3d extensions containing \"%s\"\n", count, filter);
   } else {
     for (i = 0; i < gl_num_extensions; i++)
-      Con_Printf("%3d. %s\n", i + 1, GL_GetStringiFunc(GL_EXTENSIONS, i));
+      Con_Printf("%3d. %s\n", i + 1, glGetStringi(GL_EXTENSIONS, i));
   }
 }
 
@@ -944,7 +929,7 @@ GL_FindExtension(const char* name)
 {
   int i;
   for (i = 0; i < gl_num_extensions; i++) {
-    if (0 == strcmp(name, (const char*)GL_GetStringiFunc(GL_EXTENSIONS, i))) {
+    if (0 == strcmp(name, (const char*)glGetStringi(GL_EXTENSIONS, i))) {
       if (Q_strncmp(name, "GL_", 3) == 0)
         name += 3;
       Con_SafePrintf("FOUND: %s\n", name);
@@ -964,7 +949,7 @@ void
 GL_BeginGroup(const char* name)
 {
   if (glmarkers)
-    GL_PushDebugGroupFunc(GL_DEBUG_SOURCE_APPLICATION, 0, -1, name);
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, name);
 }
 
 /*
@@ -976,7 +961,7 @@ void
 GL_EndGroup(void)
 {
   if (glmarkers)
-    GL_PopDebugGroupFunc();
+    glPopDebugGroup();
 }
 
 /*
@@ -1082,38 +1067,14 @@ GL_DebugCallback(GLenum source,
 
 /*
 ===============
-GL_InitFunctions
-===============
-*/
-qboolean
-GL_InitFunctions(const glfunc_t* funcs, qboolean required)
-{
-  qboolean ret = true;
-
-  while (funcs->name) {
-    if ((*funcs->ptr = SDL_GL_GetProcAddress(funcs->name)) == NULL) {
-      if (required) {
-        Sys_Error("OpenGL function %s not found\n", funcs->name);
-      } else {
-        Con_Warning("OpenGL function %s not found\n", funcs->name);
-        ret = false;
-      }
-    }
-    funcs++;
-  }
-
-  return ret;
-}
-
-/*
-===============
 GL_CheckExtensions
 ===============
 */
 static void
 GL_CheckExtensions(void)
 {
-  GL_InitFunctions(gl_core_functions, true);
+  if (glewInit() != GLEW_OK)
+    Sys_Error("unable to initialize GL extensions with glew");
 
   if (COM_CheckParm("-glmarkers"))
     glmarkers = true;
@@ -1123,7 +1084,7 @@ GL_CheckExtensions(void)
 #endif
   {
     glmarkers = true;
-    GL_DebugMessageCallbackFunc(&GL_DebugCallback, NULL);
+    glDebugMessageCallback(&GL_DebugCallback, NULL);
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
   }
@@ -1168,22 +1129,11 @@ GL_CheckExtensions(void)
     CLAMP(1.f, gl_texture_anisotropy.value, gl_max_anisotropy));
 
   gl_buffer_storage_able =
-    !COM_CheckParm("-nobufferstorage") &&
-    GL_FindExtension("GL_ARB_buffer_storage") &&
-    GL_InitFunctions(gl_arb_buffer_storage_functions, false);
-
-  gl_multi_bind_able = !COM_CheckParm("-nomultibind") &&
-                       GL_FindExtension("GL_ARB_multi_bind") &&
-                       GL_InitFunctions(gl_arb_multi_bind_functions, false);
-
-  gl_bindless_able = !COM_CheckParm("-nobindless") &&
-                     GL_FindExtension("GL_ARB_bindless_texture") &&
-                     GL_FindExtension("GL_ARB_shader_draw_parameters") &&
-                     GL_InitFunctions(gl_arb_bindless_texture_functions, false);
-
-  gl_clipcontrol_able = !COM_CheckParm("-noclipcontrol") &&
-                        GL_FindExtension("GL_ARB_clip_control") &&
-                        GL_InitFunctions(gl_arb_clip_control_functions, false);
+    !COM_CheckParm("-nobufferstorage") && GLEW_ARB_buffer_storage;
+  gl_multi_bind_able = !COM_CheckParm("-nomultibind") && GLEW_ARB_multi_bind;
+  gl_bindless_able = !COM_CheckParm("-nobindless") && GLEW_ARB_bindless_texture;
+  gl_clipcontrol_able =
+    !COM_CheckParm("-noclipcontrol") && GLEW_ARB_clip_control;
 }
 
 /*
@@ -1206,8 +1156,8 @@ GL_SetStateEx(unsigned mask, unsigned force)
         break;
       case GLS_BLEND_ALPHA_OIT:
         if (r_oit.value) {
-          GL_BlendFunciFunc(0, GL_ONE, GL_ONE);                  // accum
-          GL_BlendFunciFunc(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR); // revealage
+          glBlendFunci(0, GL_ONE, GL_ONE);                  // accum
+          glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR); // revealage
           break;
         }
         // fallthrough!
@@ -1253,14 +1203,14 @@ GL_SetStateEx(unsigned mask, unsigned force)
     if (force & GLS_MASK_ATTRIBS) {
       for (i = 0; i < GLS_ATTRIBS_MAXCOUNT; i++)
         if (i < newattribs)
-          GL_EnableVertexAttribArrayFunc(i);
+          glEnableVertexAttribArray(i);
         else
-          GL_DisableVertexAttribArrayFunc(i);
+          glDisableVertexAttribArray(i);
     } else {
       for (i = oldattribs; i < newattribs; i++)
-        GL_EnableVertexAttribArrayFunc(i);
+        glEnableVertexAttribArray(i);
       for (i = newattribs; i < oldattribs; i++)
-        GL_DisableVertexAttribArrayFunc(i);
+        glDisableVertexAttribArray(i);
     }
   }
 
@@ -1273,12 +1223,12 @@ GL_SetStateEx(unsigned mask, unsigned force)
 
     if (force & GLS_MASK_INSTANCED_ATTRIBS) {
       for (i = 0; i < GLS_ATTRIBS_MAXCOUNT; i++)
-        GL_VertexAttribDivisorFunc(i, i < newattribs);
+        glVertexAttribDivisor(i, i < newattribs);
     } else {
       for (i = oldattribs; i < newattribs; i++)
-        GL_VertexAttribDivisorFunc(i, 1);
+        glVertexAttribDivisor(i, 1);
       for (i = newattribs; i < oldattribs; i++)
-        GL_VertexAttribDivisorFunc(i, 0);
+        glVertexAttribDivisor(i, 0);
     }
   }
 
@@ -1320,7 +1270,7 @@ GL_SetupState(void)
 {
   glClearColor(0.f, 0.f, 0.f, 0.f);
   if (gl_clipcontrol_able) {
-    GL_ClipControlFunc(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+    glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
     glClearDepth(0.f);
     glDepthFunc(GL_GEQUAL);
   } else {
@@ -1369,8 +1319,8 @@ GL_Init(void)
 
   GL_CheckExtensions();
 
-  GL_GenVertexArraysFunc(1, &globalvao);
-  GL_BindVertexArrayFunc(globalvao);
+  glGenVertexArrays(1, &globalvao);
+  glBindVertexArray(globalvao);
 
   glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT, &ssbo_align);
   glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &ubo_align);
@@ -1447,8 +1397,8 @@ GL_BeginRendering(int* x, int* y, int* width, int* height)
   GLPalette_UpdateLookupTable();
   TexMgr_ApplySettings();
 
-  GL_BindFramebufferFunc(GL_FRAMEBUFFER,
-                         GL_NeedsPostprocess() ? framebufs.composite.fbo : 0);
+  glBindFramebuffer(GL_FRAMEBUFFER,
+                    GL_NeedsPostprocess() ? framebufs.composite.fbo : 0);
 }
 
 /*

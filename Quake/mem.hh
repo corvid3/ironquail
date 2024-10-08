@@ -95,18 +95,22 @@ class AllocEngineTraits
   Engine& m_engine;
 
 public:
+  using value_type = Engine::value_type;
+
   AllocEngineTraits(Engine& engine = Engine{})
     : m_engine(engine)
   {
   }
 
-  inline void* allocate(std::size_t const bytes,
-                        std::optional<std::string_view> name = std::nullopt)
+  inline Engine::value_type* allocate(std::size_t const bytes)
   {
-    return m_engine.allocate(bytes, name);
+    return static_cast<Engine::value_type*>(m_engine.allocate(bytes));
   }
 
-  inline void deallocate(void* ptr) { m_engine.deallocate(ptr); }
+  inline void deallocate(Engine::value_type* ptr)
+  {
+    m_engine.deallocate(ptr, 1);
+  }
 };
 
 // wrapper that converts any

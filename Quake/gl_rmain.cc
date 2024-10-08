@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_main.c
 
+#include "GL/glew.h"
+
 #include "common.hh"
 #include "cvar.hh"
 #include "quakedef.hh"
@@ -35,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "screen.hh"
 #include "server.hh"
 #include "view.hh"
+
 #include <SDL2/SDL.h>
 
 qboolean r_cache_thrash; // compatability
@@ -204,12 +207,12 @@ GL_CreateFBOAttachment(GLenum format,
 
   glGenTextures(1, &texnum);
   GL_BindNative(GL_TEXTURE0, target, texnum);
-  GL_ObjectLabelFunc(GL_TEXTURE, texnum, -1, name);
+  glObjectLabel(GL_TEXTURE, texnum, -1, name);
   if (samples > 1) {
-    GL_TexStorage2DMultisampleFunc(
+    glTexStorage2DMultisample(
       target, samples, format, vid.width, vid.height, GL_FALSE);
   } else {
-    GL_TexStorage2DFunc(target, 1, format, vid.width, vid.height);
+    glTexStorage2D(target, 1, format, vid.width, vid.height);
     glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filter);
     glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filter);
   }
@@ -239,25 +242,25 @@ GL_CreateFBO(GLenum target,
   if (numcolors > (int)countof(buffers))
     Sys_Error("GL_CreateFBO: too many color buffers (%d)", numcolors);
 
-  GL_GenFramebuffersFunc(1, &fbo);
-  GL_BindFramebufferFunc(GL_FRAMEBUFFER, fbo);
-  GL_ObjectLabelFunc(GL_FRAMEBUFFER, fbo, -1, name);
+  glGenFramebuffers(1, &fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  glObjectLabel(GL_FRAMEBUFFER, fbo, -1, name);
 
   for (i = 0; i < numcolors; i++) {
-    GL_FramebufferTexture2DFunc(
+    glFramebufferTexture2D(
       GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, target, colors[i], 0);
     buffers[i] = GL_COLOR_ATTACHMENT0 + i;
   }
-  GL_DrawBuffersFunc(numcolors, buffers);
+  glDrawBuffers(numcolors, buffers);
 
   if (depth)
-    GL_FramebufferTexture2DFunc(
+    glFramebufferTexture2D(
       GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, depth, 0);
   if (stencil)
-    GL_FramebufferTexture2DFunc(
+    glFramebufferTexture2D(
       GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, target, stencil, 0);
 
-  status = GL_CheckFramebufferStatusFunc(GL_FRAMEBUFFER);
+  status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
   if (status != GL_FRAMEBUFFER_COMPLETE)
     Sys_Error("Failed to create %s (status code 0x%X)", name, status);
 
@@ -362,7 +365,7 @@ GL_CreateFrameBuffers(void)
                    "oit composite fbo");
   }
 
-  GL_BindFramebufferFunc(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   GL_BindNative(GL_TEXTURE0, GL_TEXTURE_2D, 0);
 }
 
@@ -374,12 +377,12 @@ GL_DeleteFrameBuffers
 void
 GL_DeleteFrameBuffers(void)
 {
-  GL_DeleteFramebuffersFunc(1, &framebufs.resolved_scene.fbo);
-  GL_DeleteFramebuffersFunc(1, &framebufs.oit.fbo_composite);
-  GL_DeleteFramebuffersFunc(1, &framebufs.oit.fbo_scene);
-  GL_DeleteFramebuffersFunc(1, &framebufs.scene.fbo);
-  GL_DeleteFramebuffersFunc(1, &framebufs.composite.fbo);
-  GL_BindFramebufferFunc(GL_FRAMEBUFFER, 0);
+  glDeleteFramebuffers(1, &framebufs.resolved_scene.fbo);
+  glDeleteFramebuffers(1, &framebufs.oit.fbo_composite);
+  glDeleteFramebuffers(1, &framebufs.oit.fbo_scene);
+  glDeleteFramebuffers(1, &framebufs.scene.fbo);
+  glDeleteFramebuffers(1, &framebufs.composite.fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   GL_DeleteNativeTexture(framebufs.resolved_scene.color_tex);
   GL_DeleteNativeTexture(framebufs.oit.revealage_tex);
@@ -417,7 +420,7 @@ GL_PostProcess(void)
 
   palidx = GLPalette_Postprocess();
 
-  GL_BindFramebufferFunc(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(glx, gly, glwidth, glheight);
 
   variant = q_min((int)softemu, 2);
@@ -432,10 +435,10 @@ GL_PostProcess(void)
                      0,
                      256 * sizeof(GLuint));
   if (variant != 2) // some AMD drivers optimize out the uniform in variant #2
-    GL_Uniform3fFunc(0,
-                     vid_gamma.value,
-                     q_min(2.0f, q_max(1.0f, vid_contrast.value)),
-                     1.f / r_refdef.scale);
+    glUniform3f(0,
+                vid_gamma.value,
+                q_min(2.0f, q_max(1.0f, vid_contrast.value)),
+                1.f / r_refdef.scale);
 
   glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -948,8 +951,8 @@ void
 R_SetupGL(void)
 {
   if (!GL_NeedsSceneEffects()) {
-    GL_BindFramebufferFunc(
-      GL_FRAMEBUFFER, GL_NeedsPostprocess() ? framebufs.composite.fbo : 0u);
+    glBindFramebuffer(GL_FRAMEBUFFER,
+                      GL_NeedsPostprocess() ? framebufs.composite.fbo : 0u);
     framesetup.scene_fbo = framebufs.composite.fbo;
     framesetup.oit_fbo = framebufs.oit.fbo_composite;
     glViewport(glx + r_refdef.vrect.x,
@@ -957,7 +960,7 @@ R_SetupGL(void)
                r_refdef.vrect.width,
                r_refdef.vrect.height);
   } else {
-    GL_BindFramebufferFunc(GL_FRAMEBUFFER, framebufs.scene.fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebufs.scene.fbo);
     framesetup.scene_fbo = framebufs.scene.fbo;
     framesetup.oit_fbo = framebufs.oit.fbo_scene;
     glViewport(0,
@@ -1250,18 +1253,18 @@ R_FlushDebugGeometry(void)
               &buf,
               &ofs);
     GL_BindBuffer(GL_ARRAY_BUFFER, buf);
-    GL_VertexAttribPointerFunc(0,
-                               3,
-                               GL_FLOAT,
-                               GL_FALSE,
-                               sizeof(debugverts[0]),
-                               ofs + offsetof(debugvert_t, pos));
-    GL_VertexAttribPointerFunc(1,
-                               4,
-                               GL_UNSIGNED_BYTE,
-                               GL_TRUE,
-                               sizeof(debugverts[0]),
-                               ofs + offsetof(debugvert_t, color));
+    glVertexAttribPointer(0,
+                          3,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(debugverts[0]),
+                          ofs + offsetof(debugvert_t, pos));
+    glVertexAttribPointer(1,
+                          4,
+                          GL_UNSIGNED_BYTE,
+                          GL_TRUE,
+                          sizeof(debugverts[0]),
+                          ofs + offsetof(debugvert_t, color));
 
     GL_Upload(GL_ELEMENT_ARRAY_BUFFER,
               debugidx,
@@ -1791,9 +1794,9 @@ R_BeginTranslucency(void)
   GL_BeginGroup("Translucent objects");
 
   if (r_oit.value) {
-    GL_BindFramebufferFunc(GL_FRAMEBUFFER, framesetup.oit_fbo);
-    GL_ClearBufferfvFunc(GL_COLOR, 0, zeroes);
-    GL_ClearBufferfvFunc(GL_COLOR, 1, ones);
+    glBindFramebuffer(GL_FRAMEBUFFER, framesetup.oit_fbo);
+    glClearBufferfv(GL_COLOR, 0, zeroes);
+    glClearBufferfv(GL_COLOR, 1, ones);
 
     glEnable(GL_STENCIL_TEST);
     glStencilMask(2);
@@ -1813,7 +1816,7 @@ R_EndTranslucency(void)
   if (r_oit.value) {
     GL_BeginGroup("OIT resolve");
 
-    GL_BindFramebufferFunc(GL_FRAMEBUFFER, framesetup.scene_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, framesetup.scene_fbo);
 
     glStencilFunc(GL_EQUAL, 2, 2);
     glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -1918,29 +1921,29 @@ R_WarpScaleView(void)
   if (msaa) {
     GL_BeginGroup("MSAA resolve");
 
-    GL_BindFramebufferFunc(GL_READ_FRAMEBUFFER, framebufs.scene.fbo);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, framebufs.scene.fbo);
     if (needwarpscale) {
-      GL_BindFramebufferFunc(GL_DRAW_FRAMEBUFFER, framebufs.resolved_scene.fbo);
-      GL_BlitFramebufferFunc(
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebufs.resolved_scene.fbo);
+      glBlitFramebuffer(
         0, 0, srcw, srch, 0, 0, srcw, srch, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     } else {
-      GL_BindFramebufferFunc(GL_DRAW_FRAMEBUFFER, fbodest);
-      GL_BlitFramebufferFunc(0,
-                             0,
-                             srcw,
-                             srch,
-                             srcx,
-                             srcy,
-                             srcx + srcw,
-                             srcy + srch,
-                             GL_COLOR_BUFFER_BIT,
-                             GL_NEAREST);
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbodest);
+      glBlitFramebuffer(0,
+                        0,
+                        srcw,
+                        srch,
+                        srcx,
+                        srcy,
+                        srcx + srcw,
+                        srcy + srch,
+                        GL_COLOR_BUFFER_BIT,
+                        GL_NEAREST);
     }
 
     GL_EndGroup();
   }
 
-  GL_BindFramebufferFunc(GL_FRAMEBUFFER, fbodest);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbodest);
   glViewport(srcx, srcy, r_refdef.vrect.width, r_refdef.vrect.height);
 
   if (!needwarpscale)
@@ -1955,11 +1958,11 @@ R_WarpScaleView(void)
   GL_SetState(GLS_BLEND_OPAQUE | GLS_NO_ZTEST | GLS_NO_ZWRITE | GLS_CULL_NONE |
               GLS_ATTRIBS(0));
 
-  GL_Uniform4fFunc(0, smax, tmax, water_warp ? 1.f / 256.f : 0.f, cl.time);
+  glUniform4f(0, smax, tmax, water_warp ? 1.f / 256.f : 0.f, cl.time);
   if (v_blend[3] && gl_polyblend.value && !softemu)
-    GL_Uniform4fvFunc(1, 1, v_blend);
+    glUniform4fv(1, 1, v_blend);
   else
-    GL_Uniform4fFunc(1, 0.f, 0.f, 0.f, 0.f);
+    glUniform4f(1, 0.f, 0.f, 0.f, 0.f);
   GL_BindNative(GL_TEXTURE0,
                 GL_TEXTURE_2D,
                 msaa ? framebufs.resolved_scene.color_tex

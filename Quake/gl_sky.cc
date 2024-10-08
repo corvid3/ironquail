@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_sky.c
 
+#include <GL/glew.h>
+
+#include "common.hh"
 #include "cvar.hh"
 #include "quakedef.hh"
 
@@ -186,7 +189,7 @@ Sky_LoadTextureQ64(qmodel_t* mod, texture_t* mt)
 
   // Normal indexed texture for the back layer
   q_snprintf(
-    texturename, sizeof(texturename), "%s:%s_back", mod->name, mt->name);
+    texturename, sizeof(texturename), "%s:%s_back", mod->name.data(), mt->name);
   mt->gltexture = TexMgr_LoadImage(mod,
                                    texturename,
                                    mt->width,
@@ -217,14 +220,17 @@ Sky_LoadTextureQ64(qmodel_t* mod, texture_t* mt)
     count++;
   }
 
-  q_snprintf(
-    texturename, sizeof(texturename), "%s:%s_front", mod->name, mt->name);
+  q_snprintf(texturename,
+             sizeof(texturename),
+             "%s:%s_front",
+             mod->name.data(),
+             mt->name);
   mt->fullbright = TexMgr_LoadImage(mod,
                                     texturename,
                                     mt->width,
                                     halfheight,
                                     SRC_RGBA,
-                                    front_rgba,
+                                    front_rgba.data(),
                                     "",
                                     (src_offset_t)front_rgba,
                                     TEXPREF_ALPHA | TEXPREF_BINDLESS);
@@ -260,7 +266,6 @@ static void
 Skywind_Load_f(void)
 {
   char relname[MAX_QPATH];
-  char* buf;
   const char* data;
 
   if (!skybox) {
@@ -269,19 +274,19 @@ Skywind_Load_f(void)
   }
 
   q_snprintf(relname, sizeof(relname), "gfx/env/%s" SKYWIND_CFG, skybox->name);
-  buf = (char*)COM_LoadMallocFile(relname, NULL);
+  auto buf = COM_LoadFile(relname, nullptr);
   if (!buf) {
     Con_DPrintf("Sky wind config not found '%s'.\n", relname);
     return;
   }
 
-  data = COM_Parse(buf);
+  data = COM_Parse(buf->data());
   if (!data)
-    goto done;
+    return;
 
   if (strcmp(com_token, "skywind") != 0) {
     Con_Printf("Skywind_Load_f: first token must be 'skywind'.\n");
-    goto done;
+    return;
   }
 
   Skywind_Clear();
@@ -297,9 +302,6 @@ Skywind_Load_f(void)
 
   if ((data = COM_Parse(data)) != NULL)
     skybox->wind_pitch = fmod(atof(com_token) + 90.0, 180.0) - 90.0;
-
-done:
-  free(buf);
 }
 
 /*
@@ -457,9 +459,9 @@ static const char* const suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
 void
 Sky_LoadSkyBox(const char* name)
 {
-  int i, mark, width[6], height[6], samesize, numloaded;
+  int i, width[6], height[6], samesize, numloaded;
   char filename[MAX_OSPATH];
-  byte* data[6];
+  q_vec<byte> data[6];
   skybox_t newsky;
   enum srcformat fmt;
 
@@ -481,11 +483,11 @@ Sky_LoadSkyBox(const char* name)
   }
 
   // load textures
-  mark = Hunk_LowMark();
   for (i = 0, numloaded = 0, samesize = 0; i < 6; i++) {
     q_snprintf(filename, sizeof(filename), "gfx/env/%s%s", name, suf[i]);
-    data[i] = Image_LoadImage(filename, &width[i], &height[i], &fmt);
-    if (data[i]) {
+    if (auto n = Image_LoadImage(filename, &width[i], &height[i], &fmt)) {
+      data[i] = std::move(*n);
+
       if (fmt != SRC_RGBA)
         Sys_Error("Bad format %i for skybox side %s", fmt, filename);
 
@@ -520,13 +522,12 @@ Sky_LoadSkyBox(const char* name)
       Con_Warning("Sky_LoadSkyBox: out of memory on %" SDL_PRIu64 " bytes\n",
                   (uint64_t)numfacebytes);
       skybox = NULL;
-      Hunk_FreeToLowMark(mark);
       return;
     }
 
     for (i = 0; i < 6; i++) {
       byte* dstpixels = newsky.cubemap_pixels + numfacebytes * i;
-      byte* srcpixels = data[cubemap_order[i]];
+      byte* srcpixels = data[cubemap_order[i]].data();
       if (srcpixels)
         memcpy(dstpixels, srcpixels, numfacebytes);
       else
@@ -556,13 +557,12 @@ Sky_LoadSkyBox(const char* name)
                                             width[i],
                                             height[i],
                                             SRC_RGBA,
-                                            data[i],
+                                            data[i].data(),
                                             filename,
                                             0,
                                             TEXPREF_NONE);
     }
   }
-  Hunk_FreeToLowMark(mark);
 
   q_strlcpy(newsky.name, name, sizeof(newsky.name));
   VEC_PUSH(skybox_list, newsky);
@@ -618,7 +618,7 @@ Sky_NewMap(void)
   //
   // read worldspawn (this is so ugly, and shouldn't it be done on the server?)
   //
-  data = cl.worldmodel->entities;
+  data = cl.worldmodel->entities.data();
   if (!data)
     return; // FIXME: how could this possibly ever happen? -- if there's no
   // worldspawn then the sever wouldn't send the loadmap message to the client
@@ -780,9 +780,9 @@ Sky_DrawSkyBox(void)
   GL_SetState(GLS_BLEND_OPAQUE | GLS_NO_ZTEST | GLS_NO_ZWRITE | GLS_CULL_NONE |
               GLS_ATTRIBS(2));
 
-  GL_UniformMatrix4fvFunc(0, 1, GL_FALSE, r_matviewproj);
-  GL_Uniform3fvFunc(1, 1, r_refdef.vieworg);
-  GL_Uniform4fvFunc(2, 1, fog);
+  glUniformMatrix4fv(0, 1, GL_FALSE, r_matviewproj);
+  glUniform3fv(1, 1, r_refdef.vieworg);
+  glUniform4fv(2, 1, fog);
 
   for (i = 0; i < 6; i++) {
     struct skyboxvert_s
@@ -802,18 +802,18 @@ Sky_DrawSkyBox(void)
 
     GL_Upload(GL_ARRAY_BUFFER, verts, sizeof(verts), &buf, &ofs);
     GL_BindBuffer(GL_ARRAY_BUFFER, buf);
-    GL_VertexAttribPointerFunc(0,
-                               3,
-                               GL_FLOAT,
-                               GL_FALSE,
-                               sizeof(verts[0]),
-                               ofs + offsetof(struct skyboxvert_s, pos));
-    GL_VertexAttribPointerFunc(1,
-                               2,
-                               GL_FLOAT,
-                               GL_FALSE,
-                               sizeof(verts[0]),
-                               ofs + offsetof(struct skyboxvert_s, uv));
+    glVertexAttribPointer(0,
+                          3,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(verts[0]),
+                          ofs + offsetof(struct skyboxvert_s, pos));
+    glVertexAttribPointer(1,
+                          2,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(verts[0]),
+                          ofs + offsetof(struct skyboxvert_s, uv));
 
     GL_Bind(GL_TEXTURE0, skybox->textures[skytexorder[i]]);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);

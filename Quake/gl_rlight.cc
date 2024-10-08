@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_light.c
 
+#include <GL/glew.h>
+
 #include "glquake.hh"
 #include "mathlib.hh"
 #include "quakedef.hh"
@@ -110,17 +112,17 @@ GLLight_CreateResources(void)
 {
   glGenTextures(1, &gl_lightclustertexture);
   GL_BindNative(GL_TEXTURE0, GL_TEXTURE_3D, gl_lightclustertexture);
-  GL_ObjectLabelFunc(GL_TEXTURE, gl_lightclustertexture, -1, "light clusters");
-  GL_TexImage3DFunc(GL_TEXTURE_3D,
-                    0,
-                    GL_RG32UI,
-                    LIGHT_TILES_X,
-                    LIGHT_TILES_Y,
-                    LIGHT_TILES_Z,
-                    0,
-                    GL_RG_INTEGER,
-                    GL_UNSIGNED_INT,
-                    NULL);
+  glObjectLabel(GL_TEXTURE, gl_lightclustertexture, -1, "light clusters");
+  glTexImage3D(GL_TEXTURE_3D,
+               0,
+               GL_RG32UI,
+               LIGHT_TILES_X,
+               LIGHT_TILES_Y,
+               LIGHT_TILES_Z,
+               0,
+               GL_RG_INTEGER,
+               GL_UNSIGNED_INT,
+               NULL);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -203,13 +205,12 @@ R_PushDlights(void)
     GL_UNIFORM_BUFFER, &cluster_inputs, sizeof(cluster_inputs), &buf, &ofs);
   GL_BindBufferRange(
     GL_UNIFORM_BUFFER, 1, buf, (GLintptr)ofs, sizeof(cluster_inputs));
-  GL_BindImageTextureFunc(
+  glBindImageTexture(
     0, gl_lightclustertexture, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RG32UI);
-  GL_DispatchComputeFunc(
+  glDispatchCompute(
     (LIGHT_TILES_X + 7) / 8, (LIGHT_TILES_Y + 7) / 8, LIGHT_TILES_Z);
-  GL_MemoryBarrierFunc(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-  GL_BindImageTextureFunc(
+  glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+  glBindImageTexture(
     0, gl_lightclustertexture, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RG32UI);
 
   GL_EndGroup();

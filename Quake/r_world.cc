@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_world.c: world model rendering
 
+#include <GL/glew.h>
+
 #include "client.hh"
 #include "console.hh"
 #include "glquake.hh"
@@ -98,9 +100,8 @@ R_MarkVisSurfaces(byte* vis)
                      0,
                      cl.worldmodel->texofs[TEXTYPE_COUNT] *
                        sizeof(bmodel_draw_indirect_t));
-  GL_DispatchComputeFunc(
-    (cl.worldmodel->texofs[TEXTYPE_COUNT] + 63) / 64, 1, 1);
-  GL_MemoryBarrierFunc(GL_SHADER_STORAGE_BARRIER_BIT);
+  glDispatchCompute((cl.worldmodel->texofs[TEXTYPE_COUNT] + 63) / 64, 1, 1);
+  glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
   GL_UseProgram(glprogs.cull_mark);
   GL_BindBufferRange(
@@ -127,9 +128,9 @@ R_MarkVisSurfaces(byte* vis)
   GL_Upload(GL_UNIFORM_BUFFER, &frame, sizeof(frame), &buf, &ofs);
   GL_BindBufferRange(GL_UNIFORM_BUFFER, 1, buf, (GLintptr)ofs, sizeof(frame));
 
-  GL_DispatchComputeFunc((cl.worldmodel->leafs.size() + 63) / 64, 1, 1);
-  GL_MemoryBarrierFunc(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT |
-                       GL_ELEMENT_ARRAY_BARRIER_BIT);
+  glDispatchCompute((cl.worldmodel->leafs.size() + 63) / 64, 1, 1);
+  glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT |
+                  GL_ELEMENT_ARRAY_BARRIER_BIT);
 
   GL_EndGroup();
 }
@@ -313,28 +314,28 @@ R_FlushBModelCalls(void)
                      buf,
                      (GLintptr)ofs,
                      sizeof(bmodel_call_remap[0]) * num_bmodel_calls);
-  GL_DispatchComputeFunc((num_bmodel_calls + 63) / 64, 1, 1);
-  GL_MemoryBarrierFunc(GL_COMMAND_BARRIER_BIT);
+  glDispatchCompute((num_bmodel_calls + 63) / 64, 1, 1);
+  glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
   GL_UseProgram(bmodel_batch_program);
   GL_BindBuffer(GL_ELEMENT_ARRAY_BUFFER, gl_bmodel_ibo);
   GL_BindBuffer(GL_ARRAY_BUFFER, gl_bmodel_vbo);
   GL_BindBuffer(GL_DRAW_INDIRECT_BUFFER, cmdbuf);
-  GL_VertexAttribPointerFunc(
+  glVertexAttribPointer(
     0, 3, GL_FLOAT, GL_FALSE, sizeof(glvert_t), (void*)offsetof(glvert_t, pos));
-  GL_VertexAttribPointerFunc(
+  glVertexAttribPointer(
     1, 4, GL_FLOAT, GL_FALSE, sizeof(glvert_t), (void*)offsetof(glvert_t, st));
-  GL_VertexAttribPointerFunc(2,
-                             1,
-                             GL_FLOAT,
-                             GL_FALSE,
-                             sizeof(glvert_t),
-                             (void*)offsetof(glvert_t, lmofs));
-  GL_VertexAttribIPointerFunc(3,
-                              4,
-                              GL_UNSIGNED_BYTE,
-                              sizeof(glvert_t),
-                              (void*)offsetof(glvert_t, styles));
+  glVertexAttribPointer(2,
+                        1,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(glvert_t),
+                        (void*)offsetof(glvert_t, lmofs));
+  glVertexAttribIPointer(3,
+                         4,
+                         GL_UNSIGNED_BYTE,
+                         sizeof(glvert_t),
+                         (void*)offsetof(glvert_t, styles));
 
   if (gl_bindless_able) {
     GL_Upload(GL_SHADER_STORAGE_BUFFER,
@@ -348,11 +349,11 @@ R_FlushBModelCalls(void)
                        (GLintptr)ofs,
                        sizeof(bmodel_calls.bindless.params[0]) *
                          num_bmodel_calls);
-    GL_MultiDrawElementsIndirectFunc(GL_TRIANGLES,
-                                     GL_UNSIGNED_INT,
-                                     (const void*)dstcmdofs,
-                                     num_bmodel_calls,
-                                     sizeof(bmodel_draw_indirect_t));
+    glMultiDrawElementsIndirect(GL_TRIANGLES,
+                                GL_UNSIGNED_INT,
+                                (const void*)dstcmdofs,
+                                num_bmodel_calls,
+                                sizeof(bmodel_draw_indirect_t));
   } else {
     int i;
 
@@ -368,9 +369,9 @@ R_FlushBModelCalls(void)
                        sizeof(bmodel_calls.bound.params[0]) * num_bmodel_calls);
 
     for (i = 0; i < num_bmodel_calls; i++) {
-      GL_Uniform1iFunc(0, i);
+      glUniform1i(0, i);
       GL_BindTextures(0, 2, bmodel_calls.bound.textures[i]);
-      GL_DrawElementsIndirectFunc(
+      glDrawElementsIndirect(
         GL_TRIANGLES,
         GL_UNSIGNED_INT,
         (const byte*)(dstcmdofs + i * sizeof(bmodel_draw_indirect_t)));

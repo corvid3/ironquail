@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <GL/glew.h>
+
 #include "gl_shaders.hh"
 #include "q_ctype.hh"
 #include "quakedef.hh"
@@ -143,16 +145,16 @@ GL_CreateShader(GLenum type,
     strings[numstrings++] = extradefs;
   strings[numstrings++] = source;
 
-  shader = GL_CreateShaderFunc(type);
-  GL_ObjectLabelFunc(GL_SHADER, shader, -1, name);
-  GL_ShaderSourceFunc(shader, numstrings, strings, NULL);
-  GL_CompileShaderFunc(shader);
-  GL_GetShaderivFunc(shader, GL_COMPILE_STATUS, &status);
+  shader = glCreateShader(type);
+  glObjectLabel(GL_SHADER, shader, -1, name);
+  glShaderSource(shader, numstrings, strings, NULL);
+  glCompileShader(shader);
+  glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
 
   if (status != GL_TRUE) {
     char infolog[1024];
     memset(infolog, 0, sizeof(infolog));
-    GL_GetShaderInfoLogFunc(shader, sizeof(infolog), NULL, infolog);
+    glGetShaderInfoLog(shader, sizeof(infolog), NULL, infolog);
     GL_InitError("Error compiling %s %s shader:\n\n%s", name, typestr, infolog);
   }
 
@@ -172,22 +174,22 @@ GL_CreateProgramFromShaders(const GLuint* shaders,
   GLuint program;
   GLint status;
 
-  program = GL_CreateProgramFunc();
-  GL_ObjectLabelFunc(GL_PROGRAM, program, -1, name);
+  program = glCreateProgram();
+  glObjectLabel(GL_PROGRAM, program, -1, name);
 
   while (numshaders-- > 0) {
-    GL_AttachShaderFunc(program, *shaders);
-    GL_DeleteShaderFunc(*shaders);
+    glAttachShader(program, *shaders);
+    glDeleteShader(*shaders);
     ++shaders;
   }
 
-  GL_LinkProgramFunc(program);
-  GL_GetProgramivFunc(program, GL_LINK_STATUS, &status);
+  glLinkProgram(program);
+  glGetProgramiv(program, GL_LINK_STATUS, &status);
 
   if (status != GL_TRUE) {
     char infolog[1024];
     memset(infolog, 0, sizeof(infolog));
-    GL_GetProgramInfoLogFunc(program, sizeof(infolog), NULL, infolog);
+    glGetProgramInfoLog(program, sizeof(infolog), NULL, infolog);
     GL_InitError("Error linking %s program:\n\n%s", name, infolog);
   }
 
@@ -318,7 +320,7 @@ GL_UseProgram(GLuint program)
   if (program == gl_current_program)
     return;
   gl_current_program = program;
-  GL_UseProgramFunc(program);
+  glUseProgram(program);
 }
 
 /*
@@ -333,7 +335,7 @@ void
 GL_ClearCachedProgram(void)
 {
   gl_current_program = 0;
-  GL_UseProgramFunc(0);
+  glUseProgram(0);
 }
 
 /*
@@ -456,12 +458,12 @@ GL_DeleteShaders(void)
 {
   int i;
   for (i = 0; i < gl_num_programs; i++) {
-    GL_DeleteProgramFunc(gl_programs[i]);
+    glDeleteProgram(gl_programs[i]);
     gl_programs[i] = 0;
   }
   gl_num_programs = 0;
 
-  GL_UseProgramFunc(0);
+  glUseProgram(0);
   gl_current_program = 0;
 
   memset(&glprogs, 0, sizeof(glprogs));

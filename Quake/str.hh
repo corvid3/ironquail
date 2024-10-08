@@ -124,7 +124,7 @@ public:
   explicit q_unique_vec(size_type const size, AL alloc = AL{})
     : q_unique_vec(alloc)
   {
-    m_data = m_alloc.allocate(size);
+    m_data = static_cast<T*>(m_alloc.allocate(size));
   }
 
   ~q_unique_vec()
@@ -143,12 +143,14 @@ public:
     rhs.m_size = 0;
   }
 
-  q_unique_vec operator=(q_unique_vec&& rhs)
+  q_unique_vec& operator=(q_unique_vec&& rhs)
   {
     m_data = rhs.m_data;
     m_size = rhs.m_size;
     rhs.m_data = nullptr;
     rhs.m_size = 0;
+
+    return *this;
   }
 
   constexpr size_type size() noexcept { return m_size; }

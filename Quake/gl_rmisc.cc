@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_misc.c
 
+#include <GL/glew.h>
+
 #include "client.hh"
 #include "cmd.hh"
 #include "console.hh"
@@ -557,11 +559,11 @@ GL_CreateBuffer(GLenum target,
                 const void* data)
 {
   GLuint buffer;
-  GL_GenBuffersFunc(1, &buffer);
+  glGenBuffers(1, &buffer);
   GL_BindBuffer(target, buffer);
   if (name)
-    GL_ObjectLabelFunc(GL_BUFFER, buffer, -1, name);
-  GL_BufferDataFunc(target, size, data, usage);
+    glObjectLabel(GL_BUFFER, buffer, -1, name);
+  glBufferData(target, size, data, usage);
   return buffer;
 }
 
@@ -597,7 +599,7 @@ GL_BindBuffer(GLenum target, GLuint buffer)
   if (*cache != buffer) {
     *cache = buffer;
   apply:
-    GL_BindBufferFunc(target, buffer);
+    glBindBuffer(target, buffer);
   }
 }
 
@@ -639,7 +641,7 @@ GL_BindBufferRange(GLenum target,
     current_shader_storage_buffer = buffer;
   }
 
-  GL_BindBufferRangeFunc(target, index, buffer, offset, size);
+  glBindBufferRange(target, index, buffer, offset, size);
 }
 
 /*
@@ -668,7 +670,7 @@ GL_BindBuffersRange(GLenum target,
         range->size = sizes[i];
       }
     }
-    GL_BindBuffersRangeFunc(target, first, count, buffers, offsets, sizes);
+    glBindBuffersRange(target, first, count, buffers, offsets, sizes);
   } else {
     for (i = 0; i < count; i++)
       GL_BindBufferRange(target, first + i, buffers[i], offsets[i], sizes[i]);
@@ -698,7 +700,7 @@ GL_DeleteBuffer(GLuint buffer)
     if (ssbo_ranges[i].buffer == buffer)
       ssbo_ranges[i].buffer = 0;
 
-  GL_DeleteBuffersFunc(1, &buffer);
+  glDeleteBuffers(1, &buffer);
 }
 
 /*
@@ -722,10 +724,10 @@ GL_ClearBufferBindings(void)
   for (i = 0; i < countof(ssbo_ranges); i++)
     ssbo_ranges[i].buffer = 0;
 
-  GL_BindBufferFunc(GL_ARRAY_BUFFER, 0);
-  GL_BindBufferFunc(GL_ELEMENT_ARRAY_BUFFER, 0);
-  GL_BindBufferFunc(GL_DRAW_INDIRECT_BUFFER, 0);
-  GL_BindBufferFunc(GL_SHADER_STORAGE_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
 /*
@@ -790,19 +792,19 @@ GL_AllocFrameResources(frameres_bits_t bits)
       if (frame->host_buffer) {
         if (frame->host_ptr) {
           GL_BindBuffer(GL_ARRAY_BUFFER, frame->host_buffer);
-          GL_UnmapBufferFunc(GL_ARRAY_BUFFER);
+          glUnmapBuffer(GL_ARRAY_BUFFER);
         }
         GL_AddGarbageBuffer(frame->host_buffer);
       }
 
-      GL_GenBuffersFunc(1, &frame->host_buffer);
+      glGenBuffers(1, &frame->host_buffer);
       GL_BindBuffer(GL_ARRAY_BUFFER, frame->host_buffer);
       q_snprintf(name, sizeof(name), "dynamic host buffer %d", i);
-      GL_ObjectLabelFunc(GL_BUFFER, frame->host_buffer, -1, name);
+      glObjectLabel(GL_BUFFER, frame->host_buffer, -1, name);
       if (gl_buffer_storage_able) {
-        GL_BufferStorageFunc(
+        glBufferStorage(
           GL_ARRAY_BUFFER, frameres_host_buffer_size, NULL, flags);
-        frame->host_ptr = (GLubyte*)GL_MapBufferRangeFunc(
+        frame->host_ptr = (GLubyte*)glMapBufferRange(
           GL_ARRAY_BUFFER, 0, frameres_host_buffer_size, flags);
         if (!frame->host_ptr)
           Sys_Error(
@@ -810,7 +812,7 @@ GL_AllocFrameResources(frameres_bits_t bits)
             " bytes",
             (uint64_t)frameres_host_buffer_size);
       } else {
-        GL_BufferDataFunc(
+        glBufferData(
           GL_ARRAY_BUFFER, frameres_host_buffer_size, NULL, GL_STREAM_DRAW);
       }
     }
@@ -819,14 +821,14 @@ GL_AllocFrameResources(frameres_bits_t bits)
       if (frame->device_buffer)
         GL_AddGarbageBuffer(frame->device_buffer);
 
-      GL_GenBuffersFunc(1, &frame->device_buffer);
+      glGenBuffers(1, &frame->device_buffer);
       GL_BindBuffer(GL_SHADER_STORAGE_BUFFER, frame->device_buffer);
       q_snprintf(name, sizeof(name), "dynamic device buffer %d", i);
-      GL_ObjectLabelFunc(GL_BUFFER, frame->device_buffer, -1, name);
-      GL_BufferDataFunc(GL_SHADER_STORAGE_BUFFER,
-                        frameres_device_buffer_size,
-                        NULL,
-                        GL_STREAM_DRAW);
+      glObjectLabel(GL_BUFFER, frame->device_buffer, -1, name);
+      glBufferData(GL_SHADER_STORAGE_BUFFER,
+                   frameres_device_buffer_size,
+                   NULL,
+                   GL_STREAM_DRAW);
     }
   }
 
@@ -863,7 +865,7 @@ GL_DeleteFrameResources(void)
     frameres_t* frame = &frameres[i];
 
     if (frame->fence) {
-      GL_DeleteSyncFunc(frame->fence);
+      glDeleteSync(frame->fence);
       frame->fence = NULL;
     }
 
@@ -875,7 +877,7 @@ GL_DeleteFrameResources(void)
 
     if (frame->host_ptr) {
       GL_BindBuffer(GL_ARRAY_BUFFER, frame->host_buffer);
-      GL_UnmapBufferFunc(GL_ARRAY_BUFFER);
+      glUnmapBuffer(GL_ARRAY_BUFFER);
       frame->host_ptr = NULL;
     }
 
@@ -905,19 +907,19 @@ GL_AcquireFrameResources(void)
   size_t i, num_garbage_bufs;
 
   if (prev_frame->fence)
-    GL_WaitSyncFunc(prev_frame->fence, 0, GL_TIMEOUT_IGNORED);
+    glWaitSync(prev_frame->fence, 0, GL_TIMEOUT_IGNORED);
 
   if (frame->fence) {
     GLuint64 timeout = 1ull * 1000 * 1000 * 1000; // 1 second
     GLenum result =
-      GL_ClientWaitSyncFunc(frame->fence, GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
+      glClientWaitSync(frame->fence, GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
     if (result == GL_TIMEOUT_EXPIRED)
       glFinish();
     else if (result == GL_WAIT_FAILED)
       Sys_Error("GL_AcquireFrameResources: wait failed (0x%04X)", glGetError());
     else if (result != GL_CONDITION_SATISFIED && result != GL_ALREADY_SIGNALED)
       Sys_Error("GL_AcquireFrameResources: sync failed (0x%04X)", result);
-    GL_DeleteSyncFunc(frame->fence);
+    glDeleteSync(frame->fence);
     frame->fence = NULL;
   }
 
@@ -938,7 +940,7 @@ GL_ReleaseFrameResources(void)
   frameres_t* frame = &frameres[frameres_idx];
 
   SDL_assert(!frame->fence);
-  frame->fence = GL_FenceSyncFunc(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+  frame->fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
   if (!frame->fence)
     Sys_Error("glFenceSync failed (error code 0x%04X)", glGetError());
@@ -984,7 +986,7 @@ GL_Upload(GLenum target,
     memcpy(frame->host_ptr + frameres_host_offset, data, numbytes);
   else {
     GL_BindBuffer(target, frame->host_buffer);
-    GL_BufferSubDataFunc(target, frameres_host_offset, numbytes, data);
+    glBufferSubData(target, frameres_host_offset, numbytes, data);
   }
 
   *outbuf = frame->host_buffer;

@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <GL/glew.h>
+
 #include "console.hh"
 #include "glquake.hh"
 #include "mathlib.hh"
@@ -702,20 +704,20 @@ R_FlushParticleBatch(void)
             &buf,
             &ofs);
   GL_BindBuffer(GL_ARRAY_BUFFER, buf);
-  GL_VertexAttribPointerFunc(0,
-                             3,
-                             GL_FLOAT,
-                             GL_FALSE,
-                             sizeof(partverts[0]),
-                             ofs + offsetof(particlevert_t, pos));
-  GL_VertexAttribPointerFunc(1,
-                             4,
-                             GL_UNSIGNED_BYTE,
-                             GL_TRUE,
-                             sizeof(partverts[0]),
-                             ofs + offsetof(particlevert_t, color));
+  glVertexAttribPointer(0,
+                        3,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(partverts[0]),
+                        ofs + offsetof(particlevert_t, pos));
+  glVertexAttribPointer(1,
+                        4,
+                        GL_UNSIGNED_BYTE,
+                        GL_TRUE,
+                        sizeof(partverts[0]),
+                        ofs + offsetof(particlevert_t, color));
 
-  GL_DrawArraysInstancedFunc(GL_TRIANGLE_STRIP, 0, 4, numpartverts);
+  glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, numpartverts);
 
   numpartverts = 0;
 }
@@ -764,7 +766,7 @@ R_DrawParticles_Real(qboolean alpha, qboolean showtris)
   // the shader
   scalex *= r_matproj[1 * 4 + 0];  // -1 / tan (fovx/2)
   scaley *= -r_matproj[2 * 4 + 1]; // -1 / tan (fovy/2)
-  GL_Uniform3fFunc(0, scalex, scaley, uvscale);
+  glUniform3f(0, scalex, scaley, uvscale);
 
   if (alpha)
     GL_SetState(GLS_BLEND_ALPHA_OIT | GLS_NO_ZWRITE | GLS_CULL_NONE |
