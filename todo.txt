@@ -6,4 +6,5 @@
 (C) 2024-08-18 protect the server from cheaters (sv_cheats)
 (C) 2024-08-19 rip up the qcvm & decouple entities from it
 (C) 2024-08-20 sound rewrite, maybe use miniaudio?
+(C) 2024-10-08 implement a better caching system, for fast map changes
 (D) 2024-08-18 add crouching

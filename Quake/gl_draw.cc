@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // draw.c -- 2d drawing
 
+#include <GL/glew.h>
+
+#include "common.hh"
+#include "mem.hh"
 #include "quakedef.hh"
 
 #include "client.hh"
@@ -33,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.hh"
 #include "sbar.hh"
 #include "screen.hh"
+#include "str.hh"
 #include "wad.hh"
 #include <SDL2/SDL.h>
 
@@ -52,8 +57,8 @@ qboolean custom_conchars;
 
 gltexture_t* char_texture; // johnfitz
 byte char_texture_data[256 * 10 * 10];
-qpic_t *pic_ovr, *pic_ins; // johnfitz -- new cursor handling
-qpic_t* pic_nul;           // johnfitz -- for missing gfx, don't crash
+q_uptr<qpic_t> pic_ovr, pic_ins; // johnfitz -- new cursor handling
+q_uptr<qpic_t> pic_nul;          // johnfitz -- for missing gfx, don't crash
 
 // johnfitz -- new pics
 byte pic_ovr_data[8][8] = {
@@ -287,6 +292,7 @@ Scrap_Compatible(unsigned int texflags)
   return (texflags & required) == required && (texflags & unsupported) == 0;
 }
 
+// TODO(crow): maybe use shared_ptr's? hmmmmm
 /*
 ================
 Draw_PicFromWad
@@ -305,27 +311,28 @@ Draw_PicFromWad2(const char* name, unsigned int texflags)
   // Spike -- added cachepic stuff here, to avoid glitches if the function is
   // called multiple times with the same image.
   for (pic = menu_cachepics, i = 0; i < menu_numcachepics; pic++, i++) {
-    if (!strcmp(name, pic->name))
+    if (name == pic->name)
       return &pic->pic;
   }
+
   if (menu_numcachepics == MAX_CACHED_PICS)
     Sys_Error("menu_numcachepics == MAX_CACHED_PICS");
 
   p = (qpic_t*)W_GetLumpName(name, &info);
   if (!p) {
     Con_SafePrintf("W_GetLumpName: %s not found\n", name);
-    return pic_nul; // johnfitz
+    return pic_nul.get(); // johnfitz
   }
   if (info->type != TYP_QPIC) {
     Con_SafePrintf("Draw_PicFromWad: lump \"%s\" is not a qpic\n", name);
-    return pic_nul;
+    return pic_nul.get();
   }
   if ((size_t)info->size < sizeof(int) * 2) {
     Con_SafePrintf("Draw_PicFromWad: pic \"%s\" is too small for its qpic "
                    "header (%u bytes)\n",
                    name,
                    info->size);
-    return pic_nul;
+    return pic_nul.get();
   }
   if ((size_t)info->size < sizeof(int) * 2 + p->width * p->height) {
     Con_SafePrintf("Draw_PicFromWad: pic \"%s\" truncated (%u*%u requires %u "
@@ -334,7 +341,7 @@ Draw_PicFromWad2(const char* name, unsigned int texflags)
                    p->width,
                    p->height,
                    8 + p->width * p->height);
-    return pic_nul;
+    return pic_nul.get();
   }
   if ((size_t)info->size > sizeof(int) * 2 + p->width * p->height)
     Con_DPrintf(
@@ -402,34 +409,38 @@ Draw_CachePic
 ================
 */
 qpic_t*
-Draw_TryCachePic(const char* path, unsigned int texflags)
+Draw_TryCachePic(q_strview path, unsigned int texflags)
 {
   cachepic_t* pic;
   int i, x, y;
-  qpic_t* dat;
   glpic_t gl;
 
   for (pic = menu_cachepics, i = 0; i < menu_numcachepics; pic++, i++) {
-    if (!strcmp(path, pic->name))
+    if (path == pic->name)
       return &pic->pic;
   }
   if (menu_numcachepics == MAX_CACHED_PICS)
     Sys_Error("menu_numcachepics == MAX_CACHED_PICS");
   menu_numcachepics++;
-  strcpy(pic->name, path);
+  strcpy(pic->name, path.data());
 
   //
   // load the pic from disk
   //
-  dat = (qpic_t*)COM_LoadMallocFile(path, NULL);
-  if (!dat)
-    return NULL;
+  q_str<> dat_own;
+  if (auto o = COM_LoadFile(path, nullptr))
+    dat_own = *o;
+  else
+    return nullptr;
+
+  qpic_t* dat = reinterpret_cast<qpic_t*>(dat_own.data());
+
   SwapPic(dat);
 
   // HACK HACK HACK --- we need to keep this as a separate texture
   // so that the menu configuration dialog can translate its colors
   // without affecting the whole scrap atlas
-  if (!strcmp(path, "gfx/menuplyr.lmp"))
+  if (path == "gfx/menuplr.lmp")
     texflags &= ~TEXPREF_PAD; // no scrap usage
 
   pic->pic.width = dat->width;
@@ -445,12 +456,12 @@ Draw_TryCachePic(const char* path, unsigned int texflags)
     gl.th = (y + dat->height) / (float)SCRAP_ATLAS_HEIGHT;
   } else {
     gl.gltexture = TexMgr_LoadImage(NULL,
-                                    path,
+                                    path.data(),
                                     dat->width,
                                     dat->height,
                                     SRC_INDEXED,
                                     dat->data,
-                                    path,
+                                    path.data(),
                                     sizeof(int) * 2,
                                     texflags); // johnfitz -- TexMgr
     gl.sl = 0;
@@ -461,7 +472,6 @@ Draw_TryCachePic(const char* path, unsigned int texflags)
             (float)TexMgr_PadConditional(dat->height); // johnfitz
   }
 
-  free(dat);
   memcpy(pic->pic.data, &gl, sizeof(glpic_t));
 
   return &pic->pic;
@@ -482,15 +492,17 @@ Draw_CachePic(const char* path)
 Draw_MakePic -- johnfitz -- generate pics from internal data
 ================
 */
-qpic_t*
+q_uptr<qpic_t>
 Draw_MakePic(const char* name, int width, int height, byte* data)
 {
   int flags = TEXPREF_NEAREST | TEXPREF_ALPHA | TEXPREF_PERSIST |
               TEXPREF_NOPICMIP | TEXPREF_PAD;
+
+  QGeneralAlloc<byte> allocator;
   qpic_t* pic;
   glpic_t gl;
 
-  pic = (qpic_t*)Hunk_Alloc(sizeof(qpic_t) - 4 + sizeof(glpic_t));
+  pic = (qpic_t*)allocator.allocate(sizeof(qpic_t) - 4 + sizeof(glpic_t));
   pic->width = width;
   pic->height = height;
 
@@ -509,7 +521,7 @@ Draw_MakePic(const char* name, int width, int height, byte* data)
   gl.th = (float)height / (float)TexMgr_PadConditional(height);
   memcpy(pic->data, &gl, sizeof(glpic_t));
 
-  return pic;
+  return q_uptr<qpic_t>(pic);
 }
 
 //==============================================================================
@@ -695,24 +707,24 @@ Draw_Flush(void)
             &buf,
             &ofs);
   GL_BindBuffer(GL_ARRAY_BUFFER, buf);
-  GL_VertexAttribPointerFunc(0,
-                             2,
-                             GL_FLOAT,
-                             GL_FALSE,
-                             sizeof(batchverts[0]),
-                             ofs + offsetof(guivertex_t, pos));
-  GL_VertexAttribPointerFunc(1,
-                             2,
-                             GL_FLOAT,
-                             GL_FALSE,
-                             sizeof(batchverts[0]),
-                             ofs + offsetof(guivertex_t, uv));
-  GL_VertexAttribPointerFunc(2,
-                             4,
-                             GL_UNSIGNED_BYTE,
-                             GL_TRUE,
-                             sizeof(batchverts[0]),
-                             ofs + offsetof(guivertex_t, color));
+  glVertexAttribPointer(0,
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(batchverts[0]),
+                        ofs + offsetof(guivertex_t, pos));
+  glVertexAttribPointer(1,
+                        2,
+                        GL_FLOAT,
+                        GL_FALSE,
+                        sizeof(batchverts[0]),
+                        ofs + offsetof(guivertex_t, uv));
+  glVertexAttribPointer(2,
+                        4,
+                        GL_UNSIGNED_BYTE,
+                        GL_TRUE,
+                        sizeof(batchverts[0]),
+                        ofs + offsetof(guivertex_t, color));
 
   GL_Upload(GL_ELEMENT_ARRAY_BUFFER,
             batchindices,

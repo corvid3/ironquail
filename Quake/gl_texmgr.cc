@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // gl_texmgr.c -- fitzquake's texture manager. manages opengl texture images
 
+#include <GL/glew.h>
+
 #include "cvar.hh"
 #include "glquake.hh"
 #include "quakedef.hh"
@@ -150,7 +152,7 @@ TexMgr_DeleteSamplers
 static void
 TexMgr_DeleteSamplers(void)
 {
-  GL_DeleteSamplersFunc(countof(gl_samplers), gl_samplers);
+  glDeleteSamplers(countof(gl_samplers), gl_samplers);
   memset(gl_samplers, 0, sizeof(gl_samplers));
 }
 
@@ -165,27 +167,27 @@ TexMgr_CreateSamplers(void)
   int i;
 
   TexMgr_DeleteSamplers();
-  GL_GenSamplersFunc(countof(gl_samplers), gl_samplers);
+  glGenSamplers(countof(gl_samplers), gl_samplers);
 
   for (i = 0; i < NUM_GLMODES; i++) {
-    GL_SamplerParameteriFunc(
+    glSamplerParameteri(
       gl_samplers[i * 2 + 0], GL_TEXTURE_MAG_FILTER, glmodes[i].magfilter);
-    GL_SamplerParameteriFunc(
+    glSamplerParameteri(
       gl_samplers[i * 2 + 0], GL_TEXTURE_MIN_FILTER, glmodes[i].magfilter);
-    GL_SamplerParameterfFunc(gl_samplers[i * 2 + 0],
-                             GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                             gl_texfilter.anisotropy);
-    GL_SamplerParameterfFunc(
+    glSamplerParameteri(gl_samplers[i * 2 + 0],
+                        GL_TEXTURE_MAX_ANISOTROPY_EXT,
+                        gl_texfilter.anisotropy);
+    glSamplerParameterf(
       gl_samplers[i * 2 + 0], GL_TEXTURE_LOD_BIAS, gl_texfilter.lodbias);
 
-    GL_SamplerParameteriFunc(
+    glSamplerParameteri(
       gl_samplers[i * 2 + 1], GL_TEXTURE_MAG_FILTER, glmodes[i].magfilter);
-    GL_SamplerParameteriFunc(
+    glSamplerParameteri(
       gl_samplers[i * 2 + 1], GL_TEXTURE_MIN_FILTER, glmodes[i].minfilter);
-    GL_SamplerParameterfFunc(gl_samplers[i * 2 + 1],
-                             GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                             gl_texfilter.anisotropy);
-    GL_SamplerParameterfFunc(
+    glSamplerParameterf(gl_samplers[i * 2 + 1],
+                        GL_TEXTURE_MAX_ANISOTROPY_EXT,
+                        gl_texfilter.anisotropy);
+    glSamplerParameterf(
       gl_samplers[i * 2 + 1], GL_TEXTURE_LOD_BIAS, gl_texfilter.lodbias);
   }
 }
@@ -212,18 +214,19 @@ TexMgr_SetFilterModes
 static void
 TexMgr_SetFilterModes(gltexture_t* glt)
 {
+  // NOTE(crow): again... more bindless handles...
   if (glt->bindless_handle) {
     int sampleridx;
     if (glt->flags & (TEXPREF_NEAREST | TEXPREF_LINEAR))
       return;
 
-    GL_MakeTextureHandleNonResidentARBFunc(glt->bindless_handle);
+    glMakeTextureHandleNonResidentARB(glt->bindless_handle);
     sampleridx = gl_texfilter.mode * 2;
     if (glt->flags & TEXPREF_MIPMAP)
       sampleridx++;
     glt->bindless_handle =
-      GL_GetTextureSamplerHandleARBFunc(glt->texnum, gl_samplers[sampleridx]);
-    GL_MakeTextureHandleResidentARBFunc(glt->bindless_handle);
+      glGetTextureSamplerHandleARB(glt->texnum, gl_samplers[sampleridx]);
+    glMakeTextureHandleResidentARB(glt->bindless_handle);
 
     return;
   }
@@ -2198,8 +2201,11 @@ GL_DeleteTexture(gltexture_t* texture)
 {
   if (!texture->texnum)
     return;
+  // NOTE(crow):
+  //     what? why are we using bindless textures...
+  //     should maybe do something about this...
   if (texture->bindless_handle) {
-    GL_MakeTextureHandleNonResidentARBFunc(texture->bindless_handle);
+    glMakeTextureHandleNonResidentARB(texture->bindless_handle);
     texture->bindless_handle = 0;
   }
   GL_DeleteNativeTexture(texture->texnum);
@@ -2218,13 +2224,13 @@ GL_ClearBindings(void)
 
   memset(&currenttexture, 0, sizeof(currenttexture));
   if (gl_multi_bind_able) {
-    GL_BindTexturesFunc(0, countof(currenttexture), NULL);
-    GL_BindSamplersFunc(0, countof(currenttexture), NULL);
+    glBindTextures(0, countof(currenttexture), NULL);
+    glBindSamplers(0, countof(currenttexture), NULL);
   } else
     for (i = 0; i < (int)countof(currenttexture); i++) {
       GL_SelectTexture(GL_TEXTURE0 + i);
       glBindTexture(GL_TEXTURE_2D, 0);
-      GL_BindSamplerFunc(i, 0);
+      glBindSampler(i, 0);
     }
 }
 
@@ -2288,17 +2294,17 @@ GLPalette_CreateResources(void)
 
   glGenTextures(1, &gl_palette_lut);
   GL_BindNative(GL_TEXTURE0, GL_TEXTURE_3D, gl_palette_lut);
-  GL_ObjectLabelFunc(GL_TEXTURE, gl_palette_lut, -1, "palette lut");
-  GL_TexImage3DFunc(GL_TEXTURE_3D,
-                    0,
-                    GL_R8UI,
-                    128,
-                    128,
-                    128,
-                    0,
-                    GL_RED_INTEGER,
-                    GL_UNSIGNED_BYTE,
-                    NULL);
+  glObjectLabel(GL_TEXTURE, gl_palette_lut, -1, "palette lut");
+  glTexImage3D(GL_TEXTURE_3D,
+               0,
+               GL_R8UI,
+               128,
+               128,
+               128,
+               0,
+               GL_RED_INTEGER,
+               GL_UNSIGNED_BYTE,
+               NULL);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

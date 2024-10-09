@@ -6,12 +6,14 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "mem.hh"
 
 template<template<typename M> typename A = QGeneralAlloc>
 using q_str = std::basic_string<char, std::char_traits<char>, A<char>>;
+using q_strview = std::basic_string_view<char>;
 template<template<typename M> typename A = QGeneralAlloc>
 using q_strstr = std::basic_stringstream<char, std::char_traits<char>, A<char>>;
 template<typename T, template<typename M> typename A = QGeneralAlloc>
